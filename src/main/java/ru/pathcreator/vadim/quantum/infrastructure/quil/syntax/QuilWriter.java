@@ -15,6 +15,7 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
@@ -36,7 +37,6 @@ import ru.pathcreator.vadim.quantum.domain.operation.Operation;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -47,7 +47,7 @@ import ru.pathcreator.vadim.quantum.infrastructure.quil.mapping.QuilGateMapper;
  */
 public final class QuilWriter {
 
-    private static final String SOURCE_FRAGMENT_FORMAT = "quil";
+    private static final String CALIBRATION_BODY_LANGUAGE = "quil";
 
     public QuilWriterResult write(final QuantumProgram program) {
         if (program == null) {
@@ -70,12 +70,12 @@ public final class QuilWriter {
         final QuantumCircuit circuit
     ) {
         final StringBuilder builder = new StringBuilder();
-        final QuilWriterResult sourceFragmentsResult = appendProgramSourceFragments(
+        final QuilWriterResult calibrationResult = appendCalibrationDefinitions(
             builder,
             program
         );
-        if (!sourceFragmentsResult.isSuccess()) {
-            return sourceFragmentsResult;
+        if (!calibrationResult.isSuccess()) {
+            return calibrationResult;
         }
         final QuilWriterResult definitionsResult = appendGateDefinitions(
             builder,
@@ -103,20 +103,21 @@ public final class QuilWriter {
         return QuilWriterResult.success(builder.toString());
     }
 
-    private static QuilWriterResult appendProgramSourceFragments(
+    private static QuilWriterResult appendCalibrationDefinitions(
         final StringBuilder builder,
         final QuantumProgram program
     ) {
-        for (int i = 0; i < program.sourceFragmentCount(); i++) {
-            if (!SOURCE_FRAGMENT_FORMAT.equals(program.sourceFragment(i).format())) {
+        for (int i = 0; i < program.calibrationDefinitionCount(); i++) {
+            final CalibrationDefinition definition = program.calibrationDefinition(i);
+            if (!CALIBRATION_BODY_LANGUAGE.equals(definition.bodyLanguage())) {
                 return QuilWriterResult.failure(IntegrationDiagnostic.error(
                     IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
-                    "Quil export does not support source fragment format: "
-                        + program.sourceFragment(i).format()
+                    "Quil export does not support calibration body language: "
+                        + definition.bodyLanguage()
                         + "."
                 ));
             }
-            builder.append(program.sourceFragment(i).content().stripTrailing())
+            builder.append(definition.body().stripTrailing())
                 .append('\n');
         }
         return QuilWriterResult.success("");
@@ -281,17 +282,6 @@ public final class QuilWriter {
             builder.append("WAIT\n");
             return QuilWriterResult.success("");
         }
-        if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            if (!SOURCE_FRAGMENT_FORMAT.equals(fragmentOperation.fragment().format())) {
-                return QuilWriterResult.failure(IntegrationDiagnostic.error(
-                    IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
-                    "Quil export does not support source fragment format: " + fragmentOperation.fragment().format() + "."
-                ));
-            }
-            builder.append(fragmentOperation.fragment().content().stripTrailing())
-                .append('\n');
-            return QuilWriterResult.success("");
-        }
         return QuilWriterResult.failure(IntegrationDiagnostic.error(
             IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
             "Quil export does not support operation kind: " + operation.kind() + "."
@@ -452,6 +442,8 @@ public final class QuilWriter {
             case BITWISE_AND -> "&";
             case BITWISE_OR -> "|";
             case BITWISE_XOR -> "^";
+            case SHIFT_LEFT -> "<<";
+            case SHIFT_RIGHT -> ">>";
         };
     }
 

@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
@@ -31,7 +33,6 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.infrastructure.quil.mapping.QuilGateMapper;
@@ -42,9 +43,7 @@ import ru.pathcreator.vadim.quantum.infrastructure.quil.mapping.QuilGateMapper;
 public final class QuilParser {
 
     private static final String RAW_MEMORY_REGISTER_BASE_NAME = "ro";
-    private static final String SOURCE_FRAGMENT_FORMAT = "quil";
-    private static final String SOURCE_FRAGMENT_KIND_STATEMENT = "statement";
-    private static final String SOURCE_FRAGMENT_KIND_BLOCK = "block";
+    private static final String CALIBRATION_BODY_LANGUAGE = "quil";
 
     private static final Pattern DECLARE_PATTERN = Pattern.compile("^DECLARE\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\[(\\d+)])?(?:\\s+.*)?$", Pattern.CASE_INSENSITIVE);
     private static final Pattern DEFGATE_PATTERN = Pattern.compile("^DEFGATE\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?:$", Pattern.CASE_INSENSITIVE);
@@ -53,6 +52,7 @@ public final class QuilParser {
     private static final Pattern LABEL_PATTERN = Pattern.compile("^LABEL\\s+@?([A-Za-z_][A-Za-z0-9_]*)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern JUMP_PATTERN = Pattern.compile("^JUMP\\s+@?([A-Za-z_][A-Za-z0-9_]*)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern CONDITIONAL_JUMP_PATTERN = Pattern.compile("^JUMP-(WHEN|UNLESS)\\s+@?([A-Za-z_][A-Za-z0-9_]*)\\s+(.+)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CALIBRATION_HEADER_PATTERN = Pattern.compile("^(DEFCAL|DEFFRAME|DEFWAVEFORM)\\s+([A-Za-z_][A-Za-z0-9_]*).*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
     private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d+$");
 
@@ -448,11 +448,15 @@ public final class QuilParser {
             if (isProgramSourceBlock(statement)) {
                 continue;
             }
+            if (isCalibrationSourceBlock(statement)) {
+                continue;
+            }
             if (statement.sourceOnly()) {
-                preserveSource(
-                    circuit,
+                diagnostics.add(error(
+                    IntegrationDiagnosticCode.UNSUPPORTED_INPUT_FEATURE,
+                    "Quil block is not represented by Quantum IR: " + statement.text() + ".",
                     statement
-                );
+                ));
                 continue;
             }
             final Matcher declareMatcher = DECLARE_PATTERN.matcher(statement.text());
@@ -517,10 +521,22 @@ public final class QuilParser {
     ) {
         for (int i = 0; i < statements.size(); i++) {
             final Statement statement = statements.get(i);
-            if (isProgramSourceBlock(statement)) {
-                program.addSourceFragment(sourceFragment(statement));
+            if (isCalibrationSourceBlock(statement)) {
+                program.addCalibrationDefinition(calibrationDefinition(statement));
+            } else if (isProgramSourceBlock(statement)) {
+                program.addExternalCallableDeclaration(externalCallableDeclaration(statement));
             }
         }
+    }
+
+    private static boolean isCalibrationSourceBlock(final Statement statement) {
+        if (!statement.sourceOnly()) {
+            return false;
+        }
+        final String upper = statement.text().toUpperCase();
+        return upper.startsWith("DEFCAL ")
+            || upper.startsWith("DEFFRAME ")
+            || upper.startsWith("DEFWAVEFORM ");
     }
 
     private static boolean isProgramSourceBlock(final Statement statement) {
@@ -528,10 +544,7 @@ public final class QuilParser {
             return false;
         }
         final String upper = statement.text().toUpperCase();
-        return upper.startsWith("DEFCAL ")
-            || upper.startsWith("DEFCIRCUIT ")
-            || upper.startsWith("DEFFRAME ")
-            || upper.startsWith("DEFWAVEFORM ");
+        return upper.startsWith("DEFCIRCUIT ");
     }
 
     private static void parseMeasure(
@@ -959,10 +972,11 @@ public final class QuilParser {
     ) {
         final Matcher matcher = GATE_PATTERN.matcher(statement.text());
         if (!matcher.matches()) {
-            preserveSource(
-                circuit,
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Cannot parse Quil instruction: " + statement.text() + ".",
                 statement
-            );
+            ));
             return;
         }
         Gate gate = QuilGateMapper.fromQuilName(matcher.group(1));
@@ -983,10 +997,11 @@ public final class QuilParser {
             );
         }
         if (qubitTokens.length != gate.arity()) {
-            preserveSource(
-                circuit,
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Quil gate arity mismatch for " + matcher.group(1) + ".",
                 statement
-            );
+            ));
             return;
         }
         final ParameterExpression[] parameters = parseParameters(
@@ -995,10 +1010,11 @@ public final class QuilParser {
             statement
         );
         if (parameters == null) {
-            preserveSource(
-                circuit,
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Cannot parse Quil gate parameters: " + statement.text() + ".",
                 statement
-            );
+            ));
             return;
         }
         final ru.pathcreator.vadim.quantum.domain.bit.Qubit[] operationQubits = new ru.pathcreator.vadim.quantum.domain.bit.Qubit[qubitTokens.length];
@@ -1138,21 +1154,47 @@ public final class QuilParser {
         );
     }
 
-    private static void preserveSource(
-        final QuantumCircuit circuit,
-        final Statement statement
-    ) {
-        circuit.sourceFragment(sourceFragment(statement));
-    }
-
-    private static ProgramSourceFragment sourceFragment(final Statement statement) {
-        return new ProgramSourceFragment(
-            SOURCE_FRAGMENT_FORMAT,
-            statement.sourceOnly()
-                ? SOURCE_FRAGMENT_KIND_BLOCK
-                : SOURCE_FRAGMENT_KIND_STATEMENT,
+    private static CalibrationDefinition calibrationDefinition(final Statement statement) {
+        return new CalibrationDefinition(
+            calibrationTargetName(statement),
+            List.of(),
+            List.of(),
+            CALIBRATION_BODY_LANGUAGE,
             statement.content()
         );
+    }
+
+    private static String calibrationTargetName(final Statement statement) {
+        final Matcher matcher = CALIBRATION_HEADER_PATTERN.matcher(statement.text());
+        if (matcher.matches()) {
+            return matcher.group(2);
+        }
+        return "quil_calibration_line_" + statement.line();
+    }
+
+    private static ExternalCallableDeclaration externalCallableDeclaration(
+        final Statement statement
+    ) {
+        return new ExternalCallableDeclaration(
+            externalCallableName(statement),
+            null
+        );
+    }
+
+    private static String externalCallableName(final Statement statement) {
+        final String header = statement.text();
+        final int spaceIndex = header.indexOf(' ');
+        final int colonIndex = header.indexOf(':');
+        if (
+            spaceIndex >= 0
+            && colonIndex > spaceIndex
+        ) {
+            return header.substring(
+                spaceIndex + 1,
+                colonIndex
+            ).trim();
+        }
+        return "quil_defcircuit_line_" + statement.line();
     }
 
     private static int parsePositiveInt(

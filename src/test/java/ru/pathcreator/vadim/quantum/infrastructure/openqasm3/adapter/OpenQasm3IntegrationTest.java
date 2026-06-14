@@ -35,7 +35,6 @@ import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
@@ -118,6 +117,33 @@ class OpenQasm3IntegrationTest {
             4,
             imported.program().circuit(0).operationCount()
         );
+    }
+
+    @Test
+    void importsCalibrationBlocksAsCalibrationDefinitions() {
+        final ImportResult result = QuantumIntegrations.openQasm3().importProgram("""
+            OPENQASM 3.0;
+            defcalgrammar "openpulse";
+            defcal x $0 {
+              play drive($0), gaussian(...);
+            }
+            """);
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            2,
+            result.program().calibrationDefinitionCount()
+        );
+        assertEquals(
+            "openqasm3",
+            result.program().calibrationDefinition(0).bodyLanguage()
+        );
+
+        final ExportResult exported = QuantumIntegrations.openQasm3().exportProgram(result.program());
+
+        assertTrue(exported.isSuccess());
+        assertTrue(exported.content().contains("defcalgrammar \"openpulse\";"));
+        assertTrue(exported.content().contains("defcal x $0"));
     }
 
     @Test
@@ -319,7 +345,7 @@ class OpenQasm3IntegrationTest {
 
         assertFalse(result.isSuccess());
         assertEquals(
-            IntegrationDiagnosticCode.UNSUPPORTED_GATE,
+            IntegrationDiagnosticCode.PARSE_ERROR,
             result.diagnostic(0).code()
         );
     }
@@ -381,10 +407,6 @@ class OpenQasm3IntegrationTest {
 
         assertTrue(result.isSuccess());
         assertEquals(
-            0,
-            result.program().sourceFragmentCount() + sourceFragmentOperationCount(result.program().circuit(0))
-        );
-        assertEquals(
             8,
             result.program().circuit(0).operationCount()
         );
@@ -426,10 +448,6 @@ class OpenQasm3IntegrationTest {
 
         assertTrue(result.isSuccess());
         assertEquals(
-            0,
-            result.program().sourceFragmentCount() + sourceFragmentOperationCount(result.program().circuit(0))
-        );
-        assertEquals(
             4,
             result.program().circuit(0).operationCount()
         );
@@ -450,10 +468,6 @@ class OpenQasm3IntegrationTest {
             """);
 
         assertTrue(result.isSuccess());
-        assertEquals(
-            0,
-            result.program().sourceFragmentCount() + sourceFragmentOperationCount(result.program().circuit(0))
-        );
         assertEquals(
             2,
             result.program().circuit(0).operationCount()
@@ -494,10 +508,6 @@ class OpenQasm3IntegrationTest {
             """);
 
         assertTrue(result.isSuccess());
-        assertEquals(
-            0,
-            result.program().sourceFragmentCount() + sourceFragmentOperationCount(result.program().circuit(0))
-        );
         assertEquals(
             10,
             result.program().circuit(0).operationCount()
@@ -581,13 +591,4 @@ class OpenQasm3IntegrationTest {
         return program;
     }
 
-    private static int sourceFragmentOperationCount(final QuantumCircuit circuit) {
-        int count = 0;
-        for (int i = 0; i < circuit.operationCount(); i++) {
-            if (circuit.operation(i) instanceof SourceFragmentOperation) {
-                count++;
-            }
-        }
-        return count;
-    }
 }

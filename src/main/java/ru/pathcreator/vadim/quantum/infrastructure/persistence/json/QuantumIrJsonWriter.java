@@ -87,13 +87,11 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 
 /**
@@ -212,14 +210,6 @@ public final class QuantumIrJsonWriter {
             "calibrationDefinitions",
             calibrationDefinitions
         );
-        final ArrayList<Object> sourceFragments = new ArrayList<>();
-        for (int i = 0; i < program.sourceFragmentCount(); i++) {
-            sourceFragments.add(writeSourceFragment(program.sourceFragment(i)));
-        }
-        json.put(
-            "sourceFragments",
-            sourceFragments
-        );
         final ArrayList<Object> circuits = new ArrayList<>();
         for (int i = 0; i < program.circuitCount(); i++) {
             circuits.add(writeCircuit(
@@ -230,23 +220,6 @@ public final class QuantumIrJsonWriter {
         json.put(
             "circuits",
             circuits
-        );
-        return json;
-    }
-
-    private static LinkedHashMap<String, Object> writeSourceFragment(final ProgramSourceFragment fragment) {
-        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
-        json.put(
-            "format",
-            fragment.format()
-        );
-        json.put(
-            "kind",
-            fragment.kind()
-        );
-        json.put(
-            "content",
-            fragment.content()
         );
         return json;
     }
@@ -1090,11 +1063,6 @@ public final class QuantumIrJsonWriter {
             || operation.kind() == OperationKind.WAIT
         ) {
             return json;
-        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            json.put(
-                "fragment",
-                writeSourceFragment(fragmentOperation.fragment())
-            );
         } else {
             diagnostics.add(PersistenceDiagnostic.error(
                 PersistenceDiagnosticCode.UNSUPPORTED_MODEL_FEATURE,

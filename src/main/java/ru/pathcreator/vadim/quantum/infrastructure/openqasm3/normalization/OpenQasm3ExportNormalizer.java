@@ -56,7 +56,6 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
@@ -163,8 +162,11 @@ public final class OpenQasm3ExportNormalizer {
                 ));
             }
         }
-        for (int i = 0; i < program.sourceFragmentCount(); i++) {
-            state.normalizedProgram.addSourceFragment(program.sourceFragment(i));
+        for (int i = 0; i < program.calibrationDefinitionCount(); i++) {
+            state.normalizedProgram.addCalibrationDefinition(program.calibrationDefinition(i));
+        }
+        for (int i = 0; i < program.externalCallableDeclarationCount(); i++) {
+            state.normalizedProgram.addExternalCallableDeclaration(program.externalCallableDeclaration(i));
         }
     }
 
@@ -468,8 +470,6 @@ public final class OpenQasm3ExportNormalizer {
                 null,
                 null
             );
-        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            target.sourceFragment(fragmentOperation.fragment());
         } else {
             state.diagnostics.add(IntegrationDiagnostic.error(
                 IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
@@ -939,8 +939,6 @@ public final class OpenQasm3ExportNormalizer {
                     : null,
                 boxOperation.body()
             );
-        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            target.sourceFragment(fragmentOperation.fragment());
         }
     }
 
@@ -1165,9 +1163,6 @@ public final class OpenQasm3ExportNormalizer {
                     state
                 )
             );
-        }
-        if (operation instanceof SourceFragmentOperation) {
-            return operation;
         }
         state.diagnostics.add(IntegrationDiagnostic.error(
             IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,

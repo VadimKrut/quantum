@@ -118,7 +118,7 @@ class OpenQasm3ExternalCorpusTest {
         );
         assertTrue(
             program.gateDefinitionCount() > 0
-                || program.sourceFragmentCount() > 0
+                || program.calibrationDefinitionCount() > 0
                 || program.circuit(0).quantumRegisterCount() > 0
                 || program.circuit(0).classicalRegisterCount() > 0
                 || program.circuit(0).operationCount() > 0,

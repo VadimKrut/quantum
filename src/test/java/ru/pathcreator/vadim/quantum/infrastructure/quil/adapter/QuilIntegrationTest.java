@@ -136,7 +136,7 @@ class QuilIntegrationTest {
     }
 
     @Test
-    void importsMatrixGateDefinitionWithoutSourceFragment() {
+    void importsMatrixGateDefinitionAsStructuralIr() {
         final ImportResult result = QuantumIntegrations.quil().importProgram("""
             DECLARE ro BIT[1]
             DEFGATE CUSTOM:
@@ -161,6 +161,32 @@ class QuilIntegrationTest {
 
         assertTrue(exported.isSuccess());
         assertTrue(exported.content().contains("DEFGATE CUSTOM:"));
+    }
+
+    @Test
+    void importsCalibrationBlocksAsCalibrationDefinitions() {
+        final ImportResult result = QuantumIntegrations.quil().importProgram("""
+            DEFCAL RX(pi/2) 0:
+                FENCE 0
+                NONBLOCKING PULSE 0 "rf" drag_gaussian(duration: 1e-08)
+                FENCE 0
+            """);
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            1,
+            result.program().calibrationDefinitionCount()
+        );
+        assertEquals(
+            "quil",
+            result.program().calibrationDefinition(0).bodyLanguage()
+        );
+
+        final ExportResult exported = QuantumIntegrations.quil().exportProgram(result.program());
+
+        assertTrue(exported.isSuccess());
+        assertTrue(exported.content().contains("DEFCAL RX(pi/2) 0:"));
+        assertTrue(exported.content().contains("NONBLOCKING PULSE"));
     }
 
     @Test

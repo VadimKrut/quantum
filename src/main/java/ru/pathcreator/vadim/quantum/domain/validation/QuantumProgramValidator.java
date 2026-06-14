@@ -56,7 +56,6 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
@@ -745,8 +744,6 @@ public final class QuantumProgramValidator {
                 || operation instanceof WaitOperation
             ) {
                 continue;
-            } else if (operation instanceof SourceFragmentOperation) {
-                continue;
             } else {
                 addError(
                     errors,
@@ -1154,8 +1151,6 @@ public final class QuantumProgramValidator {
             || operation instanceof HaltOperation
             || operation instanceof WaitOperation
         ) {
-            return;
-        } else if (operation instanceof SourceFragmentOperation) {
             return;
         } else {
             addError(

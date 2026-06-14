@@ -16,6 +16,7 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
 import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
@@ -51,13 +52,11 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 import ru.pathcreator.vadim.quantum.infrastructure.openqasm3.mapping.OpenQasm3GateMapper;
 
@@ -65,6 +64,8 @@ import ru.pathcreator.vadim.quantum.infrastructure.openqasm3.mapping.OpenQasm3Ga
  * Writer OpenQASM 3.0 для поддерживаемой части Quantum IR.
  */
 public final class OpenQasm3Writer {
+
+    private static final String CALIBRATION_BODY_LANGUAGE = "openqasm3";
 
     /**
      * Пишет одну схему в OpenQASM 3.0.
@@ -110,10 +111,13 @@ public final class OpenQasm3Writer {
                 return result;
             }
         }
-        appendSourceFragments(
+        final OpenQasm3WriterResult calibrationResult = appendCalibrationDefinitions(
             builder,
             program
         );
+        if (!calibrationResult.isSuccess()) {
+            return calibrationResult;
+        }
         appendExternalCallableDeclarations(
             builder,
             program
@@ -149,21 +153,27 @@ public final class OpenQasm3Writer {
         return OpenQasm3WriterResult.success(builder.toString());
     }
 
-    private static void appendSourceFragments(
+    private static OpenQasm3WriterResult appendCalibrationDefinitions(
         final StringBuilder builder,
         final QuantumProgram program
     ) {
-        for (int i = 0; i < program.sourceFragmentCount(); i++) {
-            final ProgramSourceFragment fragment = program.sourceFragment(i);
-            if (!"openqasm3".equals(fragment.format())) {
-                continue;
+        for (int i = 0; i < program.calibrationDefinitionCount(); i++) {
+            final CalibrationDefinition definition = program.calibrationDefinition(i);
+            if (!CALIBRATION_BODY_LANGUAGE.equals(definition.bodyLanguage())) {
+                return OpenQasm3WriterResult.failure(IntegrationDiagnostic.error(
+                    IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
+                    "OpenQASM 3 export does not support calibration body language: "
+                        + definition.bodyLanguage()
+                        + "."
+                ));
             }
-            builder.append(fragment.content().trim());
-            if (requiresStatementTerminator(fragment.content())) {
+            builder.append(definition.body().trim());
+            if (requiresStatementTerminator(definition.body())) {
                 builder.append(';');
             }
             builder.append('\n');
         }
+        return OpenQasm3WriterResult.success("");
     }
 
     private static boolean requiresStatementTerminator(final String content) {
@@ -324,19 +334,6 @@ public final class OpenQasm3Writer {
                 definitionsByName,
                 indent
             );
-        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            if (!"openqasm3".equals(fragmentOperation.fragment().format())) {
-                return OpenQasm3WriterResult.failure(IntegrationDiagnostic.error(
-                    IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
-                    "OpenQASM 3 export does not support source fragment format: " + fragmentOperation.fragment().format() + "."
-                ));
-            }
-            builder.append(indent)
-                .append(fragmentOperation.fragment().content().trim());
-            if (requiresStatementTerminator(fragmentOperation.fragment().content())) {
-                builder.append(';');
-            }
-            builder.append('\n');
         } else {
             return OpenQasm3WriterResult.failure(IntegrationDiagnostic.error(
                 IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
@@ -1011,6 +1008,8 @@ public final class OpenQasm3Writer {
             case BITWISE_AND -> "&";
             case BITWISE_OR -> "|";
             case BITWISE_XOR -> "^";
+            case SHIFT_LEFT -> "<<";
+            case SHIFT_RIGHT -> ">>";
         };
     }
 

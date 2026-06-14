@@ -102,14 +102,12 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationKind;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationUnit;
 import ru.pathcreator.vadim.quantum.domain.validation.QuantumProgramValidator;
@@ -314,44 +312,6 @@ public final class QuantumIrJsonReader {
             ),
             program
         );
-        readSourceFragments(
-            optionalArray(
-                node,
-                "sourceFragments"
-            ),
-            program
-        );
-    }
-
-    private static void readSourceFragments(
-        final JsonNode node,
-        final QuantumProgram program
-    ) {
-        for (int i = 0; i < node.size(); i++) {
-            final JsonNode item = requiredArrayElementObject(
-                node,
-                i,
-                "program.sourceFragments"
-            );
-            try {
-                program.addSourceFragment(new ProgramSourceFragment(
-                    requiredText(
-                        item,
-                        "format"
-                    ),
-                    requiredText(
-                        item,
-                        "kind"
-                    ),
-                    requiredText(
-                        item,
-                        "content"
-                    )
-                ));
-            } catch (final IllegalArgumentException exception) {
-                throw invalidValue(exception);
-            }
-        }
     }
 
     private static void readClassicalDeclarations(
@@ -1484,31 +1444,10 @@ public final class QuantumIrJsonReader {
                 );
                 case HALT -> HaltOperation.INSTANCE;
                 case WAIT -> WaitOperation.INSTANCE;
-                case SOURCE_FRAGMENT -> new SourceFragmentOperation(readSourceFragment(requiredObject(
-                    node,
-                    "fragment"
-                )));
             };
         } catch (final IllegalArgumentException exception) {
             throw invalidValue(exception);
         }
-    }
-
-    private static ProgramSourceFragment readSourceFragment(final JsonNode node) {
-        return new ProgramSourceFragment(
-            requiredText(
-                node,
-                "format"
-            ),
-            requiredText(
-                node,
-                "kind"
-            ),
-            requiredText(
-                node,
-                "content"
-            )
-        );
     }
 
     private static OperationBlock readOperationBlock(
@@ -1645,8 +1584,6 @@ public final class QuantumIrJsonReader {
             circuit.halt();
         } else if (operation instanceof WaitOperation) {
             circuit.waitInstruction();
-        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
-            circuit.sourceFragment(fragmentOperation.fragment());
         } else {
             throw error(
                 PersistenceDiagnosticCode.UNSUPPORTED_MODEL_FEATURE,

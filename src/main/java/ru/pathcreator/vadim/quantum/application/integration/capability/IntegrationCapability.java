@@ -80,6 +80,11 @@ public enum IntegrationCapability {
     TIMING_OPERATIONS,
 
     /**
+     * Adapter может писать target-level calibration definitions.
+     */
+    CALIBRATIONS,
+
+    /**
      * Adapter может писать классические присваивания.
      */
     CLASSICAL_ASSIGNMENTS,

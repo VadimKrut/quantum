@@ -21,5 +21,7 @@ public enum ClassicalBinaryOperator {
     MODULO,
     BITWISE_AND,
     BITWISE_OR,
-    BITWISE_XOR
+    BITWISE_XOR,
+    SHIFT_LEFT,
+    SHIFT_RIGHT
 }

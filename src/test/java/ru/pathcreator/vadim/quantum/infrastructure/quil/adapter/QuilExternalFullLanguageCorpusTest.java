@@ -29,10 +29,8 @@ import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -139,6 +137,13 @@ class QuilExternalFullLanguageCorpusTest {
     private static void verifyFile(final Path file) throws IOException {
         final String source = Files.readString(file);
         final ImportResult imported = QuantumIntegrations.quil().importProgram(source);
+        if (file.getFileName().toString().equals("test1.quil")) {
+            assertFalse(
+                imported.isSuccess(),
+                file + " contains malformed/non-portable gate instructions and must not become raw source IR"
+            );
+            return;
+        }
 
         assertTrue(
             imported.isSuccess(),
@@ -148,11 +153,6 @@ class QuilExternalFullLanguageCorpusTest {
             imported.program(),
             file
         );
-        assertExpectedStructuralImport(
-            imported.program(),
-            file
-        );
-
         final QuantumIrWriteResult json = QuantumIrFiles.writeToString(imported.program());
 
         assertTrue(
@@ -200,42 +200,8 @@ class QuilExternalFullLanguageCorpusTest {
             program.circuit(0).quantumRegisterCount() > 0
                 || program.circuit(0).classicalRegisterCount() > 0
                 || program.circuit(0).operationCount() > 0
-                || program.sourceFragmentCount() > 0,
+                || program.calibrationDefinitionCount() > 0,
             file + " must create non-empty IR"
-        );
-    }
-
-    private static void assertExpectedStructuralImport(
-        final QuantumProgram program,
-        final Path file
-    ) {
-        if (!file.getFileName().toString().equals("test1.quil")) {
-            return;
-        }
-        assertEquals(
-            2,
-            circuitFragmentCount(program),
-            "test1.quil must keep only malformed/non-real gate instructions as source fragments"
-        );
-        assertEquals(
-            2,
-            operationCount(program, LabelOperation.class),
-            "test1.quil labels must be structural IR"
-        );
-        assertEquals(
-            2,
-            operationCount(program, BranchOperation.class),
-            "test1.quil jumps must be structural IR"
-        );
-        assertEquals(
-            1,
-            operationCount(program, HaltOperation.class),
-            "test1.quil halt must be structural IR"
-        );
-        assertEquals(
-            1,
-            operationCount(program, WaitOperation.class),
-            "test1.quil wait must be structural IR"
         );
     }
 
@@ -246,8 +212,7 @@ class QuilExternalFullLanguageCorpusTest {
         final ExportResult openQasm2 = QuantumIntegrations.openQasm2().exportProgram(program);
         final ExportResult openQasm3 = QuantumIntegrations.openQasm3().exportProgram(program);
         if (
-            program.sourceFragmentCount() == 0
-            && circuitFragmentCount(program) == 0
+            program.calibrationDefinitionCount() == 0
             && operationCount(program, BranchOperation.class) == 0
             && operationCount(program, LabelOperation.class) == 0
             && operationCount(program, HaltOperation.class) == 0
@@ -271,13 +236,6 @@ class QuilExternalFullLanguageCorpusTest {
                 file + " non-portable Quil IR must not be silently exported to OpenQASM 3"
             );
         }
-    }
-
-    private static int circuitFragmentCount(final QuantumProgram program) {
-        return operationCount(
-            program,
-            SourceFragmentOperation.class
-        );
     }
 
     private static int operationCount(

@@ -45,12 +45,10 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.domain.register.RegisterName;
@@ -982,11 +980,6 @@ public final class QuantumCircuit {
         return this;
     }
 
-    public QuantumCircuit sourceFragment(final ProgramSourceFragment fragment) {
-        addOperation(new SourceFragmentOperation(fragment));
-        return this;
-    }
-
     /**
      * Возвращает количество операций.
      *
@@ -1270,8 +1263,6 @@ public final class QuantumCircuit {
             }
         } else if (operation instanceof TimingBoxOperation boxOperation) {
             ensureOperationBlockBelongsToCircuit(boxOperation.body());
-        } else if (operation instanceof SourceFragmentOperation) {
-            return;
         } else {
             throw new IllegalArgumentException("Operation is not supported by this circuit.");
         }

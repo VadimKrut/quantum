@@ -12,6 +12,7 @@ package ru.pathcreator.vadim.quantum.infrastructure.openqasm3.syntax;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +21,7 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
 import ru.pathcreator.vadim.quantum.domain.callable.CallableArgument;
 import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
@@ -58,13 +60,11 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
-import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
-import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationUnit;
 import ru.pathcreator.vadim.quantum.infrastructure.openqasm3.mapping.OpenQasm3GateNames;
@@ -101,12 +101,13 @@ public final class OpenQasm3Parser {
     private static final Pattern SUBROUTINE_MIXED_CALL_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\s*\\((.*?)\\)\\s+(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern SUBROUTINE_CALL_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\s*(?:\\((.*)\\)|(.*))$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern RETURN_PATTERN = Pattern.compile("^return\\s+(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static final Pattern INTEGER_COMPOUND_ASSIGNMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\s*([+\\-*/^])=\\s*(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern INTEGER_COMPOUND_ASSIGNMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\s*([+\\-*/^]|<<|>>)=\\s*(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern CLASSICAL_ASSIGNMENT_PATTERN = Pattern.compile("^(.+?)\\s*=\\s*(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern CLASSICAL_COMPARISON_PATTERN = Pattern.compile("^(.+?)\\s*(==|!=|<=|>=|<|>)\\s*(.+)$");
     private static final Pattern CLASSICAL_CAST_PATTERN = Pattern.compile("^(?:int|uint|bit|bool)(?:\\[[^]]+])?\\((.+)\\)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern BOOLEAN_CAST_PATTERN = Pattern.compile("^bool\\((.+)\\)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern DURATION_PATTERN = Pattern.compile("^([0-9]+(?:\\.[0-9]+)?)(dt|ns|us|ms|s)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DEFCAL_PATTERN = Pattern.compile("^defcal\\s+([A-Za-z_][A-Za-z0-9_]*).*$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern OPAQUE_PATTERN = Pattern.compile("^opaque\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern GATE_DEFINITION_PATTERN = Pattern.compile("^gate\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+([^{}]+)\\s*\\{(.*)}$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
@@ -116,6 +117,7 @@ public final class OpenQasm3Parser {
     private static final Pattern REGISTER_ARGUMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)$");
     private static final Pattern PHYSICAL_QUBIT_PATTERN = Pattern.compile("^\\$(\\d+)$");
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");
+    private static final String CALIBRATION_BODY_LANGUAGE = "openqasm3";
 
     private final OpenQasm3AstParser astParser;
 
@@ -348,10 +350,15 @@ public final class OpenQasm3Parser {
                 statement
             );
         } else if (opaqueMatcher.matches()) {
-            preserveSourceFragment(
+            parseOpaqueGateDefinition(
                 context,
                 statement,
-                "opaque"
+                opaqueMatcher
+            );
+        } else if (isCalibrationSourceStatement(statement.text())) {
+            parseCalibrationDefinition(
+                context,
+                statement
             );
         } else if (subroutineDefinitionMatcher.matches()) {
             parseSubroutineDefinition(
@@ -426,12 +433,13 @@ public final class OpenQasm3Parser {
         )) {
             return;
         } else if (shouldPreserveSourceOperation(statement.text())) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
         } else if (shouldPreserveSourceStatement(statement.text())) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement
             );
@@ -461,10 +469,11 @@ public final class OpenQasm3Parser {
                 ifBlockMatcher.group(1)
             )
         ) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
         } else if (ifBlockMatcher.matches()) {
             parseConditionalBlock(
                 context,
@@ -479,10 +488,11 @@ public final class OpenQasm3Parser {
                 ifInlineParts.condition()
             )
         ) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
         } else if (ifInlineParts != null) {
             parseInlineConditional(
                 context,
@@ -516,10 +526,11 @@ public final class OpenQasm3Parser {
                 whileMatcher.group(1)
             )
         ) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
         } else if (whileMatcher.matches()) {
             parseWhileLoop(
                 context,
@@ -581,7 +592,7 @@ public final class OpenQasm3Parser {
                 classicalAssignmentMatcher
             );
         } else if (isUnsupportedStatement(statement.text())) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement
             );
@@ -606,6 +617,37 @@ public final class OpenQasm3Parser {
             || lowerCaseStatement.startsWith("annotation ")
             || lowerCaseStatement.startsWith("duration ")
             || lowerCaseStatement.startsWith("stretch ");
+    }
+
+    private static boolean isCalibrationSourceStatement(final String statement) {
+        final String lowerCaseStatement = statement.trim().toLowerCase();
+        return lowerCaseStatement.startsWith("defcalgrammar")
+            || lowerCaseStatement.startsWith("defcal ");
+    }
+
+    private static void parseCalibrationDefinition(
+        final ParseContext context,
+        final Statement statement
+    ) {
+        context.program().addCalibrationDefinition(new CalibrationDefinition(
+            calibrationTargetName(statement),
+            List.of(),
+            List.of(),
+            CALIBRATION_BODY_LANGUAGE,
+            statement.text()
+        ));
+    }
+
+    private static String calibrationTargetName(final Statement statement) {
+        final String trimmed = statement.text().trim();
+        if (trimmed.toLowerCase().startsWith("defcalgrammar")) {
+            return "defcalgrammar_line_" + statement.line();
+        }
+        final Matcher matcher = DEFCAL_PATTERN.matcher(trimmed);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        return "defcal_line_" + statement.line();
     }
 
     private static boolean shouldPreserveSourceOperation(final String statement) {
@@ -742,50 +784,41 @@ public final class OpenQasm3Parser {
         ).matcher(value).matches();
     }
 
-    private static void preserveSourceFragment(
+    private static void rejectUnsupportedSource(
         final ParseContext context,
         final Statement statement
     ) {
-        preserveSourceFragment(
+        rejectUnsupportedSource(
             context,
             statement,
-            sourceFragmentKind(statement.text())
+            unsupportedStatementKind(statement.text())
         );
     }
 
-    private static void preserveSourceFragment(
+    private static void rejectUnsupportedSource(
         final ParseContext context,
         final Statement statement,
         final String kind
     ) {
-        context.program().addSourceFragment(sourceFragment(
-            statement,
-            kind
-        ));
-    }
-
-    private static SourceFragmentOperation sourceFragmentOperation(
-        final Statement statement,
-        final String kind
-    ) {
-        return new SourceFragmentOperation(sourceFragment(
-            statement,
-            kind
-        ));
-    }
-
-    private static ProgramSourceFragment sourceFragment(
-        final Statement statement,
-        final String kind
-    ) {
-        return new ProgramSourceFragment(
-            "openqasm3",
-            kind,
-            statement.text()
+        context.addError(
+            IntegrationDiagnosticCode.UNSUPPORTED_INPUT_FEATURE,
+            "OpenQASM 3 " + kind + " is not represented by Quantum IR: " + statement.text() + ".",
+            statement
         );
     }
 
-    private static String sourceFragmentKind(final String statement) {
+    private static Operation[] rejectUnsupportedBlockSource(
+        final ParseContext context,
+        final Statement statement
+    ) {
+        rejectUnsupportedSource(
+            context,
+            statement
+        );
+        return null;
+    }
+
+    private static String unsupportedStatementKind(final String statement) {
         final String lowerCaseStatement = statement.trim().toLowerCase();
         if (lowerCaseStatement.startsWith("defcalgrammar")) {
             return "defcalgrammar";
@@ -907,7 +940,7 @@ public final class OpenQasm3Parser {
             bodyParts == null
             || shouldPreserveSubroutineBody(bodyParts.body())
         ) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "def"
@@ -920,7 +953,7 @@ public final class OpenQasm3Parser {
             matcher.group(2)
         );
         if (arguments == null) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "def"
@@ -1130,7 +1163,7 @@ public final class OpenQasm3Parser {
             statement
         );
         if (operation == null) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "array"
@@ -1167,7 +1200,7 @@ public final class OpenQasm3Parser {
             }
             final ClassicalType type = parseClassicalTypeText(argumentText);
             if (type == null) {
-                preserveSourceFragment(
+                rejectUnsupportedSource(
                     context,
                     statement,
                     "extern"
@@ -1186,7 +1219,7 @@ public final class OpenQasm3Parser {
             matcher.group(3) != null
             && returnType == null
         ) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "extern"
@@ -1328,7 +1361,7 @@ public final class OpenQasm3Parser {
             );
             return;
         }
-        preserveSourceFragment(
+        rejectUnsupportedSource(
             context,
             statement,
             "let"
@@ -1854,7 +1887,7 @@ public final class OpenQasm3Parser {
             statement,
             matcher.group(1)
         )) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "opaque_gate_definition"
@@ -1918,7 +1951,7 @@ public final class OpenQasm3Parser {
             statement,
             matcher.group(1)
         )) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "gate_definition"
@@ -1926,7 +1959,7 @@ public final class OpenQasm3Parser {
             return;
         }
         if (shouldPreserveGateDefinitionBody(matcher.group(4))) {
-            preserveSourceFragment(
+            rejectUnsupportedSource(
                 context,
                 statement,
                 "gate_definition"
@@ -2165,7 +2198,8 @@ public final class OpenQasm3Parser {
         }
         final Gate gate = resolveGate(
             context,
-            matcher.group(1)
+            matcher.group(1),
+            matcher.group(2)
         );
         if (gate == null) {
             context.addError(
@@ -2231,10 +2265,11 @@ public final class OpenQasm3Parser {
             return;
         }
         if (qubits.size() != bits.size()) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
             return;
         }
         final int firstOperationIndex = context.circuit().operationCount();
@@ -2762,10 +2797,11 @@ public final class OpenQasm3Parser {
             null
         );
         if (operation == null) {
-            context.circuit().sourceFragment(sourceFragment(
-                    statement,
-                    "statement"
-                ));
+            rejectUnsupportedSource(
+                context,
+                statement,
+                "statement"
+            );
             return;
         }
         context.circuit().callableInvocation(operation);
@@ -3276,20 +3312,22 @@ public final class OpenQasm3Parser {
         return new ClassicalAssignmentOperation(new ClassicalAssignment(
             target,
             ClassicalExpression.binary(
-                compoundAssignmentOperator(matcher.group(2).charAt(0)),
+                compoundAssignmentOperator(matcher.group(2)),
                 target,
                 right
             )
         ));
     }
 
-    private static ClassicalBinaryOperator compoundAssignmentOperator(final char value) {
+    private static ClassicalBinaryOperator compoundAssignmentOperator(final String value) {
         return switch (value) {
-            case '+' -> ClassicalBinaryOperator.ADD;
-            case '-' -> ClassicalBinaryOperator.SUBTRACT;
-            case '*' -> ClassicalBinaryOperator.MULTIPLY;
-            case '/' -> ClassicalBinaryOperator.DIVIDE;
-            case '^' -> ClassicalBinaryOperator.BITWISE_XOR;
+            case "+" -> ClassicalBinaryOperator.ADD;
+            case "-" -> ClassicalBinaryOperator.SUBTRACT;
+            case "*" -> ClassicalBinaryOperator.MULTIPLY;
+            case "/" -> ClassicalBinaryOperator.DIVIDE;
+            case "^" -> ClassicalBinaryOperator.BITWISE_XOR;
+            case "<<" -> ClassicalBinaryOperator.SHIFT_LEFT;
+            case ">>" -> ClassicalBinaryOperator.SHIFT_RIGHT;
             default -> throw new IllegalArgumentException("Unsupported compound assignment operator.");
         };
     }
@@ -3459,10 +3497,13 @@ public final class OpenQasm3Parser {
             );
             return new Operation[0];
         }
-        if (tryParseSubroutineCall(
+        if (
+            topLevelAssignmentIndex(statement.text()) < 0
+            && tryParseSubroutineCall(
                 context,
                 statement
-        )) {
+            )
+        ) {
             return new Operation[0];
         }
         final Matcher blockArrayDeclarationMatcher = ARRAY_DECLARATION_PATTERN.matcher(statement.text());
@@ -3481,12 +3522,10 @@ public final class OpenQasm3Parser {
                 statement
             );
             return operation == null
-                ? new Operation[] {
-                    sourceFragmentOperation(
-                        statement,
-                        "array"
-                    )
-                }
+                ? rejectUnsupportedBlockSource(
+                    context,
+                    statement
+                )
                 : new Operation[] {operation};
         }
         final Matcher blockClassicalDeclarationMatcher = CLASSICAL_DECLARATION_PATTERN.matcher(statement.text());
@@ -3524,14 +3563,16 @@ public final class OpenQasm3Parser {
                 )
             };
         }
-        final CallableInvocationOperation invocationOperation = parseGenericCallableInvocationOperation(
-            context,
-            statement,
-            statement.text(),
-            null
-        );
-        if (invocationOperation != null) {
-            return new Operation[] {invocationOperation};
+        if (topLevelAssignmentIndex(statement.text()) < 0) {
+            final CallableInvocationOperation invocationOperation = parseGenericCallableInvocationOperation(
+                context,
+                statement,
+                statement.text(),
+                null
+            );
+            if (invocationOperation != null) {
+                return new Operation[] {invocationOperation};
+            }
         }
         final Matcher blockCregBitstringMatcher = CREG_BITSTRING_PATTERN.matcher(statement.text());
         if (blockCregBitstringMatcher.matches()) {
@@ -3554,7 +3595,7 @@ public final class OpenQasm3Parser {
         if (
             earlyAssignmentMatcher.matches()
             && topLevelAssignmentIndex(statement.text()) >= 0
-            && !statement.text().contains("measure")
+            && !isMeasureAssignment(statement.text())
         ) {
             final Operation[] returningCall = parseReturningSubroutineAssignmentOperation(
                 context,
@@ -3573,20 +3614,16 @@ public final class OpenQasm3Parser {
             return new Operation[] {compoundAssignment};
         }
         if (shouldPreserveSourceStatement(statement.text())) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         if (shouldPreserveSourceOperation(statement.text())) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         final Matcher ifBlockMatcher = IF_BLOCK_PATTERN.matcher(statement.text());
         if (
@@ -3597,12 +3634,10 @@ public final class OpenQasm3Parser {
                 ifBlockMatcher.group(1)
             )
         ) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         if (ifBlockMatcher.matches()) {
             return parseBlockConditionalOperation(
@@ -3620,12 +3655,10 @@ public final class OpenQasm3Parser {
                 ifInlineParts.condition()
             )
         ) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         if (ifInlineParts != null) {
             return parseBlockInlineConditionalOperation(
@@ -3663,12 +3696,10 @@ public final class OpenQasm3Parser {
                 whileMatcher.group(1)
             )
         ) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         if (whileMatcher.matches()) {
             return parseBlockWhileLoopOperation(
@@ -3731,7 +3762,7 @@ public final class OpenQasm3Parser {
         if (
             assignmentMatcher.matches()
             && topLevelAssignmentIndex(statement.text()) >= 0
-            && !statement.text().contains("measure")
+            && !isMeasureAssignment(statement.text())
         ) {
             return parseClassicalAssignmentOperation(
                 context,
@@ -4230,12 +4261,10 @@ public final class OpenQasm3Parser {
             return null;
         }
         if (qubits.size() != bits.size()) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         final Operation[] operations = new Operation[qubits.size()];
         for (int i = 0; i < qubits.size(); i++) {
@@ -4328,14 +4357,30 @@ public final class OpenQasm3Parser {
             );
             return null;
         }
-        final Gate gate = callParts.gate();
+        Gate gate = callParts.gate();
         if (gate == null) {
-            return new Operation[] {
-                sourceFragmentOperation(
+            final QuantumOperand[] unknownGateOperands = parseQuantumOperands(
+                context,
+                statement,
+                callParts.operandsText()
+            );
+            if (unknownGateOperands == null) {
+                return null;
+            }
+            gate = createOpaqueGateDefinition(
+                context,
+                statement,
+                callParts.name(),
+                parameterCount(
+                    context,
                     statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+                    callParts.parametersText()
+                ),
+                unknownGateOperands.length
+            );
+            if (gate == null) {
+                return null;
+            }
         }
         if (
             gate.parameterCount() > 0
@@ -4344,12 +4389,10 @@ public final class OpenQasm3Parser {
                 || shouldPreserveParameterExpression(callParts.parametersText())
             )
         ) {
-            return new Operation[] {
-                sourceFragmentOperation(
-                    statement,
-                    sourceFragmentKind(statement.text())
-                )
-            };
+            return rejectUnsupportedBlockSource(
+                context,
+                statement
+            );
         }
         final ParameterExpression[] parameters = parseParameters(
             context,
@@ -4451,12 +4494,25 @@ public final class OpenQasm3Parser {
         if (!matcher.matches()) {
             return null;
         }
+        if (
+            "u".equals(matcher.group(1))
+            && matcher.group(2) == null
+        ) {
+            return new GateCallParts(
+                matcher.group(1),
+                StandardGate.U,
+                "0,0,0",
+                matcher.group(3)
+            );
+        }
         final Gate baseGate = resolveGate(
             context,
-            matcher.group(1)
+            matcher.group(1),
+            matcher.group(2)
         );
         if (baseGate == null) {
             return new GateCallParts(
+                matcher.group(1),
                 null,
                 matcher.group(2),
                 matcher.group(3)
@@ -4469,6 +4525,7 @@ public final class OpenQasm3Parser {
                 modifiers
             );
         return new GateCallParts(
+            matcher.group(1),
             gate,
             matcher.group(2),
             matcher.group(3)
@@ -5545,7 +5602,8 @@ public final class OpenQasm3Parser {
         }
         final Gate gate = resolveGate(
             context,
-            matcher.group(1)
+            matcher.group(1),
+            matcher.group(2)
         );
         if (gate == null) {
             context.addError(
@@ -5628,13 +5686,30 @@ public final class OpenQasm3Parser {
             );
             return;
         }
-        final Gate gate = callParts.gate();
+        Gate gate = callParts.gate();
         if (gate == null) {
-            context.circuit().sourceFragment(sourceFragment(
+            final QuantumOperand[] unknownGateOperands = parseQuantumOperands(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
-            return;
+                callParts.operandsText()
+            );
+            if (unknownGateOperands == null) {
+                return;
+            }
+            gate = createOpaqueGateDefinition(
+                context,
+                statement,
+                callParts.name(),
+                parameterCount(
+                    context,
+                    statement,
+                    callParts.parametersText()
+                ),
+                unknownGateOperands.length
+            );
+            if (gate == null) {
+                return;
+            }
         }
         if (
             gate.parameterCount() > 0
@@ -5643,10 +5718,11 @@ public final class OpenQasm3Parser {
                 || shouldPreserveParameterExpression(callParts.parametersText())
             )
         ) {
-            context.circuit().sourceFragment(sourceFragment(
+            rejectUnsupportedSource(
+                context,
                 statement,
-                sourceFragmentKind(statement.text())
-            ));
+                unsupportedStatementKind(statement.text())
+            );
             return;
         }
         final ParameterExpression[] parameters = parseParameters(
@@ -5743,6 +5819,78 @@ public final class OpenQasm3Parser {
             parameters[i] = parameter;
         }
         return parameters;
+    }
+
+    private static int parameterCount(
+        final ParseContext context,
+        final Statement statement,
+        final String parameterText
+    ) {
+        if (
+            parameterText == null
+            || parameterText.isBlank()
+        ) {
+            return 0;
+        }
+        final ListParts parts = parseCommaAwareParts(
+            context,
+            statement,
+            parameterText,
+            "parameter list"
+        );
+        return parts == null
+            ? -1
+            : parts.parts().size();
+    }
+
+    private static GateDefinition createOpaqueGateDefinition(
+        final ParseContext context,
+        final Statement statement,
+        final String name,
+        final int parameterCount,
+        final int arity
+    ) {
+        if (parameterCount < 0) {
+            return null;
+        }
+        final GateDefinition existing = context.gateDefinition(name);
+        if (existing != null) {
+            return existing;
+        }
+        try {
+            final GateDefinition definition = GateDefinition.opaque(
+                name,
+                generatedNames(
+                    "p",
+                    parameterCount
+                ),
+                generatedNames(
+                    "q",
+                    arity
+                )
+            );
+            context.program().addGateDefinition(definition);
+            context.addGateDefinition(definition);
+            return definition;
+        } catch (final IllegalArgumentException exception) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                exception.getMessage(),
+                statement
+            );
+            return null;
+        }
+    }
+
+    private static List<String> generatedNames(
+        final String prefix,
+        final int count
+    ) {
+        final ArrayList<String> names = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            names.add(prefix + i);
+        }
+        return names;
     }
 
     private static ParameterExpression parseParameter(
@@ -6004,6 +6152,24 @@ public final class OpenQasm3Parser {
         final ParseContext context,
         final String name
     ) {
+        return resolveGate(
+            context,
+            name,
+            null
+        );
+    }
+
+    private static Gate resolveGate(
+        final ParseContext context,
+        final String name,
+        final String parametersText
+    ) {
+        if (
+            "u".equals(name)
+            && parametersText == null
+        ) {
+            return context.gateDefinition(name);
+        }
         final Gate standardGate = OpenQasm3GateMapper.fromOpenQasmName(name);
         if (standardGate != null) {
             return standardGate;
@@ -6404,6 +6570,10 @@ public final class OpenQasm3Parser {
     }
 
     private static BinaryExpressionParts splitRuntimeBinaryExpression(final String value) {
+        BinaryExpressionParts shiftParts = splitRuntimeShiftExpression(value);
+        if (shiftParts != null) {
+            return shiftParts;
+        }
         BinaryExpressionParts parts = splitRuntimeBinaryExpression(
             value,
             "|^&"
@@ -6433,6 +6603,43 @@ public final class OpenQasm3Parser {
                 1,
                 value.length() - 1
             ).trim());
+        }
+        return null;
+    }
+
+    private static BinaryExpressionParts splitRuntimeShiftExpression(final String value) {
+        int depth = 0;
+        for (int i = value.length() - 1; i >= 0; i--) {
+            final char current = value.charAt(i);
+            if (current == ')') {
+                depth++;
+            } else if (current == '(') {
+                depth--;
+            } else if (
+                depth == 0
+                && i > 0
+                && i + 1 < value.length()
+            ) {
+                final String operator = value.substring(
+                    i,
+                    i + 2
+                );
+                if (
+                    "<<".equals(operator)
+                    || ">>".equals(operator)
+                ) {
+                    return new BinaryExpressionParts(
+                        value.substring(
+                            0,
+                            i
+                        ).trim(),
+                        "<<".equals(operator)
+                            ? ClassicalBinaryOperator.SHIFT_LEFT
+                            : ClassicalBinaryOperator.SHIFT_RIGHT,
+                        value.substring(i + 2).trim()
+                    );
+                }
+            }
         }
         return null;
     }
@@ -7028,6 +7235,7 @@ public final class OpenQasm3Parser {
     }
 
     private record GateCallParts(
+        String name,
         Gate gate,
         String parametersText,
         String operandsText

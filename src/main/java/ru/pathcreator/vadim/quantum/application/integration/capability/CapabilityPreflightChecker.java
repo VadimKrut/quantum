@@ -57,6 +57,11 @@ public final class CapabilityPreflightChecker {
             throw new IllegalArgumentException("Integration capability profile must not be null.");
         }
         final ArrayList<IntegrationDiagnostic> diagnostics = new ArrayList<>();
+        checkProgramLevelFeatures(
+            program,
+            profile,
+            diagnostics
+        );
         for (int i = 0; i < program.circuitCount(); i++) {
             final QuantumCircuit circuit = program.circuit(i);
             checkRegisters(
@@ -73,6 +78,19 @@ public final class CapabilityPreflightChecker {
             }
         }
         return CapabilityPreflightResult.of(diagnostics);
+    }
+
+    private static void checkProgramLevelFeatures(
+        final QuantumProgram program,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (
+            program.calibrationDefinitionCount() > 0
+            && !profile.supports(IntegrationCapability.CALIBRATIONS)
+        ) {
+            diagnostics.add(unsupportedCapability("calibration definitions"));
+        }
     }
 
     private static void checkRegisters(

@@ -147,16 +147,6 @@ public final class OpenQasm2Exporter implements QuantumExporter {
                 );
             }
         }
-        appendUnsupportedSourceFragmentDiagnostics(
-            program,
-            diagnostics
-        );
-        if (hasErrors(diagnostics)) {
-            return ExportResult.failure(
-                format(),
-                diagnostics
-            );
-        }
         final CapabilityPreflightResult originalPreflightResult = preflightChecker.check(
             program,
             capabilityProfile()
@@ -204,20 +194,6 @@ public final class OpenQasm2Exporter implements QuantumExporter {
             writerResult.content(),
             diagnostics
         );
-    }
-
-    private static void appendUnsupportedSourceFragmentDiagnostics(
-        final QuantumProgram program,
-        final ArrayList<IntegrationDiagnostic> diagnostics
-    ) {
-        for (int i = 0; i < program.sourceFragmentCount(); i++) {
-            diagnostics.add(IntegrationDiagnostic.error(
-                IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
-                "OpenQASM 2 export does not support program source fragment format: "
-                    + program.sourceFragment(i).format()
-                    + "."
-            ));
-        }
     }
 
     private static void appendValidationDiagnostics(
