@@ -269,12 +269,18 @@ class QuantumIrJsonPersistenceTest {
 
         final String streamed = Files.readString(path);
         final QuantumIrReadResult read = reader.read(streamed);
+        final QuantumIrReadResult readFromFile = reader.read(path);
 
         assertEquals(
             canonical.content(),
             streamed
         );
         assertTrue(read.isSuccess());
+        assertTrue(readFromFile.isSuccess());
+        assertEquals(
+            read.program().circuit(0).operationCount(),
+            readFromFile.program().circuit(0).operationCount()
+        );
     }
 
     @Test

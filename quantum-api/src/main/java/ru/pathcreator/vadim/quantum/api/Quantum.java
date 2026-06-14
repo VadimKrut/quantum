@@ -47,6 +47,25 @@ public final class Quantum {
     }
 
     /**
+     * Создает fluent builder для gate-based Quantum IR программы.
+     *
+     * @return builder программы
+     */
+    public static QuantumProgramBuilder programBuilder() {
+        return QuantumProgramBuilder.gateBased();
+    }
+
+    /**
+     * Создает fluent builder для Quantum IR программы указанной вычислительной модели.
+     *
+     * @param computationModel вычислительная модель
+     * @return builder программы
+     */
+    public static QuantumProgramBuilder programBuilder(final QuantumComputationModel computationModel) {
+        return QuantumProgramBuilder.create(computationModel);
+    }
+
+    /**
      * Создает Quantum IR программу указанной вычислительной модели.
      *
      * @param computationModel вычислительная модель
@@ -88,6 +107,45 @@ public final class Quantum {
     }
 
     /**
+     * Импортирует OpenQASM 2 в Quantum IR.
+     *
+     * @param source OpenQASM 2 текст
+     * @return результат import
+     */
+    public static ImportResult importOpenQasm2(final String source) {
+        return importProgram(
+            IntegrationFormat.OPENQASM_2,
+            source
+        );
+    }
+
+    /**
+     * Импортирует OpenQASM 3 в Quantum IR.
+     *
+     * @param source OpenQASM 3 текст
+     * @return результат import
+     */
+    public static ImportResult importOpenQasm3(final String source) {
+        return importProgram(
+            IntegrationFormat.OPENQASM_3,
+            source
+        );
+    }
+
+    /**
+     * Импортирует Quil в Quantum IR.
+     *
+     * @param source Quil текст
+     * @return результат import
+     */
+    public static ImportResult importQuil(final String source) {
+        return importProgram(
+            IntegrationFormat.QUIL,
+            source
+        );
+    }
+
+    /**
      * Импортирует внешний текст в Quantum IR с явными настройками.
      *
      * @param format внешний формат
@@ -118,6 +176,45 @@ public final class Quantum {
         final QuantumProgram program
     ) {
         return integration(format).exportProgram(program);
+    }
+
+    /**
+     * Экспортирует Quantum IR в OpenQASM 2.
+     *
+     * @param program программа
+     * @return результат export
+     */
+    public static ExportResult exportOpenQasm2(final QuantumProgram program) {
+        return exportProgram(
+            IntegrationFormat.OPENQASM_2,
+            program
+        );
+    }
+
+    /**
+     * Экспортирует Quantum IR в OpenQASM 3.
+     *
+     * @param program программа
+     * @return результат export
+     */
+    public static ExportResult exportOpenQasm3(final QuantumProgram program) {
+        return exportProgram(
+            IntegrationFormat.OPENQASM_3,
+            program
+        );
+    }
+
+    /**
+     * Экспортирует Quantum IR в Quil.
+     *
+     * @param program программа
+     * @return результат export
+     */
+    public static ExportResult exportQuil(final QuantumProgram program) {
+        return exportProgram(
+            IntegrationFormat.QUIL,
+            program
+        );
     }
 
     /**

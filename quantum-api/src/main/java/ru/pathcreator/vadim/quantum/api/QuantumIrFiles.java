@@ -125,16 +125,6 @@ public final class QuantumIrFiles {
                 "Quantum IR JSON path must not be null."
             )));
         }
-        try {
-            return readFromString(Files.readString(
-                path,
-                StandardCharsets.UTF_8
-            ));
-        } catch (final IOException exception) {
-            return QuantumIrReadResult.failure(List.of(PersistenceDiagnostic.error(
-                PersistenceDiagnosticCode.IO_ERROR,
-                "Quantum IR JSON file could not be read: " + exception.getMessage()
-            )));
-        }
+        return JSON_READER.read(path);
     }
 }

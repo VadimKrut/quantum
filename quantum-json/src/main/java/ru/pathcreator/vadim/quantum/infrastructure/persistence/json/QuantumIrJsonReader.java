@@ -9,6 +9,11 @@
 
 package ru.pathcreator.vadim.quantum.infrastructure.persistence.json;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -146,22 +151,7 @@ public final class QuantumIrJsonReader {
         }
         try {
             final JsonNode root = objectMapper.readTree(content);
-            final ReadState state = new ReadState();
-            final QuantumProgram program = readRoot(
-                root,
-                state
-            );
-            validateProgram(
-                program,
-                state
-            );
-            if (state.hasErrors()) {
-                return QuantumIrReadResult.failure(state.diagnostics());
-            }
-            return QuantumIrReadResult.success(
-                program,
-                state.diagnostics()
-            );
+            return readRootNode(root);
         } catch (final JsonProcessingException exception) {
             return QuantumIrReadResult.failure(List.of(PersistenceDiagnostic.error(
                 PersistenceDiagnosticCode.MALFORMED_JSON,
@@ -170,6 +160,59 @@ public final class QuantumIrJsonReader {
         } catch (final ReadException exception) {
             return QuantumIrReadResult.failure(List.of(exception.diagnostic()));
         }
+    }
+
+    /**
+     * Читает Quantum IR из UTF-8 JSON-файла без промежуточной полной JSON-строки.
+     *
+     * @param path путь к JSON-файлу
+     * @return результат чтения
+     */
+    public QuantumIrReadResult read(final Path path) {
+        if (path == null) {
+            return QuantumIrReadResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.NULL_INPUT,
+                "Quantum IR JSON path must not be null."
+            )));
+        }
+        try (final BufferedReader reader = Files.newBufferedReader(
+            path,
+            StandardCharsets.UTF_8
+        )) {
+            final JsonNode root = objectMapper.readTree(reader);
+            return readRootNode(root);
+        } catch (final JsonProcessingException exception) {
+            return QuantumIrReadResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.MALFORMED_JSON,
+                "Quantum IR JSON is malformed: " + exception.getOriginalMessage()
+            )));
+        } catch (final IOException exception) {
+            return QuantumIrReadResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.IO_ERROR,
+                "Quantum IR JSON file could not be read: " + exception.getMessage()
+            )));
+        } catch (final ReadException exception) {
+            return QuantumIrReadResult.failure(List.of(exception.diagnostic()));
+        }
+    }
+
+    private static QuantumIrReadResult readRootNode(final JsonNode root) {
+        final ReadState state = new ReadState();
+        final QuantumProgram program = readRoot(
+            root,
+            state
+        );
+        validateProgram(
+            program,
+            state
+        );
+        if (state.hasErrors()) {
+            return QuantumIrReadResult.failure(state.diagnostics());
+        }
+        return QuantumIrReadResult.success(
+            program,
+            state.diagnostics()
+        );
     }
 
     private static QuantumProgram readRoot(
