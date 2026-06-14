@@ -22,14 +22,38 @@ import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.Persisten
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgument;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableBarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableBlockOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalAssignmentOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalPredicate;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableConditionalBlockOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableDelayOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableGateOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableMeasureOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationBlock;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableResetOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableTimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableWhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalType;
 import ru.pathcreator.vadim.quantum.domain.gate.DistinctQubitsGateValidationRule;
 import ru.pathcreator.vadim.quantum.domain.gate.Gate;
 import ru.pathcreator.vadim.quantum.domain.gate.GateBodyOperation;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinitionKind;
+import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
 import ru.pathcreator.vadim.quantum.domain.gate.GateValidationRule;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
@@ -42,16 +66,32 @@ import ru.pathcreator.vadim.quantum.domain.metadata.SourceLocation;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
+import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
+import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 
 /**
  * Canonical JSON writer родного формата Quantum IR.
@@ -134,6 +174,49 @@ public final class QuantumIrJsonWriter {
             "gateDefinitions",
             gateDefinitions
         );
+        final ArrayList<Object> classicalDeclarations = new ArrayList<>();
+        for (int i = 0; i < program.classicalDeclarationCount(); i++) {
+            classicalDeclarations.add(writeClassicalDeclaration(program.classicalDeclaration(i)));
+        }
+        json.put(
+            "classicalDeclarations",
+            classicalDeclarations
+        );
+        final ArrayList<Object> callableDefinitions = new ArrayList<>();
+        for (int i = 0; i < program.callableDefinitionCount(); i++) {
+            callableDefinitions.add(writeCallableDefinition(
+                program.callableDefinition(i),
+                diagnostics
+            ));
+        }
+        json.put(
+            "callableDefinitions",
+            callableDefinitions
+        );
+        final ArrayList<Object> externalCallableDeclarations = new ArrayList<>();
+        for (int i = 0; i < program.externalCallableDeclarationCount(); i++) {
+            externalCallableDeclarations.add(writeExternalCallableDeclaration(program.externalCallableDeclaration(i)));
+        }
+        json.put(
+            "externalCallableDeclarations",
+            externalCallableDeclarations
+        );
+        final ArrayList<Object> calibrationDefinitions = new ArrayList<>();
+        for (int i = 0; i < program.calibrationDefinitionCount(); i++) {
+            calibrationDefinitions.add(writeCalibrationDefinition(program.calibrationDefinition(i)));
+        }
+        json.put(
+            "calibrationDefinitions",
+            calibrationDefinitions
+        );
+        final ArrayList<Object> sourceFragments = new ArrayList<>();
+        for (int i = 0; i < program.sourceFragmentCount(); i++) {
+            sourceFragments.add(writeSourceFragment(program.sourceFragment(i)));
+        }
+        json.put(
+            "sourceFragments",
+            sourceFragments
+        );
         final ArrayList<Object> circuits = new ArrayList<>();
         for (int i = 0; i < program.circuitCount(); i++) {
             circuits.add(writeCircuit(
@@ -144,6 +227,395 @@ public final class QuantumIrJsonWriter {
         json.put(
             "circuits",
             circuits
+        );
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeSourceFragment(final ProgramSourceFragment fragment) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "format",
+            fragment.format()
+        );
+        json.put(
+            "kind",
+            fragment.kind()
+        );
+        json.put(
+            "content",
+            fragment.content()
+        );
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeClassicalDeclaration(final ClassicalDeclaration declaration) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "name",
+            declaration.name()
+        );
+        json.put(
+            "type",
+            writeClassicalType(declaration.type())
+        );
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeClassicalType(final ClassicalType type) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "kind",
+            type.kind().name()
+        );
+        if (type.hasBitWidth()) {
+            json.put(
+                "bitWidth",
+                type.bitWidth()
+            );
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeCallableDefinition(
+        final CallableDefinition definition,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "name",
+            definition.name()
+        );
+        json.put(
+            "arguments",
+            writeCallableArguments(definition.arguments())
+        );
+        json.put(
+            "body",
+            writeCallableOperationBlock(
+                definition.body(),
+                diagnostics
+            )
+        );
+        return json;
+    }
+
+    private static ArrayList<Object> writeCallableOperationBlock(
+        final CallableOperationBlock block,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) {
+        final ArrayList<Object> operations = new ArrayList<>();
+        for (int i = 0; i < block.operationCount(); i++) {
+            operations.add(writeCallableOperation(
+                block.operation(i),
+                diagnostics
+            ));
+        }
+        return operations;
+    }
+
+    private static LinkedHashMap<String, Object> writeCallableOperation(
+        final CallableOperation operation,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "kind",
+            operation.kind().name()
+        );
+        if (operation instanceof CallableGateOperation gateOperation) {
+            json.put(
+                "gate",
+                writeGate(
+                    gateOperation.gate(),
+                    diagnostics
+                )
+            );
+            json.put(
+                "parameters",
+                writeParameterExpressions(gateOperation.parameters())
+            );
+            json.put(
+                "qubits",
+                writeTextArray(gateOperation.qubitNames())
+            );
+        } else if (operation instanceof CallableMeasureOperation measureOperation) {
+            json.put(
+                "qubit",
+                measureOperation.qubitName()
+            );
+            json.put(
+                "bit",
+                measureOperation.classicalName()
+            );
+        } else if (operation instanceof CallableResetOperation resetOperation) {
+            json.put(
+                "qubit",
+                resetOperation.qubitName()
+            );
+        } else if (operation instanceof CallableBarrierOperation barrierOperation) {
+            json.put(
+                "qubits",
+                writeTextArray(barrierOperation.qubitNames())
+            );
+        } else if (operation instanceof CallableClassicalAssignmentOperation assignmentOperation) {
+            json.put(
+                "assignment",
+                writeCallableClassicalAssignment(assignmentOperation.assignment())
+            );
+        } else if (operation instanceof CallableBlockOperation blockOperation) {
+            json.put(
+                "body",
+                writeCallableOperationBlock(
+                    blockOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof CallableConditionalBlockOperation conditionalOperation) {
+            json.put(
+                "predicate",
+                writeCallableClassicalPredicate(conditionalOperation.predicate())
+            );
+            json.put(
+                "then",
+                writeCallableOperationBlock(
+                    conditionalOperation.thenBlock(),
+                    diagnostics
+                )
+            );
+            if (conditionalOperation.hasElseBlock()) {
+                json.put(
+                    "else",
+                    writeCallableOperationBlock(
+                        conditionalOperation.elseBlock(),
+                        diagnostics
+                    )
+                );
+            }
+        } else if (operation instanceof CallableForLoopOperation loopOperation) {
+            json.put(
+                "variable",
+                loopOperation.variableName()
+            );
+            json.put(
+                "startInclusive",
+                loopOperation.startInclusive()
+            );
+            json.put(
+                "step",
+                loopOperation.step()
+            );
+            json.put(
+                "endInclusive",
+                loopOperation.endInclusive()
+            );
+            json.put(
+                "body",
+                writeCallableOperationBlock(
+                    loopOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof CallableWhileLoopOperation loopOperation) {
+            json.put(
+                "predicate",
+                writeCallableClassicalPredicate(loopOperation.predicate())
+            );
+            json.put(
+                "body",
+                writeCallableOperationBlock(
+                    loopOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof CallableDelayOperation delayOperation) {
+            json.put(
+                "duration",
+                writeDuration(delayOperation.duration())
+            );
+            json.put(
+                "qubits",
+                writeTextArray(delayOperation.qubitNames())
+            );
+        } else if (operation instanceof CallableTimingBoxOperation boxOperation) {
+            if (boxOperation.hasDuration()) {
+                json.put(
+                    "duration",
+                    writeDuration(boxOperation.duration())
+                );
+            }
+            json.put(
+                "body",
+                writeCallableOperationBlock(
+                    boxOperation.body(),
+                    diagnostics
+                )
+            );
+        } else {
+            diagnostics.add(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.UNSUPPORTED_MODEL_FEATURE,
+                "Callable operation type is not supported by Quantum IR JSON: " + operation.getClass().getName() + "."
+            ));
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeCallableClassicalAssignment(
+        final CallableClassicalAssignment assignment
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "target",
+            writeCallableClassicalExpression(assignment.target())
+        );
+        json.put(
+            "value",
+            writeCallableClassicalExpression(assignment.value())
+        );
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeCallableClassicalExpression(
+        final CallableClassicalExpression expression
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "kind",
+            expression.kind().name()
+        );
+        switch (expression.kind()) {
+            case INTEGER -> json.put(
+                "value",
+                expression.integerValue()
+            );
+            case ARGUMENT_REFERENCE -> json.put(
+                "argument",
+                expression.argumentName()
+            );
+            default -> throw new IllegalStateException("Unsupported callable classical expression kind.");
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeCallableClassicalPredicate(
+        final CallableClassicalPredicate predicate
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "kind",
+            predicate.kind().name()
+        );
+        switch (predicate.kind()) {
+            case COMPARISON -> {
+                json.put(
+                    "left",
+                    writeCallableClassicalExpression(predicate.leftExpression())
+                );
+                json.put(
+                    "operator",
+                    predicate.comparisonOperator().name()
+                );
+                json.put(
+                    "right",
+                    writeCallableClassicalExpression(predicate.rightExpression())
+                );
+            }
+            case NOT -> json.put(
+                "predicate",
+                writeCallableClassicalPredicate(predicate.leftPredicate())
+            );
+            case BOOLEAN -> {
+                json.put(
+                    "left",
+                    writeCallableClassicalPredicate(predicate.leftPredicate())
+                );
+                json.put(
+                    "operator",
+                    predicate.booleanOperator().name()
+                );
+                json.put(
+                    "right",
+                    writeCallableClassicalPredicate(predicate.rightPredicate())
+                );
+            }
+            default -> throw new IllegalStateException("Unsupported callable classical predicate kind.");
+        }
+        return json;
+    }
+
+    private static ArrayList<Object> writeTextArray(final String[] values) {
+        final ArrayList<Object> json = new ArrayList<>();
+        for (int i = 0; i < values.length; i++) {
+            json.add(values[i]);
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeExternalCallableDeclaration(
+        final ExternalCallableDeclaration declaration
+    ) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "name",
+            declaration.name()
+        );
+        json.put(
+            "arguments",
+            writeCallableArguments(declaration.arguments())
+        );
+        if (declaration.hasReturnType()) {
+            json.put(
+                "returnType",
+                writeClassicalType(declaration.returnType())
+            );
+        }
+        return json;
+    }
+
+    private static ArrayList<Object> writeCallableArguments(final List<CallableArgument> arguments) {
+        final ArrayList<Object> json = new ArrayList<>();
+        for (int i = 0; i < arguments.size(); i++) {
+            final CallableArgument argument = arguments.get(i);
+            final LinkedHashMap<String, Object> item = new LinkedHashMap<>();
+            item.put(
+                "name",
+                argument.name()
+            );
+            item.put(
+                "kind",
+                argument.kind().name()
+            );
+            if (argument.kind().name().equals("CLASSICAL")) {
+                item.put(
+                    "classicalType",
+                    writeClassicalType(argument.classicalType())
+                );
+            }
+            json.add(item);
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeCalibrationDefinition(final CalibrationDefinition definition) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "targetName",
+            definition.targetName()
+        );
+        json.put(
+            "parameterNames",
+            new ArrayList<>(definition.parameterNames())
+        );
+        json.put(
+            "qubitNames",
+            new ArrayList<>(definition.qubitNames())
+        );
+        json.put(
+            "bodyLanguage",
+            definition.bodyLanguage()
+        );
+        json.put(
+            "body",
+            definition.body()
         );
         return json;
     }
@@ -260,7 +732,28 @@ public final class QuantumIrJsonWriter {
             "bodyOperations",
             bodyOperations
         );
+        if (definition.kind() == GateDefinitionKind.MATRIX) {
+            json.put(
+                "matrix",
+                writeGateMatrix(definition.matrix())
+            );
+        }
         return json;
+    }
+
+    private static ArrayList<Object> writeGateMatrix(final GateMatrix matrix) {
+        final ArrayList<Object> rows = new ArrayList<>();
+        for (int row = 0; row < matrix.rowCount(); row++) {
+            final ArrayList<Object> columns = new ArrayList<>();
+            for (int column = 0; column < matrix.columnCount(); column++) {
+                columns.add(matrix.entry(
+                    row,
+                    column
+                ));
+            }
+            rows.add(columns);
+        }
+        return rows;
     }
 
     private static ArrayList<Object> writeValidationRules(
@@ -337,13 +830,13 @@ public final class QuantumIrJsonWriter {
                 writeParameterExpressions(gateOperation.parameters())
             );
             json.put(
-                "qubits",
-                writeQubits(gateOperation.qubits())
+                "qubitReferences",
+                writeQuantumReferences(gateOperation.qubitReferences())
             );
         } else if (operation instanceof MeasureOperation measureOperation) {
             json.put(
-                "qubit",
-                writeQubit(measureOperation.qubit())
+                "qubitReference",
+                writeQuantumReference(measureOperation.qubitReference())
             );
             json.put(
                 "bit",
@@ -351,8 +844,8 @@ public final class QuantumIrJsonWriter {
             );
         } else if (operation instanceof ResetOperation resetOperation) {
             json.put(
-                "qubit",
-                writeQubit(resetOperation.qubit())
+                "qubitReference",
+                writeQuantumReference(resetOperation.qubitReference())
             );
         } else if (operation instanceof BarrierOperation barrierOperation) {
             json.put(
@@ -377,6 +870,67 @@ public final class QuantumIrJsonWriter {
                 "assignment",
                 writeClassicalAssignment(assignmentOperation.assignment())
             );
+        } else if (operation instanceof ClassicalDeclarationOperation declarationOperation) {
+            json.put(
+                "declaration",
+                writeClassicalDeclaration(declarationOperation.declaration())
+            );
+            if (declarationOperation.hasInitializer()) {
+                json.put(
+                    "initializer",
+                    writeClassicalExpression(declarationOperation.initializer())
+                );
+            }
+        } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            json.put(
+                "name",
+                arrayOperation.name()
+            );
+            json.put(
+                "elementType",
+                writeClassicalType(arrayOperation.elementType())
+            );
+            final ArrayList<Object> dimensions = new ArrayList<>();
+            for (int i = 0; i < arrayOperation.dimensionCount(); i++) {
+                dimensions.add(writeClassicalExpression(arrayOperation.dimension(i)));
+            }
+            json.put(
+                "dimensions",
+                dimensions
+            );
+            if (arrayOperation.hasInitializerText()) {
+                json.put(
+                    "initializerText",
+                    arrayOperation.initializerText()
+                );
+            }
+        } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+            json.put(
+                "callable",
+                invocationOperation.callableName()
+            );
+            if (invocationOperation.hasTarget()) {
+                json.put(
+                    "target",
+                    writeClassicalExpression(invocationOperation.target())
+                );
+            }
+            final ArrayList<Object> classicalArguments = new ArrayList<>();
+            for (int i = 0; i < invocationOperation.classicalArguments().size(); i++) {
+                classicalArguments.add(writeClassicalExpression(invocationOperation.classicalArguments().get(i)));
+            }
+            json.put(
+                "classicalArguments",
+                classicalArguments
+            );
+            final ArrayList<Object> quantumArguments = new ArrayList<>();
+            for (int i = 0; i < invocationOperation.quantumArguments().size(); i++) {
+                quantumArguments.add(writeQuantumReference(invocationOperation.quantumArguments().get(i)));
+            }
+            json.put(
+                "quantumArguments",
+                quantumArguments
+            );
         } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
             json.put(
                 "predicate",
@@ -389,6 +943,129 @@ public final class QuantumIrJsonWriter {
                     OperationMetadata.empty(),
                     diagnostics
                 )
+            );
+        } else if (operation instanceof BlockOperation blockOperation) {
+            json.put(
+                "body",
+                writeOperationBlock(
+                    blockOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            json.put(
+                "predicate",
+                writeClassicalPredicate(conditionalOperation.predicate())
+            );
+            json.put(
+                "then",
+                writeOperationBlock(
+                    conditionalOperation.thenBlock(),
+                    diagnostics
+                )
+            );
+            if (conditionalOperation.hasElseBlock()) {
+                json.put(
+                    "else",
+                    writeOperationBlock(
+                        conditionalOperation.elseBlock(),
+                        diagnostics
+                    )
+                );
+            }
+        } else if (operation instanceof ForLoopOperation loopOperation) {
+            json.put(
+                "variable",
+                loopOperation.variableName()
+            );
+            json.put(
+                "startInclusive",
+                loopOperation.startInclusive()
+            );
+            json.put(
+                "step",
+                loopOperation.step()
+            );
+            json.put(
+                "endInclusive",
+                loopOperation.endInclusive()
+            );
+            json.put(
+                "body",
+                writeOperationBlock(
+                    loopOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+            json.put(
+                "variable",
+                loopOperation.variableName()
+            );
+            if (loopOperation.hasVariableTypeText()) {
+                json.put(
+                    "variableType",
+                    loopOperation.variableTypeText()
+                );
+            }
+            json.put(
+                "startInclusive",
+                writeClassicalExpression(loopOperation.startInclusive())
+            );
+            json.put(
+                "step",
+                writeClassicalExpression(loopOperation.step())
+            );
+            json.put(
+                "endInclusive",
+                writeClassicalExpression(loopOperation.endInclusive())
+            );
+            json.put(
+                "body",
+                writeOperationBlock(
+                    loopOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof WhileLoopOperation loopOperation) {
+            json.put(
+                "predicate",
+                writeClassicalPredicate(loopOperation.predicate())
+            );
+            json.put(
+                "body",
+                writeOperationBlock(
+                    loopOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof DelayOperation delayOperation) {
+            json.put(
+                "duration",
+                writeDuration(delayOperation.duration())
+            );
+            json.put(
+                "qubitReferences",
+                writeQuantumReferences(delayOperation.references())
+            );
+        } else if (operation instanceof TimingBoxOperation boxOperation) {
+            if (boxOperation.hasDuration()) {
+                json.put(
+                    "duration",
+                    writeDuration(boxOperation.duration())
+                );
+            }
+            json.put(
+                "body",
+                writeOperationBlock(
+                    boxOperation.body(),
+                    diagnostics
+                )
+            );
+        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
+            json.put(
+                "fragment",
+                writeSourceFragment(fragmentOperation.fragment())
             );
         } else {
             diagnostics.add(PersistenceDiagnostic.error(
@@ -403,6 +1080,58 @@ public final class QuantumIrJsonWriter {
             json.put(
                 "metadata",
                 writeMetadata(metadata)
+            );
+        }
+        return json;
+    }
+
+    private static ArrayList<Object> writeOperationBlock(
+        final OperationBlock block,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) {
+        final ArrayList<Object> operations = new ArrayList<>();
+        for (int i = 0; i < block.operationCount(); i++) {
+            operations.add(writeOperation(
+                block.operation(i),
+                OperationMetadata.empty(),
+                diagnostics
+            ));
+        }
+        return operations;
+    }
+
+    private static LinkedHashMap<String, Object> writeDuration(final DurationExpression duration) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        if (duration.isStretch()) {
+            json.put(
+                "kind",
+                "STRETCH"
+            );
+            json.put(
+                "symbol",
+                duration.symbol()
+            );
+        } else if (duration.isExpression()) {
+            json.put(
+                "kind",
+                "EXPRESSION"
+            );
+            json.put(
+                "expression",
+                duration.expression()
+            );
+        } else {
+            json.put(
+                "kind",
+                "DURATION"
+            );
+            json.put(
+                "value",
+                duration.value()
+            );
+            json.put(
+                "unit",
+                duration.unit().name()
             );
         }
         return json;
@@ -475,10 +1204,17 @@ public final class QuantumIrJsonWriter {
                 modifier.integerValue()
             );
         } else if (modifier.kind() == GateModifierKind.POWER) {
-            json.put(
-                "doubleValue",
-                modifier.doubleValue()
-            );
+            if (modifier.hasPowerExpression()) {
+                json.put(
+                    "powerExpression",
+                    writeParameterExpression(modifier.powerExpression())
+                );
+            } else {
+                json.put(
+                    "doubleValue",
+                    modifier.doubleValue()
+                );
+            }
         } else if (modifier.kind() == GateModifierKind.ANNOTATION) {
             json.put(
                 "annotationName",
@@ -578,6 +1314,24 @@ public final class QuantumIrJsonWriter {
                 "value",
                 expression.integerValue()
             );
+            case VARIABLE_REFERENCE -> json.put(
+                "name",
+                expression.variableName()
+            );
+            case BINARY_OPERATION -> {
+                json.put(
+                    "operator",
+                    expression.binaryOperator().name()
+                );
+                json.put(
+                    "left",
+                    writeClassicalExpression(expression.leftExpression())
+                );
+                json.put(
+                    "right",
+                    writeClassicalExpression(expression.rightExpression())
+                );
+            }
             case BIT_REFERENCE -> json.put(
                 "bit",
                 writeClassicalBit(expression.bit())
@@ -586,6 +1340,24 @@ public final class QuantumIrJsonWriter {
                 "register",
                 expression.register().name().value()
             );
+            case SYMBOLIC_REFERENCE -> json.put(
+                "text",
+                expression.symbolicText()
+            );
+            case CALL -> {
+                json.put(
+                    "callable",
+                    expression.callableName()
+                );
+                final ArrayList<Object> arguments = new ArrayList<>();
+                for (int i = 0; i < expression.callArgumentCount(); i++) {
+                    arguments.add(writeClassicalExpression(expression.callArgument(i)));
+                }
+                json.put(
+                    "arguments",
+                    arguments
+                );
+            }
             default -> throw new IllegalStateException("Unsupported classical expression kind.");
         }
         return json;
@@ -676,6 +1448,43 @@ public final class QuantumIrJsonWriter {
         final ArrayList<Object> json = new ArrayList<>();
         for (int i = 0; i < qubits.length; i++) {
             json.add(writeQubit(qubits[i]));
+        }
+        return json;
+    }
+
+    private static ArrayList<Object> writeQuantumReferences(final QuantumReference[] references) {
+        final ArrayList<Object> json = new ArrayList<>();
+        for (int i = 0; i < references.length; i++) {
+            json.add(writeQuantumReference(references[i]));
+        }
+        return json;
+    }
+
+    private static LinkedHashMap<String, Object> writeQuantumReference(final QuantumReference reference) {
+        final LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put(
+            "kind",
+            reference.kind().name()
+        );
+        if (reference.kind() == QuantumReferenceKind.STATIC_QUBIT) {
+            json.put(
+                "qubit",
+                writeQubit(reference.qubit())
+            );
+        } else if (reference.kind() == QuantumReferenceKind.DYNAMIC_REGISTER_INDEX) {
+            json.put(
+                "register",
+                reference.register().name().value()
+            );
+            json.put(
+                "index",
+                writeClassicalExpression(reference.indexExpression())
+            );
+        } else {
+            json.put(
+                "hardwareIndex",
+                reference.hardwareIndex()
+            );
         }
         return json;
     }

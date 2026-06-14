@@ -13,6 +13,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationBlock;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalType;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind;
+import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,6 +114,73 @@ class QuantumProgramTest {
         assertThrows(
             IllegalStateException.class,
             () -> program.createCircuit("pulse")
+        );
+    }
+
+    @Test
+    void storesGenericProgramLevelDeclarations() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final ClassicalDeclaration classicalDeclaration = new ClassicalDeclaration(
+            "counter",
+            ClassicalType.sized(
+                ClassicalTypeKind.UNSIGNED_INTEGER,
+                32
+            )
+        );
+        final CallableDefinition callableDefinition = new CallableDefinition(
+            "prepare",
+            CallableOperationBlock.of()
+        );
+        final ExternalCallableDeclaration externalDeclaration = new ExternalCallableDeclaration(
+            "external_job",
+            null
+        );
+        final CalibrationDefinition calibrationDefinition = new CalibrationDefinition(
+            "x",
+            List.of(),
+            List.of("q"),
+            "pulse",
+            "body"
+        );
+
+        program.addClassicalDeclaration(classicalDeclaration)
+            .addCallableDefinition(callableDefinition)
+            .addExternalCallableDeclaration(externalDeclaration)
+            .addCalibrationDefinition(calibrationDefinition);
+
+        assertSame(
+            classicalDeclaration,
+            program.classicalDeclaration(0)
+        );
+        assertSame(
+            callableDefinition,
+            program.callableDefinition(0)
+        );
+        assertSame(
+            externalDeclaration,
+            program.externalCallableDeclaration(0)
+        );
+        assertSame(
+            calibrationDefinition,
+            program.calibrationDefinition(0)
+        );
+    }
+
+    @Test
+    void rejectsDuplicateProgramLevelSymbolNames() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        program.addGateDefinition(GateDefinition.of(
+            "custom",
+            1,
+            0
+        ));
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> program.addClassicalDeclaration(new ClassicalDeclaration(
+                "custom",
+                ClassicalType.of(ClassicalTypeKind.BOOLEAN)
+            ))
         );
     }
 }

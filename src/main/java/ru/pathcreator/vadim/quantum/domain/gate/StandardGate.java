@@ -16,6 +16,11 @@ import java.util.List;
  */
 public enum StandardGate implements Gate {
 
+    U(
+        "u",
+        1,
+        3
+    ),
     H(
         "h",
         1,
@@ -85,6 +90,11 @@ public enum StandardGate implements Gate {
         "cz",
         2,
         0
+    ),
+    CPHASE(
+        "cphase",
+        2,
+        1
     ),
     CH(
         "ch",

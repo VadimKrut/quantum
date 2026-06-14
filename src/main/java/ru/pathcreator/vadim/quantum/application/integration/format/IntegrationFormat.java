@@ -20,6 +20,22 @@ public enum IntegrationFormat {
     OPENQASM_2(
         "openqasm2",
         "OpenQASM 2.0"
+    ),
+
+    /**
+     * Текстовый формат OpenQASM 3.0.
+     */
+    OPENQASM_3(
+        "openqasm3",
+        "OpenQASM 3.0"
+    ),
+
+    /**
+     * РўРµРєСЃС‚РѕРІС‹Р№ С„РѕСЂРјР°С‚ Quil.
+     */
+    QUIL(
+        "quil",
+        "Quil"
     );
 
     /**

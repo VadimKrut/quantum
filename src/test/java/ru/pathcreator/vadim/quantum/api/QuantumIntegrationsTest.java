@@ -29,4 +29,26 @@ class QuantumIntegrationsTest {
             integration.format()
         );
     }
+
+    @Test
+    void createsOpenQasm3Integration() {
+        final QuantumIntegration integration = QuantumIntegrations.openQasm3();
+
+        assertNotNull(integration);
+        assertEquals(
+            IntegrationFormat.OPENQASM_3,
+            integration.format()
+        );
+    }
+
+    @Test
+    void createsQuilIntegration() {
+        final QuantumIntegration integration = QuantumIntegrations.quil();
+
+        assertNotNull(integration);
+        assertEquals(
+            IntegrationFormat.QUIL,
+            integration.format()
+        );
+    }
 }

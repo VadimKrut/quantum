@@ -27,5 +27,10 @@ public enum GateDefinitionKind {
     /**
      * Составной gate с символическим телом.
      */
-    COMPOSITE
+    COMPOSITE,
+
+    /**
+     * Gate, заданный символьной унитарной матрицей.
+     */
+    MATRIX
 }

@@ -13,6 +13,7 @@ package ru.pathcreator.vadim.quantum.infrastructure.openqasm2.syntax.ast;
  * Тип top-level statement OpenQASM 2.
  */
 public enum OpenQasm2AstStatementKind {
+
     VERSION,
     INCLUDE,
     QREG,

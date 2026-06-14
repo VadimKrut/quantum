@@ -11,6 +11,7 @@ package ru.pathcreator.vadim.quantum.domain.operation;
 
 import org.junit.jupiter.api.Test;
 
+import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 
@@ -64,7 +65,7 @@ class MeasureOperationTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> new MeasureOperation(
-                null,
+                (Qubit) null,
                 classicalRegister.get(0)
             )
         );

@@ -28,6 +28,12 @@ class ClassicalModelTest {
         final ClassicalExpression bit = ClassicalExpression.bit(register.get(0));
         final ClassicalExpression wholeRegister = ClassicalExpression.register(register);
         final ClassicalExpression integer = ClassicalExpression.integer(3);
+        final ClassicalExpression variable = ClassicalExpression.variable("address");
+        final ClassicalExpression binary = ClassicalExpression.binary(
+            ClassicalBinaryOperator.ADD,
+            variable,
+            ClassicalExpression.integer(1)
+        );
 
         assertEquals(
             ClassicalExpressionKind.BIT_REFERENCE,
@@ -48,6 +54,26 @@ class ClassicalModelTest {
         assertEquals(
             3,
             integer.integerValue()
+        );
+        assertEquals(
+            ClassicalExpressionKind.VARIABLE_REFERENCE,
+            variable.kind()
+        );
+        assertEquals(
+            "address",
+            variable.variableName()
+        );
+        assertEquals(
+            ClassicalExpressionKind.BINARY_OPERATION,
+            binary.kind()
+        );
+        assertEquals(
+            ClassicalBinaryOperator.ADD,
+            binary.binaryOperator()
+        );
+        assertSame(
+            variable,
+            binary.leftExpression()
         );
     }
 

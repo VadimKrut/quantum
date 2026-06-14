@@ -24,17 +24,33 @@ import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.metadata.OperationMetadata;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.domain.register.RegisterName;
+import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 
 /**
  * Изменяемый builder квантовой схемы с регистрами и операциями.
@@ -577,6 +593,47 @@ public final class QuantumCircuit {
     }
 
     /**
+     * Добавляет произвольный gate-based gate с qubit references.
+     *
+     * @param gate описание gate
+     * @param qubitReferences ссылки на qubits операции
+     * @return текущая схема
+     */
+    public QuantumCircuit gateReferences(
+        final Gate gate,
+        final QuantumReference... qubitReferences
+    ) {
+        ensureQuantumReferencesBelongToCircuit(qubitReferences);
+        addOperation(GateOperation.ofReferences(
+            gate,
+            qubitReferences
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет произвольный параметризованный gate-based gate с qubit references.
+     *
+     * @param gate описание gate
+     * @param parameters параметры gate
+     * @param qubitReferences ссылки на qubits операции
+     * @return текущая схема
+     */
+    public QuantumCircuit parameterizedGateReferences(
+        final Gate gate,
+        final ParameterExpression[] parameters,
+        final QuantumReference... qubitReferences
+    ) {
+        ensureQuantumReferencesBelongToCircuit(qubitReferences);
+        addOperation(GateOperation.parameterizedReferences(
+            gate,
+            parameters,
+            qubitReferences
+        ));
+        return this;
+    }
+
+    /**
      * Добавляет измерение кубита в классический бит.
      *
      * @param qubit измеряемый кубит
@@ -597,6 +654,26 @@ public final class QuantumCircuit {
     }
 
     /**
+     * Добавляет измерение qubit reference в classical bit.
+     *
+     * @param qubitReference измеряемая ссылка на qubit
+     * @param bit classical bit результата
+     * @return текущая схема
+     */
+    public QuantumCircuit measureReference(
+        final QuantumReference qubitReference,
+        final ClassicalBit bit
+    ) {
+        ensureQuantumReferenceBelongsToCircuit(qubitReference);
+        ensureClassicalBitBelongsToCircuit(bit);
+        addOperation(new MeasureOperation(
+            qubitReference,
+            bit
+        ));
+        return this;
+    }
+
+    /**
      * Добавляет reset кубита.
      *
      * @param qubit сбрасываемый кубит
@@ -605,6 +682,18 @@ public final class QuantumCircuit {
     public QuantumCircuit reset(final Qubit qubit) {
         ensureQubitBelongsToCircuit(qubit);
         addOperation(new ResetOperation(qubit));
+        return this;
+    }
+
+    /**
+     * Добавляет reset qubit reference.
+     *
+     * @param qubitReference сбрасываемая ссылка на qubit
+     * @return текущая схема
+     */
+    public QuantumCircuit resetReference(final QuantumReference qubitReference) {
+        ensureQuantumReferenceBelongsToCircuit(qubitReference);
+        addOperation(new ResetOperation(qubitReference));
         return this;
     }
 
@@ -656,6 +745,42 @@ public final class QuantumCircuit {
     }
 
     /**
+     * Добавляет локальное классическое объявление в поток операций.
+     *
+     * @param operation операция объявления
+     * @return текущая схема
+     */
+    public QuantumCircuit classicalDeclaration(final ClassicalDeclarationOperation operation) {
+        ensureOperationBelongsToCircuit(operation);
+        addOperation(operation);
+        return this;
+    }
+
+    /**
+     * Добавляет объявление классического массива в поток операций.
+     *
+     * @param operation операция объявления массива
+     * @return текущая схема
+     */
+    public QuantumCircuit classicalArrayDeclaration(final ClassicalArrayDeclarationOperation operation) {
+        ensureOperationBelongsToCircuit(operation);
+        addOperation(operation);
+        return this;
+    }
+
+    /**
+     * Добавляет вызов callable/subroutine/extern в поток операций.
+     *
+     * @param operation операция вызова
+     * @return текущая схема
+     */
+    public QuantumCircuit callableInvocation(final CallableInvocationOperation operation) {
+        ensureOperationBelongsToCircuit(operation);
+        addOperation(operation);
+        return this;
+    }
+
+    /**
      * Добавляет операцию с произвольным классическим предикатом.
      *
      * @param predicate предикат выполнения
@@ -672,6 +797,166 @@ public final class QuantumCircuit {
             predicate,
             operation
         ));
+        return this;
+    }
+
+    /**
+     * Добавляет scoped-блок операций.
+     *
+     * @param body тело блока
+     * @return текущая схема
+     */
+    public QuantumCircuit block(final OperationBlock body) {
+        ensureOperationBlockBelongsToCircuit(body);
+        addOperation(new BlockOperation(body));
+        return this;
+    }
+
+    /**
+     * Добавляет блочное ветвление.
+     *
+     * @param predicate предикат ветвления
+     * @param thenBlock then-блок
+     * @param elseBlock else-блок или null
+     * @return текущая схема
+     */
+    public QuantumCircuit conditionalBlock(
+        final ClassicalPredicate predicate,
+        final OperationBlock thenBlock,
+        final OperationBlock elseBlock
+    ) {
+        ensureClassicalPredicateBelongsToCircuit(predicate);
+        ensureOperationBlockBelongsToCircuit(thenBlock);
+        if (elseBlock != null) {
+            ensureOperationBlockBelongsToCircuit(elseBlock);
+        }
+        addOperation(new ConditionalBlockOperation(
+            predicate,
+            thenBlock,
+            elseBlock
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет цикл по диапазону.
+     *
+     * @param variableName имя переменной цикла
+     * @param startInclusive начало диапазона
+     * @param step шаг
+     * @param endInclusive конец диапазона
+     * @param body тело цикла
+     * @return текущая схема
+     */
+    public QuantumCircuit forLoop(
+        final String variableName,
+        final long startInclusive,
+        final long step,
+        final long endInclusive,
+        final OperationBlock body
+    ) {
+        ensureOperationBlockBelongsToCircuit(body);
+        addOperation(new ForLoopOperation(
+            variableName,
+            startInclusive,
+            step,
+            endInclusive,
+            body
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет цикл по runtime/symbolic диапазону.
+     *
+     * @param operation операция цикла
+     * @return текущая схема
+     */
+    public QuantumCircuit symbolicForLoop(final SymbolicForLoopOperation operation) {
+        ensureOperationBelongsToCircuit(operation);
+        addOperation(operation);
+        return this;
+    }
+
+    /**
+     * Добавляет while-цикл.
+     *
+     * @param predicate предикат продолжения
+     * @param body тело цикла
+     * @return текущая схема
+     */
+    public QuantumCircuit whileLoop(
+        final ClassicalPredicate predicate,
+        final OperationBlock body
+    ) {
+        ensureClassicalPredicateBelongsToCircuit(predicate);
+        ensureOperationBlockBelongsToCircuit(body);
+        addOperation(new WhileLoopOperation(
+            predicate,
+            body
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет временную задержку.
+     *
+     * @param duration длительность
+     * @param qubits кубиты задержки
+     * @return текущая схема
+     */
+    public QuantumCircuit delay(
+        final DurationExpression duration,
+        final Qubit... qubits
+    ) {
+        ensureQubitsBelongToCircuit(qubits);
+        addOperation(new DelayOperation(
+            duration,
+            qubits
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет временную задержку по универсальным quantum references.
+     *
+     * @param duration длительность
+     * @param references quantum references
+     * @return текущая схема
+     */
+    public QuantumCircuit delayReferences(
+        final DurationExpression duration,
+        final QuantumReference... references
+    ) {
+        ensureQuantumReferencesBelongToCircuit(references);
+        addOperation(new DelayOperation(
+            duration,
+            references
+        ));
+        return this;
+    }
+
+    /**
+     * Добавляет timing box-блок.
+     *
+     * @param duration длительность или null
+     * @param body тело блока
+     * @return текущая схема
+     */
+    public QuantumCircuit timingBox(
+        final DurationExpression duration,
+        final OperationBlock body
+    ) {
+        ensureOperationBlockBelongsToCircuit(body);
+        addOperation(new TimingBoxOperation(
+            duration,
+            body
+        ));
+        return this;
+    }
+
+    public QuantumCircuit sourceFragment(final ProgramSourceFragment fragment) {
+        addOperation(new SourceFragmentOperation(fragment));
         return this;
     }
 
@@ -788,6 +1073,27 @@ public final class QuantumCircuit {
         }
     }
 
+    private void ensureQuantumReferencesBelongToCircuit(final QuantumReference[] references) {
+        if (references == null) {
+            throw new IllegalArgumentException("Quantum references must not be null.");
+        }
+        for (int i = 0; i < references.length; i++) {
+            ensureQuantumReferenceBelongsToCircuit(references[i]);
+        }
+    }
+
+    private void ensureQuantumReferenceBelongsToCircuit(final QuantumReference reference) {
+        if (reference == null) {
+            throw new IllegalArgumentException("Quantum reference must not be null.");
+        }
+        if (reference.kind() == QuantumReferenceKind.STATIC_QUBIT) {
+            ensureQubitBelongsToCircuit(reference.qubit());
+        } else if (reference.kind() == QuantumReferenceKind.DYNAMIC_REGISTER_INDEX) {
+            ensureQuantumRegisterBelongsToCircuit(reference.register());
+            ensureClassicalExpressionBelongsToCircuit(reference.indexExpression());
+        }
+    }
+
     private void ensureQubitBelongsToCircuit(final Qubit qubit) {
         if (qubit == null) {
             throw new IllegalArgumentException("Qubit must not be null.");
@@ -798,6 +1104,18 @@ public final class QuantumCircuit {
             }
         }
         throw new IllegalArgumentException("Qubit does not belong to this circuit.");
+    }
+
+    private void ensureQuantumRegisterBelongsToCircuit(final QuantumRegister register) {
+        if (register == null) {
+            throw new IllegalArgumentException("Quantum register must not be null.");
+        }
+        for (int i = 0; i < quantumRegisters.size(); i++) {
+            if (quantumRegisters.get(i) == register) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Quantum register does not belong to this circuit.");
     }
 
     private void ensureClassicalBitBelongsToCircuit(final ClassicalBit bit) {
@@ -855,6 +1173,13 @@ public final class QuantumCircuit {
             ensureClassicalBitBelongsToCircuit(expression.bit());
         } else if (expression.kind() == ClassicalExpressionKind.REGISTER_REFERENCE) {
             ensureClassicalRegisterBelongsToCircuit(expression.register());
+        } else if (expression.kind() == ClassicalExpressionKind.BINARY_OPERATION) {
+            ensureClassicalExpressionBelongsToCircuit(expression.leftExpression());
+            ensureClassicalExpressionBelongsToCircuit(expression.rightExpression());
+        } else if (expression.kind() == ClassicalExpressionKind.CALL) {
+            for (int i = 0; i < expression.callArgumentCount(); i++) {
+                ensureClassicalExpressionBelongsToCircuit(expression.callArgument(i));
+            }
         }
     }
 
@@ -863,21 +1188,74 @@ public final class QuantumCircuit {
             throw new IllegalArgumentException("Operation must not be null.");
         }
         if (operation instanceof GateOperation gateOperation) {
-            ensureQubitsBelongToCircuit(gateOperation.qubits());
+            ensureQuantumReferencesBelongToCircuit(gateOperation.qubitReferences());
         } else if (operation instanceof MeasureOperation measureOperation) {
-            ensureQubitBelongsToCircuit(measureOperation.qubit());
+            ensureQuantumReferenceBelongsToCircuit(measureOperation.qubitReference());
             ensureClassicalBitBelongsToCircuit(measureOperation.bit());
         } else if (operation instanceof ResetOperation resetOperation) {
-            ensureQubitBelongsToCircuit(resetOperation.qubit());
+            ensureQuantumReferenceBelongsToCircuit(resetOperation.qubitReference());
         } else if (operation instanceof BarrierOperation barrierOperation) {
             ensureQubitsBelongToCircuit(barrierOperation.qubits());
         } else if (operation instanceof ClassicalAssignmentOperation assignmentOperation) {
             ensureClassicalAssignmentBelongsToCircuit(assignmentOperation.assignment());
+        } else if (operation instanceof ClassicalDeclarationOperation declarationOperation) {
+            if (declarationOperation.hasInitializer()) {
+                ensureClassicalExpressionBelongsToCircuit(declarationOperation.initializer());
+            }
+        } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            for (int i = 0; i < arrayOperation.dimensionCount(); i++) {
+                ensureClassicalExpressionBelongsToCircuit(arrayOperation.dimension(i));
+            }
+        } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+            if (invocationOperation.hasTarget()) {
+                ensureClassicalExpressionBelongsToCircuit(invocationOperation.target());
+            }
+            for (int i = 0; i < invocationOperation.classicalArguments().size(); i++) {
+                ensureClassicalExpressionBelongsToCircuit(invocationOperation.classicalArguments().get(i));
+            }
+            for (int i = 0; i < invocationOperation.quantumArguments().size(); i++) {
+                ensureQuantumReferenceBelongsToCircuit(invocationOperation.quantumArguments().get(i));
+            }
         } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
             ensureClassicalPredicateBelongsToCircuit(controlledOperation.predicate());
             ensureOperationBelongsToCircuit(controlledOperation.operation());
+        } else if (operation instanceof BlockOperation blockOperation) {
+            ensureOperationBlockBelongsToCircuit(blockOperation.body());
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            ensureClassicalPredicateBelongsToCircuit(conditionalOperation.predicate());
+            ensureOperationBlockBelongsToCircuit(conditionalOperation.thenBlock());
+            if (conditionalOperation.hasElseBlock()) {
+                ensureOperationBlockBelongsToCircuit(conditionalOperation.elseBlock());
+            }
+        } else if (operation instanceof ForLoopOperation loopOperation) {
+            ensureOperationBlockBelongsToCircuit(loopOperation.body());
+        } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+            ensureClassicalExpressionBelongsToCircuit(loopOperation.startInclusive());
+            ensureClassicalExpressionBelongsToCircuit(loopOperation.step());
+            ensureClassicalExpressionBelongsToCircuit(loopOperation.endInclusive());
+            ensureOperationBlockBelongsToCircuit(loopOperation.body());
+        } else if (operation instanceof WhileLoopOperation loopOperation) {
+            ensureClassicalPredicateBelongsToCircuit(loopOperation.predicate());
+            ensureOperationBlockBelongsToCircuit(loopOperation.body());
+        } else if (operation instanceof DelayOperation delayOperation) {
+            for (int i = 0; i < delayOperation.qubitCount(); i++) {
+                ensureQuantumReferenceBelongsToCircuit(delayOperation.reference(i));
+            }
+        } else if (operation instanceof TimingBoxOperation boxOperation) {
+            ensureOperationBlockBelongsToCircuit(boxOperation.body());
+        } else if (operation instanceof SourceFragmentOperation) {
+            return;
         } else {
             throw new IllegalArgumentException("Operation is not supported by this circuit.");
+        }
+    }
+
+    private void ensureOperationBlockBelongsToCircuit(final OperationBlock block) {
+        if (block == null) {
+            throw new IllegalArgumentException("Operation block must not be null.");
+        }
+        for (int i = 0; i < block.operationCount(); i++) {
+            ensureOperationBelongsToCircuit(block.operation(i));
         }
     }
 

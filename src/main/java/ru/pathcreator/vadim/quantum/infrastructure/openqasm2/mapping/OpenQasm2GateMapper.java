@@ -88,6 +88,9 @@ public final class OpenQasm2GateMapper {
             } else if (modifier.kind() == GateModifierKind.CONTROLLED) {
                 quantumControlCount += modifier.integerValue();
             } else if (modifier.kind() == GateModifierKind.POWER) {
+                if (modifier.hasPowerExpression()) {
+                    return null;
+                }
                 power *= modifier.doubleValue();
             } else {
                 return null;

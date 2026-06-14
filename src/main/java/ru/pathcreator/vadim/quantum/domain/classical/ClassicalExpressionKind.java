@@ -13,7 +13,12 @@ package ru.pathcreator.vadim.quantum.domain.classical;
  * Тип classical expression.
  */
 public enum ClassicalExpressionKind {
+
     INTEGER,
+    VARIABLE_REFERENCE,
+    BINARY_OPERATION,
     BIT_REFERENCE,
-    REGISTER_REFERENCE
+    REGISTER_REFERENCE,
+    SYMBOLIC_REFERENCE,
+    CALL
 }

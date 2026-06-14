@@ -11,6 +11,7 @@ package ru.pathcreator.vadim.quantum.domain.gate.modifier;
 
 import java.util.Objects;
 
+import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.naming.IdentifierName;
 
 /**
@@ -36,6 +37,11 @@ public final class GateModifier {
     private final double doubleValue;
 
     /**
+     * Символическое выражение степени для POWER, если степень не является числом.
+     */
+    private final ParameterExpression powerExpression;
+
+    /**
      * Имя аннотации для модификатора ANNOTATION.
      */
     private final String annotationName;
@@ -44,11 +50,13 @@ public final class GateModifier {
         final GateModifierKind kind,
         final int integerValue,
         final double doubleValue,
+        final ParameterExpression powerExpression,
         final String annotationName
     ) {
         this.kind = kind;
         this.integerValue = integerValue;
         this.doubleValue = doubleValue;
+        this.powerExpression = powerExpression;
         this.annotationName = annotationName;
     }
 
@@ -62,6 +70,7 @@ public final class GateModifier {
             GateModifierKind.INVERSE,
             0,
             0.0,
+            null,
             null
         );
     }
@@ -80,6 +89,7 @@ public final class GateModifier {
             GateModifierKind.CONTROLLED,
             controlCount,
             0.0,
+            null,
             null
         );
     }
@@ -98,6 +108,26 @@ public final class GateModifier {
             GateModifierKind.POWER,
             0,
             exponent,
+            null,
+            null
+        );
+    }
+
+    /**
+     * Создает модификатор степени gate с выражением, вычисляемым целевой средой.
+     *
+     * @param expression выражение степени
+     * @return модификатор степени
+     */
+    public static GateModifier power(final ParameterExpression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("Gate power expression must not be null.");
+        }
+        return new GateModifier(
+            GateModifierKind.POWER,
+            0,
+            0.0,
+            expression,
             null
         );
     }
@@ -116,6 +146,7 @@ public final class GateModifier {
             GateModifierKind.REPEAT,
             count,
             0.0,
+            null,
             null
         );
     }
@@ -135,6 +166,7 @@ public final class GateModifier {
             GateModifierKind.ANNOTATION,
             0,
             0.0,
+            null,
             identifierName.value()
         );
     }
@@ -167,6 +199,27 @@ public final class GateModifier {
     }
 
     /**
+     * Проверяет, что степень задана выражением, а не числом.
+     *
+     * @return true, если POWER хранит выражение степени
+     */
+    public boolean hasPowerExpression() {
+        return kind == GateModifierKind.POWER && powerExpression != null;
+    }
+
+    /**
+     * Возвращает выражение степени.
+     *
+     * @return выражение степени
+     */
+    public ParameterExpression powerExpression() {
+        if (!hasPowerExpression()) {
+            throw new IllegalStateException("Gate modifier does not have a power expression.");
+        }
+        return powerExpression;
+    }
+
+    /**
      * Возвращает имя аннотации.
      *
      * @return имя аннотации
@@ -193,6 +246,10 @@ public final class GateModifier {
                 modifier.doubleValue
             ) == 0
             && Objects.equals(
+                powerExpression,
+                modifier.powerExpression
+            )
+            && Objects.equals(
                 annotationName,
                 modifier.annotationName
             );
@@ -204,6 +261,7 @@ public final class GateModifier {
             kind,
             integerValue,
             doubleValue,
+            powerExpression,
             annotationName
         );
     }

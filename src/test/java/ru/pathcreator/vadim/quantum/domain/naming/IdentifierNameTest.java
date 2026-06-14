@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class IdentifierNameTest {
+
     @Test
     void createsIdentifierNameFromValidValue() {
         final IdentifierName name = IdentifierName.of(

@@ -13,6 +13,7 @@ package ru.pathcreator.vadim.quantum.domain.classical;
  * Оператор сравнения classical expressions.
  */
 public enum ClassicalComparisonOperator {
+
     EQUAL,
     NOT_EQUAL,
     LESS_THAN,

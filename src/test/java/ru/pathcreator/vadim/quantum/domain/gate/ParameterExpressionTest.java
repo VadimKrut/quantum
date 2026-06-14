@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParameterExpressionTest {
+
     @Test
     void createsNumericParameter() {
         final ParameterExpression expression = ParameterExpression.of(3.141592653589793);

@@ -1,0 +1,891 @@
+/*
+ * Copyright 2026 Vadim Aleksandrovich Zaletaev
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+package ru.pathcreator.vadim.quantum.infrastructure.quil.syntax;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
+import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
+import ru.pathcreator.vadim.quantum.domain.gate.Gate;
+import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
+import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
+import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
+import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
+import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
+import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
+import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
+import ru.pathcreator.vadim.quantum.infrastructure.quil.mapping.QuilGateMapper;
+
+/**
+ * Parser Quil в Quantum IR для instruction subset, который имеет честное отображение в gate-based IR.
+ */
+public final class QuilParser {
+
+    private static final String RAW_MEMORY_REGISTER_BASE_NAME = "ro";
+    private static final String SOURCE_FRAGMENT_FORMAT = "quil";
+    private static final String SOURCE_FRAGMENT_KIND_STATEMENT = "statement";
+    private static final String SOURCE_FRAGMENT_KIND_BLOCK = "block";
+
+    private static final Pattern DECLARE_PATTERN = Pattern.compile("^DECLARE\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\[(\\d+)])?(?:\\s+.*)?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DEFGATE_PATTERN = Pattern.compile("^DEFGATE\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?:$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEASURE_PATTERN = Pattern.compile("^MEASURE\\s+(\\d+)(?:\\s+(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\[(\\d+)])?|(\\d+)|\\[(\\d+)\\]))?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RESET_PATTERN = Pattern.compile("^RESET(?:\\s+(\\d+))?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d+$");
+
+    public QuilParserResult parse(final String source) {
+        final ArrayList<IntegrationDiagnostic> diagnostics = new ArrayList<>();
+        if (source == null) {
+            diagnostics.add(IntegrationDiagnostic.error(
+                IntegrationDiagnosticCode.NULL_INPUT,
+                "Quil source must not be null."
+            ));
+            return new QuilParserResult(
+                null,
+                diagnostics
+            );
+        }
+        if (source.isBlank()) {
+            diagnostics.add(IntegrationDiagnostic.error(
+                IntegrationDiagnosticCode.EMPTY_INPUT,
+                "Quil source must not be blank."
+            ));
+            return new QuilParserResult(
+                null,
+                diagnostics
+            );
+        }
+        final ArrayList<Statement> statements = statements(source);
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final LinkedHashMap<String, GateDefinition> gateDefinitions = parseGateDefinitions(
+            statements,
+            program,
+            diagnostics
+        );
+        final ParsePlan plan = buildPlan(
+            statements,
+            gateDefinitions,
+            diagnostics
+        );
+        if (hasErrors(diagnostics)) {
+            return new QuilParserResult(
+                null,
+                diagnostics
+            );
+        }
+        final QuantumCircuit circuit = program.createCircuit("main");
+        final QuantumRegister qubits = plan.maxQubitIndex() < 0
+            ? null
+            : circuit.createQuantumRegister(
+                "q",
+                plan.maxQubitIndex() + 1
+            );
+        final LinkedHashMap<String, ClassicalRegister> classicalRegisters = new LinkedHashMap<>();
+        for (final String name : plan.classicalRegisterSizes().keySet()) {
+            classicalRegisters.put(
+                name,
+                circuit.createClassicalRegister(
+                    name,
+                    plan.classicalRegisterSizes().get(name).intValue()
+                )
+            );
+        }
+        preserveProgramSourceBlocks(
+            statements,
+            program
+        );
+        parseOperations(
+            statements,
+            program,
+            circuit,
+            qubits,
+            classicalRegisters,
+            plan.rawMemoryRegisterName(),
+            gateDefinitions,
+            diagnostics
+        );
+        if (hasErrors(diagnostics)) {
+            return new QuilParserResult(
+                null,
+                diagnostics
+            );
+        }
+        return new QuilParserResult(
+            program,
+            diagnostics
+        );
+    }
+
+    private static ArrayList<Statement> statements(final String source) {
+        final ArrayList<Statement> statements = new ArrayList<>();
+        final String[] lines = source.split("\\R");
+        for (int i = 0; i < lines.length; i++) {
+            final String text = stripComment(lines[i]).trim();
+            if (!text.isBlank()) {
+                if (isBlockHeader(text)) {
+                    final StringBuilder block = new StringBuilder(rstrip(lines[i]));
+                    final int line = i + 1;
+                    while (i + 1 < lines.length) {
+                        final String nextLine = lines[i + 1];
+                        final String nextText = stripComment(nextLine).trim();
+                        if (
+                            !nextText.isBlank()
+                            && !startsWithWhitespace(nextLine)
+                        ) {
+                            break;
+                        }
+                        i++;
+                        block.append('\n')
+                            .append(rstrip(nextLine));
+                    }
+                    statements.add(new Statement(
+                        text,
+                        block.toString().stripTrailing(),
+                        line,
+                        true
+                    ));
+                    continue;
+                }
+                statements.add(new Statement(
+                    text,
+                    text,
+                    i + 1,
+                    shouldPreserveSourceStatement(text)
+                ));
+            }
+        }
+        return statements;
+    }
+
+    private static boolean isBlockHeader(final String text) {
+        final String upper = text.toUpperCase();
+        return text.endsWith(":")
+            && (
+                upper.startsWith("DEFGATE ")
+                || upper.startsWith("DEFCAL ")
+                || upper.startsWith("DEFCIRCUIT ")
+                || upper.startsWith("DEFFRAME ")
+                || upper.startsWith("DEFWAVEFORM ")
+            );
+    }
+
+    private static boolean startsWithWhitespace(final String line) {
+        return !line.isEmpty()
+            && Character.isWhitespace(line.charAt(0));
+    }
+
+    private static String rstrip(final String value) {
+        int end = value.length();
+        while (
+            end > 0
+            && Character.isWhitespace(value.charAt(end - 1))
+        ) {
+            end--;
+        }
+        return value.substring(
+            0,
+            end
+        );
+    }
+
+    private static boolean shouldPreserveSourceStatement(final String text) {
+        final String upper = text.toUpperCase();
+        return upper.startsWith("PRAGMA ")
+            || upper.startsWith("INCLUDE ")
+            || upper.startsWith("LABEL ")
+            || upper.startsWith("JUMP")
+            || upper.equals("HALT")
+            || upper.equals("WAIT")
+            || upper.equals("NOP")
+            || upper.startsWith("MOVE ")
+            || upper.startsWith("EXCHANGE ")
+            || upper.startsWith("CONVERT ")
+            || upper.startsWith("LOAD ")
+            || upper.startsWith("STORE ")
+            || upper.startsWith("ADD ")
+            || upper.startsWith("SUB ")
+            || upper.startsWith("MUL ")
+            || upper.startsWith("DIV ")
+            || upper.startsWith("NEG ")
+            || upper.startsWith("EQ ")
+            || upper.startsWith("GT ")
+            || upper.startsWith("GE ")
+            || upper.startsWith("LT ")
+            || upper.startsWith("LE ")
+            || upper.startsWith("AND ")
+            || upper.startsWith("IOR ")
+            || upper.startsWith("XOR ")
+            || upper.startsWith("NOT ")
+            || upper.startsWith("DELAY ")
+            || upper.startsWith("FENCE")
+            || upper.startsWith("PULSE ")
+            || upper.startsWith("CAPTURE ")
+            || upper.startsWith("RAW-CAPTURE ")
+            || upper.startsWith("SET-")
+            || upper.startsWith("SHIFT-")
+            || upper.startsWith("SWAP-PHASES ")
+            || upper.startsWith("NONBLOCKING ");
+    }
+
+    private static String stripComment(final String line) {
+        final int position = line.indexOf('#');
+        if (position < 0) {
+            return line;
+        }
+        return line.substring(
+            0,
+            position
+        );
+    }
+
+    private static LinkedHashMap<String, GateDefinition> parseGateDefinitions(
+        final ArrayList<Statement> statements,
+        final QuantumProgram program,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final LinkedHashMap<String, GateDefinition> definitions = new LinkedHashMap<>();
+        for (int i = 0; i < statements.size(); i++) {
+            final Statement statement = statements.get(i);
+            final Matcher matcher = DEFGATE_PATTERN.matcher(statement.text());
+            if (!matcher.matches()) {
+                continue;
+            }
+            try {
+                final GateDefinition definition = GateDefinition.matrix(
+                    matcher.group(1),
+                    parseDefgateParameterNames(matcher.group(2)),
+                    defgateQubitNames(statement),
+                    parseDefgateMatrix(statement)
+                );
+                program.addGateDefinition(definition);
+                definitions.put(
+                    definition.gateName(),
+                    definition
+                );
+            } catch (final IllegalArgumentException exception) {
+                diagnostics.add(error(
+                    IntegrationDiagnosticCode.PARSE_ERROR,
+                    exception.getMessage(),
+                    statement
+                ));
+            }
+        }
+        return definitions;
+    }
+
+    private static List<String> parseDefgateParameterNames(final String text) {
+        if (
+            text == null
+            || text.isBlank()
+        ) {
+            return List.of();
+        }
+        final String[] parts = text.split(",");
+        final String[] names = new String[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            final String trimmed = parts[i].trim();
+            names[i] = trimmed.startsWith("%")
+                ? trimmed.substring(1)
+                : trimmed;
+        }
+        return List.of(names);
+    }
+
+    private static List<String> defgateQubitNames(final Statement statement) {
+        final int matrixSize = parseDefgateMatrix(statement).rowCount();
+        int arity = 0;
+        int size = matrixSize;
+        while (size > 1) {
+            arity++;
+            size /= 2;
+        }
+        final String[] names = new String[arity];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = "q" + i;
+        }
+        return List.of(names);
+    }
+
+    private static GateMatrix parseDefgateMatrix(final Statement statement) {
+        final String[] lines = statement.content().split("\\R");
+        final ArrayList<String[]> rows = new ArrayList<>();
+        for (int i = 1; i < lines.length; i++) {
+            final String line = stripComment(lines[i]).trim();
+            if (line.isBlank()) {
+                continue;
+            }
+            final String[] parts = line.split(",");
+            for (int j = 0; j < parts.length; j++) {
+                parts[j] = parts[j].trim();
+            }
+            rows.add(parts);
+        }
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Quil DEFGATE matrix must not be empty.");
+        }
+        return GateMatrix.of(rows.toArray(new String[0][]));
+    }
+
+    private static ParsePlan buildPlan(
+        final ArrayList<Statement> statements,
+        final LinkedHashMap<String, GateDefinition> gateDefinitions,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        int maxQubitIndex = -1;
+        int maxRawMemoryIndex = -1;
+        final LinkedHashMap<String, Integer> classicalRegisterSizes = new LinkedHashMap<>();
+        for (int i = 0; i < statements.size(); i++) {
+            final Statement statement = statements.get(i);
+            final Matcher declareMatcher = DECLARE_PATTERN.matcher(statement.text());
+            final Matcher measureMatcher = MEASURE_PATTERN.matcher(statement.text());
+            if (statement.sourceOnly()) {
+                continue;
+            }
+            if (declareMatcher.matches()) {
+                if (isBitDeclaration(declareMatcher)) {
+                    classicalRegisterSizes.put(
+                        declareMatcher.group(1),
+                        Integer.valueOf(parseDeclaredBitSize(
+                            declareMatcher,
+                            statement,
+                            diagnostics
+                        ))
+                    );
+                }
+            } else if (measureMatcher.matches()) {
+                maxQubitIndex = Math.max(
+                    maxQubitIndex,
+                    parseNonNegativeInt(
+                        measureMatcher.group(1),
+                        statement,
+                        diagnostics
+                    )
+                );
+                if (rawMemoryIndex(measureMatcher) != null) {
+                    maxRawMemoryIndex = Math.max(
+                        maxRawMemoryIndex,
+                        parseNonNegativeInt(
+                            rawMemoryIndex(measureMatcher),
+                            statement,
+                            diagnostics
+                        )
+                    );
+                }
+            } else {
+                maxQubitIndex = Math.max(
+                    maxQubitIndex,
+                    maxKnownGateQubitIndex(
+                        statement.text(),
+                        gateDefinitions
+                    )
+                );
+            }
+        }
+        final String rawMemoryRegisterName = maxRawMemoryIndex < 0
+            ? null
+            : rawMemoryRegisterName(classicalRegisterSizes);
+        if (rawMemoryRegisterName != null) {
+            classicalRegisterSizes.put(
+                rawMemoryRegisterName,
+                Integer.valueOf(maxRawMemoryIndex + 1)
+            );
+        }
+        return new ParsePlan(
+            maxQubitIndex,
+            classicalRegisterSizes,
+            rawMemoryRegisterName
+        );
+    }
+
+    private static String rawMemoryRegisterName(final LinkedHashMap<String, Integer> classicalRegisterSizes) {
+        if (!classicalRegisterSizes.containsKey(RAW_MEMORY_REGISTER_BASE_NAME)) {
+            return RAW_MEMORY_REGISTER_BASE_NAME;
+        }
+        int suffix = 1;
+        while (classicalRegisterSizes.containsKey(RAW_MEMORY_REGISTER_BASE_NAME + "_" + suffix)) {
+            suffix++;
+        }
+        return RAW_MEMORY_REGISTER_BASE_NAME + "_" + suffix;
+    }
+
+    private static int maxQubitIndex(final String text) {
+        int result = -1;
+        final String[] parts = text.replace(
+            ",",
+            " "
+        ).split("\\s+");
+        for (int i = 1; i < parts.length; i++) {
+            final String token = parts[i].trim();
+            if (INTEGER_PATTERN.matcher(token).matches()) {
+                result = Math.max(
+                    result,
+                    Integer.parseInt(token)
+                );
+            }
+        }
+        return result;
+    }
+
+    private static int maxKnownGateQubitIndex(
+        final String text,
+        final LinkedHashMap<String, GateDefinition> gateDefinitions
+    ) {
+        final Matcher matcher = GATE_PATTERN.matcher(text);
+        if (!matcher.matches()) {
+            return -1;
+        }
+        final Gate gate = QuilGateMapper.fromQuilName(matcher.group(1));
+        if (
+            gate == null
+            && !gateDefinitions.containsKey(matcher.group(1))
+        ) {
+            return -1;
+        }
+        return maxQubitIndex(text);
+    }
+
+    private static void parseOperations(
+        final ArrayList<Statement> statements,
+        final QuantumProgram program,
+        final QuantumCircuit circuit,
+        final QuantumRegister qubits,
+        final LinkedHashMap<String, ClassicalRegister> classicalRegisters,
+        final String rawMemoryRegisterName,
+        final LinkedHashMap<String, GateDefinition> gateDefinitions,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        for (int i = 0; i < statements.size(); i++) {
+            final Statement statement = statements.get(i);
+            if (DEFGATE_PATTERN.matcher(statement.text()).matches()) {
+                continue;
+            }
+            if (isProgramSourceBlock(statement)) {
+                continue;
+            }
+            if (statement.sourceOnly()) {
+                preserveSource(
+                    circuit,
+                    statement
+                );
+                continue;
+            }
+            final Matcher declareMatcher = DECLARE_PATTERN.matcher(statement.text());
+            if (declareMatcher.matches()) {
+                if (!isBitDeclaration(declareMatcher)) {
+                    preserveSource(
+                        circuit,
+                        statement
+                    );
+                }
+                continue;
+            }
+            final Matcher measureMatcher = MEASURE_PATTERN.matcher(statement.text());
+            final Matcher resetMatcher = RESET_PATTERN.matcher(statement.text());
+            if (measureMatcher.matches()) {
+                parseMeasure(
+                    statement,
+                    circuit,
+                    qubits,
+                    classicalRegisters,
+                    rawMemoryRegisterName,
+                    measureMatcher,
+                    diagnostics
+                );
+            } else if (resetMatcher.matches()) {
+                parseReset(
+                    statement,
+                    circuit,
+                    qubits,
+                    resetMatcher,
+                    diagnostics
+                );
+            } else {
+                parseGate(
+                    statement,
+                    program,
+                    circuit,
+                    qubits,
+                    gateDefinitions,
+                    diagnostics
+                );
+            }
+        }
+    }
+
+    private static void preserveProgramSourceBlocks(
+        final ArrayList<Statement> statements,
+        final QuantumProgram program
+    ) {
+        for (int i = 0; i < statements.size(); i++) {
+            final Statement statement = statements.get(i);
+            if (isProgramSourceBlock(statement)) {
+                program.addSourceFragment(sourceFragment(statement));
+            }
+        }
+    }
+
+    private static boolean isProgramSourceBlock(final Statement statement) {
+        if (!statement.sourceOnly()) {
+            return false;
+        }
+        final String upper = statement.text().toUpperCase();
+        return upper.startsWith("DEFCAL ")
+            || upper.startsWith("DEFCIRCUIT ")
+            || upper.startsWith("DEFFRAME ")
+            || upper.startsWith("DEFWAVEFORM ");
+    }
+
+    private static void parseMeasure(
+        final Statement statement,
+        final QuantumCircuit circuit,
+        final QuantumRegister qubits,
+        final LinkedHashMap<String, ClassicalRegister> classicalRegisters,
+        final String rawMemoryRegisterName,
+        final Matcher matcher,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final int qubitIndex = parseNonNegativeInt(
+            matcher.group(1),
+            statement,
+            diagnostics
+        );
+        if (matcher.group(2) == null) {
+            if (rawMemoryIndex(matcher) != null) {
+                final ClassicalRegister register = classicalRegisters.get(rawMemoryRegisterName);
+                final int bitIndex = parseNonNegativeInt(
+                    rawMemoryIndex(matcher),
+                    statement,
+                    diagnostics
+                );
+                circuit.measure(
+                    qubits.get(qubitIndex),
+                    register.get(bitIndex)
+                );
+            }
+            return;
+        }
+        final ClassicalRegister register = classicalRegisters.get(matcher.group(2));
+        if (register == null) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Unknown Quil memory region: " + matcher.group(2) + ".",
+                statement
+            ));
+            return;
+        }
+        final int bitIndex = parseNonNegativeInt(
+            matcher.group(3) == null
+                ? "0"
+                : matcher.group(3),
+            statement,
+            diagnostics
+        );
+        if (bitIndex >= register.size()) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Quil memory reference is outside declared region.",
+                statement
+            ));
+            return;
+        }
+        circuit.measure(
+            qubits.get(qubitIndex),
+            register.get(bitIndex)
+        );
+    }
+
+    private static String rawMemoryIndex(final Matcher matcher) {
+        if (matcher.group(4) != null) {
+            return matcher.group(4);
+        }
+        return matcher.group(5);
+    }
+
+    private static void parseReset(
+        final Statement statement,
+        final QuantumCircuit circuit,
+        final QuantumRegister qubits,
+        final Matcher matcher,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (matcher.group(1) == null) {
+            for (int i = 0; i < qubits.size(); i++) {
+                circuit.reset(qubits.get(i));
+            }
+            return;
+        }
+        circuit.reset(qubits.get(parseNonNegativeInt(
+            matcher.group(1),
+            statement,
+            diagnostics
+        )));
+    }
+
+    private static void parseGate(
+        final Statement statement,
+        final QuantumProgram program,
+        final QuantumCircuit circuit,
+        final QuantumRegister qubits,
+        final LinkedHashMap<String, GateDefinition> gateDefinitions,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final Matcher matcher = GATE_PATTERN.matcher(statement.text());
+        if (!matcher.matches()) {
+            preserveSource(
+                circuit,
+                statement
+            );
+            return;
+        }
+        Gate gate = QuilGateMapper.fromQuilName(matcher.group(1));
+        if (gate == null) {
+            gate = gateDefinitions.get(matcher.group(1));
+        }
+        final String[] qubitTokens = matcher.group(3).replace(
+            ",",
+            " "
+        ).trim().split("\\s+");
+        if (gate == null) {
+            gate = createExternalGateDefinition(
+                program,
+                gateDefinitions,
+                matcher.group(1),
+                qubitTokens.length,
+                parameterCount(matcher.group(2))
+            );
+        }
+        if (qubitTokens.length != gate.arity()) {
+            preserveSource(
+                circuit,
+                statement
+            );
+            return;
+        }
+        final ParameterExpression[] parameters = parseParameters(
+            matcher.group(2),
+            gate.parameterCount(),
+            statement
+        );
+        if (parameters == null) {
+            preserveSource(
+                circuit,
+                statement
+            );
+            return;
+        }
+        final ru.pathcreator.vadim.quantum.domain.bit.Qubit[] operationQubits = new ru.pathcreator.vadim.quantum.domain.bit.Qubit[qubitTokens.length];
+        for (int i = 0; i < qubitTokens.length; i++) {
+            operationQubits[i] = qubits.get(parseNonNegativeInt(
+                qubitTokens[i],
+                statement,
+                diagnostics
+            ));
+        }
+        circuit.parameterizedGate(
+            gate,
+            parameters,
+            operationQubits
+        );
+    }
+
+    private static GateDefinition createExternalGateDefinition(
+        final QuantumProgram program,
+        final LinkedHashMap<String, GateDefinition> gateDefinitions,
+        final String name,
+        final int arity,
+        final int parameterCount
+    ) {
+        final String[] parameterNames = new String[parameterCount];
+        for (int i = 0; i < parameterNames.length; i++) {
+            parameterNames[i] = "p" + i;
+        }
+        final String[] qubitNames = new String[arity];
+        for (int i = 0; i < qubitNames.length; i++) {
+            qubitNames[i] = "q" + i;
+        }
+        final GateDefinition definition = GateDefinition.opaque(
+            name,
+            List.of(parameterNames),
+            List.of(qubitNames)
+        );
+        program.addGateDefinition(definition);
+        gateDefinitions.put(
+            definition.gateName(),
+            definition
+        );
+        return definition;
+    }
+
+    private static int parameterCount(final String text) {
+        if (
+            text == null
+            || text.isBlank()
+        ) {
+            return 0;
+        }
+        return text.split(",").length;
+    }
+
+    private static ParameterExpression[] parseParameters(
+        final String text,
+        final int expectedCount,
+        final Statement statement
+    ) {
+        if (expectedCount == 0) {
+            if (text != null) {
+                return null;
+            }
+            return new ParameterExpression[0];
+        }
+        if (text == null) {
+            return null;
+        }
+        final String[] parts = text.split(",");
+        if (parts.length != expectedCount) {
+            return null;
+        }
+        final ParameterExpression[] parameters = new ParameterExpression[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            try {
+                parameters[i] = QuilParameterParser.parse(parts[i]);
+            } catch (final IllegalArgumentException exception) {
+                return null;
+            }
+        }
+        return parameters;
+    }
+
+    private static boolean isBitDeclaration(final Matcher matcher) {
+        return "BIT".equalsIgnoreCase(matcher.group(2));
+    }
+
+    private static int parseDeclaredBitSize(
+        final Matcher matcher,
+        final Statement statement,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (matcher.group(3) == null) {
+            return 1;
+        }
+        return parsePositiveInt(
+            matcher.group(3),
+            statement,
+            diagnostics
+        );
+    }
+
+    private static void preserveSource(
+        final QuantumCircuit circuit,
+        final Statement statement
+    ) {
+        circuit.sourceFragment(sourceFragment(statement));
+    }
+
+    private static ProgramSourceFragment sourceFragment(final Statement statement) {
+        return new ProgramSourceFragment(
+            SOURCE_FRAGMENT_FORMAT,
+            statement.sourceOnly()
+                ? SOURCE_FRAGMENT_KIND_BLOCK
+                : SOURCE_FRAGMENT_KIND_STATEMENT,
+            statement.content()
+        );
+    }
+
+    private static int parsePositiveInt(
+        final String value,
+        final Statement statement,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final int parsed = parseNonNegativeInt(
+            value,
+            statement,
+            diagnostics
+        );
+        if (parsed <= 0) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Quil size must be positive.",
+                statement
+            ));
+        }
+        return parsed;
+    }
+
+    private static int parseNonNegativeInt(
+        final String value,
+        final Statement statement,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        try {
+            final long parsed = Long.parseLong(value);
+            if (
+                parsed < 0L
+                || parsed > Integer.MAX_VALUE
+            ) {
+                diagnostics.add(error(
+                    IntegrationDiagnosticCode.PARSE_ERROR,
+                    "Quil integer is outside non-negative Java int range.",
+                    statement
+                ));
+                return 0;
+            }
+            return (int) parsed;
+        } catch (final NumberFormatException exception) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Expected Quil integer.",
+                statement
+            ));
+            return 0;
+        }
+    }
+
+    private static IntegrationDiagnostic error(
+        final IntegrationDiagnosticCode code,
+        final String message,
+        final Statement statement
+    ) {
+        return IntegrationDiagnostic.error(
+            code,
+            message,
+            statement.line(),
+            1
+        );
+    }
+
+    private static boolean hasErrors(final ArrayList<IntegrationDiagnostic> diagnostics) {
+        for (int i = 0; i < diagnostics.size(); i++) {
+            if (diagnostics.get(i).isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private record Statement(
+        String text,
+        String content,
+        int line,
+        boolean sourceOnly
+    ) {
+    }
+
+    private record ParsePlan(
+        int maxQubitIndex,
+        LinkedHashMap<String, Integer> classicalRegisterSizes,
+        String rawMemoryRegisterName
+    ) {
+    }
+}

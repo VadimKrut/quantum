@@ -15,8 +15,11 @@ import org.junit.jupiter.api.Test;
 
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -69,5 +72,37 @@ class CapabilityPreflightCheckerTest {
             IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
             result.diagnostics().get(0).code()
         );
+    }
+
+    @Test
+    void reportsDynamicQubitReferencesWhenTargetDoesNotSupportThem() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("main");
+        final QuantumRegister buffer = circuit.createQuantumRegister(
+            "buffer",
+            4
+        );
+        circuit.gateReferences(
+            StandardGate.H,
+            QuantumReference.dynamicIndex(
+                buffer,
+                ClassicalExpression.variable("address")
+            )
+        );
+
+        final CapabilityPreflightResult result = new CapabilityPreflightChecker().check(
+            program,
+            IntegrationCapabilityProfile.of(
+                IntegrationFormat.QUIL,
+                EnumSet.of(IntegrationCapability.QUANTUM_REGISTERS)
+            )
+        );
+
+        assertFalse(result.isSuccess());
+        assertEquals(
+            IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
+            result.diagnostics().get(0).code()
+        );
+        assertTrue(result.diagnostics().get(0).message().contains("dynamic qubit references"));
     }
 }

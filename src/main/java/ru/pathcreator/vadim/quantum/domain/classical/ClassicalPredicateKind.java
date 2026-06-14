@@ -13,6 +13,7 @@ package ru.pathcreator.vadim.quantum.domain.classical;
  * Тип classical predicate.
  */
 public enum ClassicalPredicateKind {
+
     COMPARISON,
     BOOLEAN,
     NOT

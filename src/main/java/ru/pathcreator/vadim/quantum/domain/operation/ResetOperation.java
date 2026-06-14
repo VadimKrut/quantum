@@ -14,25 +14,34 @@ import java.util.Objects;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 
 /**
- * Неизменяемая операция сброса кубита.
+ * Неизменяемая операция сброса qubit reference.
  */
 public final class ResetOperation implements Operation {
 
     /**
-     * Кубит, который нужно сбросить.
+     * Ссылка на qubit, который нужно сбросить.
      */
-    private final Qubit qubit;
+    private final QuantumReference qubitReference;
 
     /**
-     * Создает immutable операцию сброса.
+     * Создает reset статического qubit.
      *
-     * @param qubit сбрасываемый кубит
+     * @param qubit сбрасываемый qubit
      */
     public ResetOperation(final Qubit qubit) {
-        if (qubit == null) {
-            throw new IllegalArgumentException("Reset qubit must not be null.");
+        this(QuantumReference.staticQubit(qubit));
+    }
+
+    /**
+     * Создает reset qubit reference.
+     *
+     * @param qubitReference сбрасываемая ссылка на qubit
+     */
+    public ResetOperation(final QuantumReference qubitReference) {
+        if (qubitReference == null) {
+            throw new IllegalArgumentException("Reset qubit reference must not be null.");
         }
-        this.qubit = qubit;
+        this.qubitReference = qubitReference;
     }
 
     @Override
@@ -41,12 +50,21 @@ public final class ResetOperation implements Operation {
     }
 
     /**
-     * Возвращает сбрасываемый кубит.
+     * Возвращает статический сбрасываемый qubit.
      *
-     * @return сбрасываемый кубит
+     * @return сбрасываемый qubit
      */
     public Qubit qubit() {
-        return qubit;
+        return qubitReference.qubit();
+    }
+
+    /**
+     * Возвращает ссылку на сбрасываемый qubit.
+     *
+     * @return ссылка на qubit
+     */
+    public QuantumReference qubitReference() {
+        return qubitReference;
     }
 
     @Override
@@ -58,13 +76,13 @@ public final class ResetOperation implements Operation {
             return false;
         }
         return Objects.equals(
-            qubit,
-            operation.qubit
+            qubitReference,
+            operation.qubitReference
         );
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(qubit);
+        return Objects.hash(qubitReference);
     }
 }

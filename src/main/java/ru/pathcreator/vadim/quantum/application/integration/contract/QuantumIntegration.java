@@ -13,4 +13,6 @@ package ru.pathcreator.vadim.quantum.application.integration.contract;
  * Двунаправленная внешняя интеграция: export из Quantum IR и import обратно в Quantum IR.
  */
 public interface QuantumIntegration extends QuantumExporter, QuantumImporter {
+
+    // Объединяет контракты import/export без дополнительных методов.
 }

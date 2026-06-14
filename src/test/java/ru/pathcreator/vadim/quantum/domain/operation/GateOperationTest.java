@@ -12,6 +12,7 @@ package ru.pathcreator.vadim.quantum.domain.operation;
 import org.junit.jupiter.api.Test;
 
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -90,6 +91,40 @@ class GateOperationTest {
     }
 
     @Test
+    void createsGateOperationWithDynamicQubitReference() {
+        final QuantumRegister buffer = QuantumRegister.create(
+            "buffer",
+            4
+        );
+        final QuantumRegister q = QuantumRegister.create(
+            "q",
+            1
+        );
+        final QuantumReference dynamicReference = QuantumReference.dynamicIndex(
+            buffer,
+            ClassicalExpression.variable("address")
+        );
+        final GateOperation operation = GateOperation.ofReferences(
+            StandardGate.CY,
+            dynamicReference,
+            QuantumReference.staticQubit(q.get(0))
+        );
+
+        assertSame(
+            dynamicReference,
+            operation.qubitReference(0)
+        );
+        assertEquals(
+            "address",
+            operation.qubitReference(0).indexExpression().variableName()
+        );
+        assertThrows(
+            IllegalStateException.class,
+            () -> operation.qubit(0)
+        );
+    }
+
+    @Test
     void rejectsWrongGateArity() {
         final QuantumRegister register = QuantumRegister.create(
             "q",
@@ -147,7 +182,7 @@ class GateOperationTest {
             IllegalArgumentException.class,
             () -> new GateOperation(
                 StandardGate.H,
-                null,
+                (Qubit[]) null,
                 new ParameterExpression[0]
             )
         );

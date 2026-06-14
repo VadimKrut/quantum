@@ -22,18 +22,47 @@ import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.Persisten
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgument;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgumentKind;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableBarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableBlockOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalAssignmentOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalExpressionKind;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalPredicate;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableClassicalPredicateKind;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableConditionalBlockOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableDelayOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableGateOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableMeasureOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationBlock;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationKind;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableResetOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableTimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.callable.template.CallableWhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBooleanOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpressionKind;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicateKind;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalType;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind;
 import ru.pathcreator.vadim.quantum.domain.gate.DistinctQubitsGateValidationRule;
 import ru.pathcreator.vadim.quantum.domain.gate.Gate;
 import ru.pathcreator.vadim.quantum.domain.gate.GateBodyOperation;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinitionKind;
+import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
 import ru.pathcreator.vadim.quantum.domain.gate.GateValidationRule;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
@@ -50,17 +79,34 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationKind;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
+import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
+import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
+import ru.pathcreator.vadim.quantum.domain.timing.DurationUnit;
 import ru.pathcreator.vadim.quantum.domain.validation.QuantumProgramValidator;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationError;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationResult;
@@ -199,6 +245,11 @@ public final class QuantumIrJsonReader {
             }
             state.addGateDefinition(definition);
         }
+        readProgramLevelDeclarations(
+            node,
+            program,
+            state
+        );
         final JsonNode circuits = requiredArray(
             node,
             "circuits"
@@ -215,6 +266,551 @@ public final class QuantumIrJsonReader {
             );
         }
         return program;
+    }
+
+    private static void readProgramLevelDeclarations(
+        final JsonNode node,
+        final QuantumProgram program,
+        final ReadState state
+    ) {
+        readClassicalDeclarations(
+            optionalArray(
+                node,
+                "classicalDeclarations"
+            ),
+            program
+        );
+        readCallableDefinitions(
+            optionalArray(
+                node,
+                "callableDefinitions"
+            ),
+            program,
+            state
+        );
+        readExternalCallableDeclarations(
+            optionalArray(
+                node,
+                "externalCallableDeclarations"
+            ),
+            program
+        );
+        readCalibrationDefinitions(
+            optionalArray(
+                node,
+                "calibrationDefinitions"
+            ),
+            program
+        );
+        readSourceFragments(
+            optionalArray(
+                node,
+                "sourceFragments"
+            ),
+            program
+        );
+    }
+
+    private static void readSourceFragments(
+        final JsonNode node,
+        final QuantumProgram program
+    ) {
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "program.sourceFragments"
+            );
+            try {
+                program.addSourceFragment(new ProgramSourceFragment(
+                    requiredText(
+                        item,
+                        "format"
+                    ),
+                    requiredText(
+                        item,
+                        "kind"
+                    ),
+                    requiredText(
+                        item,
+                        "content"
+                    )
+                ));
+            } catch (final IllegalArgumentException exception) {
+                throw invalidValue(exception);
+            }
+        }
+    }
+
+    private static void readClassicalDeclarations(
+        final JsonNode node,
+        final QuantumProgram program
+    ) {
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "program.classicalDeclarations"
+            );
+            try {
+                program.addClassicalDeclaration(new ClassicalDeclaration(
+                    requiredText(
+                        item,
+                        "name"
+                    ),
+                    readClassicalType(requiredObject(
+                        item,
+                        "type"
+                    ))
+                ));
+            } catch (final IllegalArgumentException exception) {
+                throw invalidValue(exception);
+            }
+        }
+    }
+
+    private static void readCallableDefinitions(
+        final JsonNode node,
+        final QuantumProgram program,
+        final ReadState state
+    ) {
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "program.callableDefinitions"
+            );
+            try {
+                program.addCallableDefinition(new CallableDefinition(
+                    requiredText(
+                        item,
+                        "name"
+                    ),
+                    readCallableOperationBlock(
+                        requiredArray(
+                            item,
+                            "body"
+                        ),
+                        state
+                    ),
+                    readCallableArguments(requiredArray(
+                        item,
+                        "arguments"
+                    ))
+                ));
+            } catch (final IllegalArgumentException exception) {
+                throw invalidValue(exception);
+            }
+        }
+    }
+
+    private static CallableOperationBlock readCallableOperationBlock(
+        final JsonNode node,
+        final ReadState state
+    ) {
+        final ArrayList<CallableOperation> operations = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            operations.add(readCallableOperation(
+                requiredArrayElementObject(
+                    node,
+                    i,
+                    "callable.body"
+                ),
+                state
+            ));
+        }
+        return CallableOperationBlock.of(operations);
+    }
+
+    private static CallableOperation readCallableOperation(
+        final JsonNode node,
+        final ReadState state
+    ) {
+        final CallableOperationKind kind = enumValue(
+            CallableOperationKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "callableOperation.kind"
+        );
+        try {
+            return switch (kind) {
+                case GATE -> CallableGateOperation.parameterized(
+                    readGate(
+                        requiredObject(
+                            node,
+                            "gate"
+                        ),
+                        state
+                    ),
+                    readParameterExpressions(requiredArray(
+                        node,
+                        "parameters"
+                    )),
+                    readTextArray(requiredArray(
+                        node,
+                        "qubits"
+                    ))
+                );
+                case MEASURE -> new CallableMeasureOperation(
+                    requiredText(
+                        node,
+                        "qubit"
+                    ),
+                    requiredText(
+                        node,
+                        "bit"
+                    )
+                );
+                case RESET -> new CallableResetOperation(requiredText(
+                    node,
+                    "qubit"
+                ));
+                case BARRIER -> new CallableBarrierOperation(readTextArray(requiredArray(
+                    node,
+                    "qubits"
+                )));
+                case CLASSICAL_ASSIGNMENT -> new CallableClassicalAssignmentOperation(
+                    readCallableClassicalAssignment(requiredObject(
+                        node,
+                        "assignment"
+                    ))
+                );
+                case BLOCK -> new CallableBlockOperation(readCallableOperationBlock(
+                    requiredArray(
+                        node,
+                        "body"
+                    ),
+                    state
+                ));
+                case CONDITIONAL_BLOCK -> new CallableConditionalBlockOperation(
+                    readCallableClassicalPredicate(requiredObject(
+                        node,
+                        "predicate"
+                    )),
+                    readCallableOperationBlock(
+                        requiredArray(
+                            node,
+                            "then"
+                        ),
+                        state
+                    ),
+                    node.has("else") ? readCallableOperationBlock(
+                        requiredArray(
+                            node,
+                            "else"
+                        ),
+                        state
+                    ) : null
+                );
+                case FOR_LOOP -> new CallableForLoopOperation(
+                    requiredText(
+                        node,
+                        "variable"
+                    ),
+                    requiredLong(
+                        node,
+                        "startInclusive"
+                    ),
+                    requiredLong(
+                        node,
+                        "step"
+                    ),
+                    requiredLong(
+                        node,
+                        "endInclusive"
+                    ),
+                    readCallableOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state
+                    )
+                );
+                case WHILE_LOOP -> new CallableWhileLoopOperation(
+                    readCallableClassicalPredicate(requiredObject(
+                        node,
+                        "predicate"
+                    )),
+                    readCallableOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state
+                    )
+                );
+                case DELAY -> new CallableDelayOperation(
+                    readDuration(requiredObject(
+                        node,
+                        "duration"
+                    )),
+                    readTextArray(requiredArray(
+                        node,
+                        "qubits"
+                    ))
+                );
+                case TIMING_BOX -> new CallableTimingBoxOperation(
+                    node.has("duration") ? readDuration(requiredObject(
+                        node,
+                        "duration"
+                    )) : null,
+                    readCallableOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state
+                    )
+                );
+            };
+        } catch (final IllegalArgumentException exception) {
+            throw invalidValue(exception);
+        }
+    }
+
+    private static CallableClassicalAssignment readCallableClassicalAssignment(final JsonNode node) {
+        return new CallableClassicalAssignment(
+            readCallableClassicalExpression(requiredObject(
+                node,
+                "target"
+            )),
+            readCallableClassicalExpression(requiredObject(
+                node,
+                "value"
+            ))
+        );
+    }
+
+    private static CallableClassicalExpression readCallableClassicalExpression(final JsonNode node) {
+        final CallableClassicalExpressionKind kind = enumValue(
+            CallableClassicalExpressionKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "callableClassicalExpression.kind"
+        );
+        return switch (kind) {
+            case INTEGER -> CallableClassicalExpression.integer(requiredLong(
+                node,
+                "value"
+            ));
+            case ARGUMENT_REFERENCE -> CallableClassicalExpression.argument(requiredText(
+                node,
+                "argument"
+            ));
+        };
+    }
+
+    private static CallableClassicalPredicate readCallableClassicalPredicate(final JsonNode node) {
+        final CallableClassicalPredicateKind kind = enumValue(
+            CallableClassicalPredicateKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "callableClassicalPredicate.kind"
+        );
+        return switch (kind) {
+            case COMPARISON -> CallableClassicalPredicate.compare(
+                readCallableClassicalExpression(requiredObject(
+                    node,
+                    "left"
+                )),
+                enumValue(
+                    ClassicalComparisonOperator.class,
+                    requiredText(
+                        node,
+                        "operator"
+                    ),
+                    "callableClassicalPredicate.operator"
+                ),
+                readCallableClassicalExpression(requiredObject(
+                    node,
+                    "right"
+                ))
+            );
+            case NOT -> CallableClassicalPredicate.not(readCallableClassicalPredicate(requiredObject(
+                node,
+                "predicate"
+            )));
+            case BOOLEAN -> readCallableBooleanPredicate(node);
+        };
+    }
+
+    private static CallableClassicalPredicate readCallableBooleanPredicate(final JsonNode node) {
+        final CallableClassicalPredicate left = readCallableClassicalPredicate(requiredObject(
+            node,
+            "left"
+        ));
+        final CallableClassicalPredicate right = readCallableClassicalPredicate(requiredObject(
+            node,
+            "right"
+        ));
+        final ClassicalBooleanOperator operator = enumValue(
+            ClassicalBooleanOperator.class,
+            requiredText(
+                node,
+                "operator"
+            ),
+            "callableClassicalPredicate.operator"
+        );
+        if (operator == ClassicalBooleanOperator.AND) {
+            return CallableClassicalPredicate.and(
+                left,
+                right
+            );
+        }
+        return CallableClassicalPredicate.or(
+            left,
+            right
+        );
+    }
+
+    private static void readExternalCallableDeclarations(
+        final JsonNode node,
+        final QuantumProgram program
+    ) {
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "program.externalCallableDeclarations"
+            );
+            try {
+                program.addExternalCallableDeclaration(new ExternalCallableDeclaration(
+                    requiredText(
+                        item,
+                        "name"
+                    ),
+                    item.has("returnType")
+                        ? readClassicalType(requiredObject(
+                            item,
+                            "returnType"
+                        ))
+                        : null,
+                    readCallableArguments(requiredArray(
+                        item,
+                        "arguments"
+                    ))
+                ));
+            } catch (final IllegalArgumentException exception) {
+                throw invalidValue(exception);
+            }
+        }
+    }
+
+    private static void readCalibrationDefinitions(
+        final JsonNode node,
+        final QuantumProgram program
+    ) {
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "program.calibrationDefinitions"
+            );
+            try {
+                program.addCalibrationDefinition(new CalibrationDefinition(
+                    requiredText(
+                        item,
+                        "targetName"
+                    ),
+                    readTextList(requiredArray(
+                        item,
+                        "parameterNames"
+                    )),
+                    readTextList(requiredArray(
+                        item,
+                        "qubitNames"
+                    )),
+                    requiredText(
+                        item,
+                        "bodyLanguage"
+                    ),
+                    requiredText(
+                        item,
+                        "body"
+                    )
+                ));
+            } catch (final IllegalArgumentException exception) {
+                throw invalidValue(exception);
+            }
+        }
+    }
+
+    private static ClassicalType readClassicalType(final JsonNode node) {
+        final ClassicalTypeKind kind = enumValue(
+            ClassicalTypeKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "classicalType.kind"
+        );
+        if (node.has("bitWidth")) {
+            return ClassicalType.sized(
+                kind,
+                requiredInt(
+                    node,
+                    "bitWidth"
+                )
+            );
+        }
+        return ClassicalType.of(kind);
+    }
+
+    private static ClassicalDeclaration readClassicalDeclaration(final JsonNode node) {
+        return new ClassicalDeclaration(
+            requiredText(
+                node,
+                "name"
+            ),
+            readClassicalType(requiredObject(
+                node,
+                "type"
+            ))
+        );
+    }
+
+    private static CallableArgument[] readCallableArguments(final JsonNode node) {
+        final CallableArgument[] arguments = new CallableArgument[node.size()];
+        for (int i = 0; i < node.size(); i++) {
+            final JsonNode item = requiredArrayElementObject(
+                node,
+                i,
+                "callable.arguments"
+            );
+            final CallableArgumentKind kind = enumValue(
+                CallableArgumentKind.class,
+                requiredText(
+                    item,
+                    "kind"
+                ),
+                "callableArgument.kind"
+            );
+            if (kind == CallableArgumentKind.QUBIT) {
+                arguments[i] = CallableArgument.qubit(requiredText(
+                    item,
+                    "name"
+                ));
+            } else {
+                arguments[i] = CallableArgument.classical(
+                    requiredText(
+                        item,
+                        "name"
+                    ),
+                    readClassicalType(requiredObject(
+                        item,
+                        "classicalType"
+                    ))
+                );
+            }
+        }
+        return arguments;
     }
 
     private static GateDefinition readGateDefinition(
@@ -266,6 +862,17 @@ public final class QuantumIrJsonReader {
                     qubitNames
                 );
             }
+            if (kind == GateDefinitionKind.MATRIX) {
+                return GateDefinition.matrix(
+                    name,
+                    parameterNames,
+                    qubitNames,
+                    readGateMatrix(requiredArray(
+                        node,
+                        "matrix"
+                    ))
+                );
+            }
             return GateDefinition.composite(
                 name,
                 parameterNames,
@@ -281,6 +888,26 @@ public final class QuantumIrJsonReader {
         } catch (final IllegalArgumentException exception) {
             throw invalidValue(exception);
         }
+    }
+
+    private static GateMatrix readGateMatrix(final JsonNode node) {
+        final String[][] entries = new String[node.size()][];
+        for (int row = 0; row < node.size(); row++) {
+            final JsonNode rowNode = requiredArrayElementArray(
+                node,
+                row,
+                "gateDefinition.matrix"
+            );
+            entries[row] = new String[rowNode.size()];
+            for (int column = 0; column < rowNode.size(); column++) {
+                final JsonNode item = rowNode.get(column);
+                if (!item.isTextual()) {
+                    throw invalidStructure("Gate matrix entry must be text.");
+                }
+                entries[row][column] = item.asText();
+            }
+        }
+        return GateMatrix.of(entries);
     }
 
     private static List<GateValidationRule> readValidationRules(final JsonNode node) {
@@ -483,7 +1110,7 @@ public final class QuantumIrJsonReader {
         );
         try {
             return switch (kind) {
-                case GATE -> GateOperation.parameterized(
+                case GATE -> GateOperation.parameterizedReferences(
                     readGate(
                         requiredObject(
                             node,
@@ -495,20 +1122,14 @@ public final class QuantumIrJsonReader {
                         node,
                         "parameters"
                     )),
-                    readQubits(
-                        requiredArray(
-                            node,
-                            "qubits"
-                        ),
+                    readOperationQuantumReferences(
+                        node,
                         circuitState
                     )
                 );
                 case MEASURE -> new MeasureOperation(
-                    readQubit(
-                        requiredText(
-                            node,
-                            "qubit"
-                        ),
+                    readOperationQuantumReference(
+                        node,
                         circuitState
                     ),
                     readClassicalBit(
@@ -519,11 +1140,8 @@ public final class QuantumIrJsonReader {
                         circuitState
                     )
                 );
-                case RESET -> new ResetOperation(readQubit(
-                    requiredText(
-                        node,
-                        "qubit"
-                    ),
+                case RESET -> new ResetOperation(readOperationQuantumReference(
+                    node,
                     circuitState
                 ));
                 case BARRIER -> new BarrierOperation(readQubits(
@@ -557,6 +1175,73 @@ public final class QuantumIrJsonReader {
                     ),
                     circuitState
                 ));
+                case CLASSICAL_DECLARATION -> new ClassicalDeclarationOperation(
+                    readClassicalDeclaration(requiredObject(
+                        node,
+                        "declaration"
+                    )),
+                    node.has("initializer")
+                        ? readClassicalExpression(
+                            requiredObject(
+                                node,
+                                "initializer"
+                            ),
+                            circuitState
+                        )
+                        : null
+                );
+                case CLASSICAL_ARRAY_DECLARATION -> new ClassicalArrayDeclarationOperation(
+                    requiredText(
+                        node,
+                        "name"
+                    ),
+                    readClassicalType(requiredObject(
+                        node,
+                        "elementType"
+                    )),
+                    readClassicalExpressionList(
+                        requiredArray(
+                            node,
+                            "dimensions"
+                        ),
+                        circuitState
+                    ),
+                    node.has("initializerText")
+                        ? requiredText(
+                            node,
+                            "initializerText"
+                        )
+                        : null
+                );
+                case CALLABLE_INVOCATION -> new CallableInvocationOperation(
+                    requiredText(
+                        node,
+                        "callable"
+                    ),
+                    node.has("target")
+                        ? readClassicalExpression(
+                            requiredObject(
+                                node,
+                                "target"
+                            ),
+                            circuitState
+                        )
+                        : null,
+                    readClassicalExpressionList(
+                        requiredArray(
+                            node,
+                            "classicalArguments"
+                        ),
+                        circuitState
+                    ),
+                    readQuantumReferenceList(
+                        requiredArray(
+                            node,
+                            "quantumArguments"
+                        ),
+                        circuitState
+                    )
+                );
                 case CLASSICALLY_CONTROLLED -> new ClassicallyControlledOperation(
                     readClassicalPredicate(
                         requiredObject(
@@ -574,10 +1259,228 @@ public final class QuantumIrJsonReader {
                         circuitState
                     )
                 );
+                case BLOCK -> new BlockOperation(readOperationBlock(
+                    requiredArray(
+                        node,
+                        "body"
+                    ),
+                    state,
+                    circuitState
+                ));
+                case CONDITIONAL_BLOCK -> new ConditionalBlockOperation(
+                    readClassicalPredicate(
+                        requiredObject(
+                            node,
+                            "predicate"
+                        ),
+                        circuitState
+                    ),
+                    readOperationBlock(
+                        requiredArray(
+                            node,
+                            "then"
+                        ),
+                        state,
+                        circuitState
+                    ),
+                    node.has("else") ? readOperationBlock(
+                        requiredArray(
+                            node,
+                            "else"
+                        ),
+                        state,
+                        circuitState
+                    ) : null
+                );
+                case FOR_LOOP -> new ForLoopOperation(
+                    requiredText(
+                        node,
+                        "variable"
+                    ),
+                    requiredLong(
+                        node,
+                        "startInclusive"
+                    ),
+                    requiredLong(
+                        node,
+                        "step"
+                    ),
+                    requiredLong(
+                        node,
+                        "endInclusive"
+                    ),
+                    readOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state,
+                        circuitState
+                    )
+                );
+                case SYMBOLIC_FOR_LOOP -> new SymbolicForLoopOperation(
+                    requiredText(
+                        node,
+                        "variable"
+                    ),
+                    node.has("variableType")
+                        ? requiredText(
+                            node,
+                            "variableType"
+                        )
+                        : null,
+                    readClassicalExpression(
+                        requiredObject(
+                            node,
+                            "startInclusive"
+                        ),
+                        circuitState
+                    ),
+                    readClassicalExpression(
+                        requiredObject(
+                            node,
+                            "step"
+                        ),
+                        circuitState
+                    ),
+                    readClassicalExpression(
+                        requiredObject(
+                            node,
+                            "endInclusive"
+                        ),
+                        circuitState
+                    ),
+                    readOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state,
+                        circuitState
+                    )
+                );
+                case WHILE_LOOP -> new WhileLoopOperation(
+                    readClassicalPredicate(
+                        requiredObject(
+                            node,
+                            "predicate"
+                        ),
+                        circuitState
+                    ),
+                    readOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state,
+                        circuitState
+                    )
+                );
+                case DELAY -> new DelayOperation(
+                    readDuration(requiredObject(
+                        node,
+                        "duration"
+                    )),
+                    readOperationQuantumReferences(
+                        node,
+                        circuitState
+                    )
+                );
+                case TIMING_BOX -> new TimingBoxOperation(
+                    node.has("duration") ? readDuration(requiredObject(
+                        node,
+                        "duration"
+                    )) : null,
+                    readOperationBlock(
+                        requiredArray(
+                            node,
+                            "body"
+                        ),
+                        state,
+                        circuitState
+                    )
+                );
+                case SOURCE_FRAGMENT -> new SourceFragmentOperation(readSourceFragment(requiredObject(
+                    node,
+                    "fragment"
+                )));
             };
         } catch (final IllegalArgumentException exception) {
             throw invalidValue(exception);
         }
+    }
+
+    private static ProgramSourceFragment readSourceFragment(final JsonNode node) {
+        return new ProgramSourceFragment(
+            requiredText(
+                node,
+                "format"
+            ),
+            requiredText(
+                node,
+                "kind"
+            ),
+            requiredText(
+                node,
+                "content"
+            )
+        );
+    }
+
+    private static OperationBlock readOperationBlock(
+        final JsonNode node,
+        final ReadState state,
+        final CircuitState circuitState
+    ) {
+        final ArrayList<Operation> operations = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            operations.add(readOperation(
+                requiredArrayElementObject(
+                    node,
+                    i,
+                    "operationBlock"
+                ),
+                state,
+                circuitState
+            ));
+        }
+        return OperationBlock.of(operations);
+    }
+
+    private static DurationExpression readDuration(final JsonNode node) {
+        final String kind = requiredText(
+            node,
+            "kind"
+        );
+        if ("STRETCH".equals(kind)) {
+            return DurationExpression.stretch(requiredText(
+                node,
+                "symbol"
+            ));
+        }
+        if ("EXPRESSION".equals(kind)) {
+            return DurationExpression.expression(requiredText(
+                node,
+                "expression"
+            ));
+        }
+        if ("DURATION".equals(kind)) {
+            return DurationExpression.duration(
+                requiredDouble(
+                    node,
+                    "value"
+                ),
+                enumValue(
+                    DurationUnit.class,
+                    requiredText(
+                        node,
+                        "unit"
+                    ),
+                    "duration.unit"
+                )
+            );
+        }
+        throw invalidValue(new IllegalArgumentException("Unknown duration expression kind: " + kind + "."));
     }
 
     private static void appendOperation(
@@ -585,18 +1488,18 @@ public final class QuantumIrJsonReader {
         final Operation operation
     ) {
         if (operation instanceof GateOperation gateOperation) {
-            circuit.parameterizedGate(
+            circuit.parameterizedGateReferences(
                 gateOperation.gate(),
                 gateOperation.parameters(),
-                gateOperation.qubits()
+                gateOperation.qubitReferences()
             );
         } else if (operation instanceof MeasureOperation measureOperation) {
-            circuit.measure(
-                measureOperation.qubit(),
+            circuit.measureReference(
+                measureOperation.qubitReference(),
                 measureOperation.bit()
             );
         } else if (operation instanceof ResetOperation resetOperation) {
-            circuit.reset(resetOperation.qubit());
+            circuit.resetReference(resetOperation.qubitReference());
         } else if (operation instanceof BarrierOperation barrierOperation) {
             circuit.barrier(barrierOperation.qubits());
         } else if (operation instanceof ControlledOperation controlledOperation) {
@@ -606,11 +1509,52 @@ public final class QuantumIrJsonReader {
             );
         } else if (operation instanceof ClassicalAssignmentOperation assignmentOperation) {
             circuit.assign(assignmentOperation.assignment());
+        } else if (operation instanceof ClassicalDeclarationOperation declarationOperation) {
+            circuit.classicalDeclaration(declarationOperation);
+        } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            circuit.classicalArrayDeclaration(arrayOperation);
+        } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+            circuit.callableInvocation(invocationOperation);
         } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
             circuit.classicallyControlled(
                 controlledOperation.predicate(),
                 controlledOperation.operation()
             );
+        } else if (operation instanceof BlockOperation blockOperation) {
+            circuit.block(blockOperation.body());
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            circuit.conditionalBlock(
+                conditionalOperation.predicate(),
+                conditionalOperation.thenBlock(),
+                conditionalOperation.hasElseBlock() ? conditionalOperation.elseBlock() : null
+            );
+        } else if (operation instanceof ForLoopOperation loopOperation) {
+            circuit.forLoop(
+                loopOperation.variableName(),
+                loopOperation.startInclusive(),
+                loopOperation.step(),
+                loopOperation.endInclusive(),
+                loopOperation.body()
+            );
+        } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+            circuit.symbolicForLoop(loopOperation);
+        } else if (operation instanceof WhileLoopOperation loopOperation) {
+            circuit.whileLoop(
+                loopOperation.predicate(),
+                loopOperation.body()
+            );
+        } else if (operation instanceof DelayOperation delayOperation) {
+            circuit.delay(
+                delayOperation.duration(),
+                delayOperation.qubits()
+            );
+        } else if (operation instanceof TimingBoxOperation boxOperation) {
+            circuit.timingBox(
+                boxOperation.hasDuration() ? boxOperation.duration() : null,
+                boxOperation.body()
+            );
+        } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
+            circuit.sourceFragment(fragmentOperation.fragment());
         } else {
             throw error(
                 PersistenceDiagnosticCode.UNSUPPORTED_MODEL_FEATURE,
@@ -705,10 +1649,15 @@ public final class QuantumIrJsonReader {
                     node,
                     "integerValue"
                 ));
-                case POWER -> GateModifier.power(requiredDouble(
-                    node,
-                    "doubleValue"
-                ));
+                case POWER -> node.has("powerExpression")
+                    ? GateModifier.power(readParameterExpression(requiredObject(
+                        node,
+                        "powerExpression"
+                    )))
+                    : GateModifier.power(requiredDouble(
+                        node,
+                        "doubleValue"
+                    ));
                 case REPEAT -> GateModifier.repeat(requiredInt(
                     node,
                     "integerValue"
@@ -876,6 +1825,34 @@ public final class QuantumIrJsonReader {
                 node,
                 "value"
             ));
+            case VARIABLE_REFERENCE -> ClassicalExpression.variable(requiredText(
+                node,
+                "name"
+            ));
+            case BINARY_OPERATION -> ClassicalExpression.binary(
+                enumValue(
+                    ClassicalBinaryOperator.class,
+                    requiredText(
+                        node,
+                        "operator"
+                    ),
+                    "classicalExpression.operator"
+                ),
+                readClassicalExpression(
+                    requiredObject(
+                        node,
+                        "left"
+                    ),
+                    state
+                ),
+                readClassicalExpression(
+                    requiredObject(
+                        node,
+                        "right"
+                    ),
+                    state
+                )
+            );
             case BIT_REFERENCE -> ClassicalExpression.bit(readClassicalBit(
                 requiredText(
                     node,
@@ -887,7 +1864,60 @@ public final class QuantumIrJsonReader {
                 node,
                 "register"
             )));
+            case SYMBOLIC_REFERENCE -> ClassicalExpression.symbolicReference(requiredText(
+                node,
+                "text"
+            ));
+            case CALL -> ClassicalExpression.call(
+                requiredText(
+                    node,
+                    "callable"
+                ),
+                readClassicalExpressionList(
+                    requiredArray(
+                        node,
+                        "arguments"
+                    ),
+                    state
+                )
+            );
         };
+    }
+
+    private static List<ClassicalExpression> readClassicalExpressionList(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        final ArrayList<ClassicalExpression> result = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            result.add(readClassicalExpression(
+                requiredArrayElementObject(
+                    node,
+                    i,
+                    "classicalExpressions"
+                ),
+                state
+            ));
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<QuantumReference> readQuantumReferenceList(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        final ArrayList<QuantumReference> result = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            result.add(readOperationQuantumReference(
+                requiredArrayElementObject(
+                    node,
+                    i,
+                    "quantumReferences"
+                ),
+                state
+            ));
+        }
+        return List.copyOf(result);
     }
 
     private static ClassicalPredicate readClassicalPredicate(
@@ -1038,6 +2068,113 @@ public final class QuantumIrJsonReader {
         return result;
     }
 
+    private static QuantumReference[] readOperationQuantumReferences(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        if (node.has("qubitReferences")) {
+            return readQuantumReferences(
+                requiredArray(
+                    node,
+                    "qubitReferences"
+                ),
+                state
+            );
+        }
+        final Qubit[] qubits = readQubits(
+            requiredArray(
+                node,
+                "qubits"
+            ),
+            state
+        );
+        final QuantumReference[] references = new QuantumReference[qubits.length];
+        for (int i = 0; i < qubits.length; i++) {
+            references[i] = QuantumReference.staticQubit(qubits[i]);
+        }
+        return references;
+    }
+
+    private static QuantumReference readOperationQuantumReference(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        if (node.has("qubitReference")) {
+            return readQuantumReference(
+                requiredObject(
+                    node,
+                    "qubitReference"
+                ),
+                state
+            );
+        }
+        return QuantumReference.staticQubit(readQubit(
+            requiredText(
+                node,
+                "qubit"
+            ),
+            state
+        ));
+    }
+
+    private static QuantumReference[] readQuantumReferences(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        final QuantumReference[] result = new QuantumReference[node.size()];
+        for (int i = 0; i < node.size(); i++) {
+            result[i] = readQuantumReference(
+                requiredArrayElementObject(
+                    node,
+                    i,
+                    "qubitReferences"
+                ),
+                state
+            );
+        }
+        return result;
+    }
+
+    private static QuantumReference readQuantumReference(
+        final JsonNode node,
+        final CircuitState state
+    ) {
+        final QuantumReferenceKind kind = enumValue(
+            QuantumReferenceKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "quantumReference.kind"
+        );
+        return switch (kind) {
+            case STATIC_QUBIT -> QuantumReference.staticQubit(readQubit(
+                requiredText(
+                    node,
+                    "qubit"
+                ),
+                state
+            ));
+            case DYNAMIC_REGISTER_INDEX -> QuantumReference.dynamicIndex(
+                state.quantumRegister(requiredText(
+                    node,
+                    "register"
+                )),
+                readClassicalExpression(
+                    requiredObject(
+                        node,
+                        "index"
+                    ),
+                    state
+                )
+            );
+            case HARDWARE_QUBIT -> QuantumReference.hardwareQubit(requiredInt(
+                node,
+                "hardwareIndex"
+            ));
+        };
+    }
+
     private static Qubit readQubit(
         final String reference,
         final CircuitState state
@@ -1158,6 +2295,24 @@ public final class QuantumIrJsonReader {
         return value;
     }
 
+    private static JsonNode optionalArray(
+        final JsonNode node,
+        final String field
+    ) {
+        final JsonNode value = node.get(field);
+        if (value == null) {
+            return objectMapperMissingArray();
+        }
+        if (!value.isArray()) {
+            throw invalidStructure("Field must be an array: " + field + ".");
+        }
+        return value;
+    }
+
+    private static JsonNode objectMapperMissingArray() {
+        return new ObjectMapper().createArrayNode();
+    }
+
     private static JsonNode requiredArrayElementObject(
         final JsonNode node,
         final int index,
@@ -1169,6 +2324,21 @@ public final class QuantumIrJsonReader {
             || !value.isObject()
         ) {
             throw invalidStructure(path + "[" + index + "] must be an object.");
+        }
+        return value;
+    }
+
+    private static JsonNode requiredArrayElementArray(
+        final JsonNode node,
+        final int index,
+        final String path
+    ) {
+        final JsonNode value = node.get(index);
+        if (
+            value == null
+            || !value.isArray()
+        ) {
+            throw invalidStructure(path + "[" + index + "] must be an array.");
         }
         return value;
     }

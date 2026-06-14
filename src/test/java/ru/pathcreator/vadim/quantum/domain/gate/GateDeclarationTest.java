@@ -14,7 +14,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GateDeclarationTest {
 
@@ -70,15 +69,21 @@ class GateDeclarationTest {
     }
 
     @Test
-    void rejectsInvalidCompositeGateBody() {
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> GateDefinition.composite(
-                "empty",
-                List.of(),
-                List.of("q"),
-                List.of()
-            )
+    void createsIdentityCompositeGateDefinition() {
+        final GateDefinition definition = GateDefinition.composite(
+            "identity_gate",
+            List.of(),
+            List.of("q"),
+            List.of()
+        );
+
+        assertEquals(
+            GateDefinitionKind.COMPOSITE,
+            definition.kind()
+        );
+        assertEquals(
+            0,
+            definition.bodyOperations().size()
         );
     }
 }

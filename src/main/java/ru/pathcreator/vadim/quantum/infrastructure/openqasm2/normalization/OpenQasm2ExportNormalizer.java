@@ -42,10 +42,12 @@ import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -286,6 +288,13 @@ public final class OpenQasm2ExportNormalizer {
                     remap
                 )
             );
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            appendConditionalBlockOperation(
+                target,
+                conditionalOperation,
+                remap,
+                state
+            );
         } else if (operation instanceof ClassicalAssignmentOperation assignmentOperation) {
             appendOperation(
                 target,
@@ -301,6 +310,50 @@ public final class OpenQasm2ExportNormalizer {
                 IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
                 "OpenQASM 2 export does not support operation kind: " + operation.kind() + "."
             ));
+        }
+    }
+
+    private static void appendConditionalBlockOperation(
+        final QuantumCircuit target,
+        final ConditionalBlockOperation operation,
+        final Remap remap,
+        final NormalizationState state
+    ) {
+        if (operation.hasElseBlock()) {
+            state.diagnostics.add(IntegrationDiagnostic.error(
+                IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
+                "OpenQASM 2 export cannot lower conditional blocks with else branch."
+            ));
+            return;
+        }
+        appendConditionalBlockOperations(
+            target,
+            operation.thenBlock(),
+            remap,
+            state,
+            remapPredicate(
+                operation.predicate(),
+                remap
+            )
+        );
+    }
+
+    private static void appendConditionalBlockOperations(
+        final QuantumCircuit target,
+        final OperationBlock block,
+        final Remap remap,
+        final NormalizationState state,
+        final ClassicalPredicate predicate
+    ) {
+        for (int i = 0; i < block.operationCount(); i++) {
+            appendControlledNestedOperation(
+                target,
+                block.operation(i),
+                remap,
+                state,
+                null,
+                predicate
+            );
         }
     }
 
@@ -745,6 +798,22 @@ public final class OpenQasm2ExportNormalizer {
     ) {
         if (expression.kind() == ClassicalExpressionKind.INTEGER) {
             return ClassicalExpression.integer(expression.integerValue());
+        }
+        if (expression.kind() == ClassicalExpressionKind.VARIABLE_REFERENCE) {
+            return ClassicalExpression.variable(expression.variableName());
+        }
+        if (expression.kind() == ClassicalExpressionKind.BINARY_OPERATION) {
+            return ClassicalExpression.binary(
+                expression.binaryOperator(),
+                remapExpression(
+                    expression.leftExpression(),
+                    remap
+                ),
+                remapExpression(
+                    expression.rightExpression(),
+                    remap
+                )
+            );
         }
         if (expression.kind() == ClassicalExpressionKind.BIT_REFERENCE) {
             return ClassicalExpression.bit(remap.classicalBit(expression.bit()));

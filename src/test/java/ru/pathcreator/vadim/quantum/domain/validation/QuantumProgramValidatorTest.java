@@ -29,6 +29,7 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 
@@ -106,6 +107,47 @@ class QuantumProgramValidatorTest {
         final ValidationResult result = new QuantumProgramValidator().validate(program);
 
         assertTrue(result.isValid());
+    }
+
+    @Test
+    void acceptsDynamicGateBasedQubitReferences() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("dynamic_refs");
+        final QuantumRegister buffer = circuit.createQuantumRegister(
+            "buffer",
+            4
+        );
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        final ClassicalRegister c = circuit.createClassicalRegister(
+            "c",
+            1
+        );
+        final QuantumReference bufferAtAddress = QuantumReference.dynamicIndex(
+            buffer,
+            ClassicalExpression.variable("address")
+        );
+
+        circuit.gateReferences(
+            StandardGate.CY,
+            bufferAtAddress,
+            QuantumReference.staticQubit(q.get(0))
+        );
+        circuit.measureReference(
+            bufferAtAddress,
+            c.get(0)
+        );
+        circuit.resetReference(bufferAtAddress);
+
+        final ValidationResult result = new QuantumProgramValidator().validate(program);
+
+        assertTrue(result.isValid());
+        assertEquals(
+            3,
+            circuit.operationCount()
+        );
     }
 
     @Test

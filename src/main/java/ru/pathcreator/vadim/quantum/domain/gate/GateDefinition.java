@@ -30,6 +30,7 @@ public final class GateDefinition implements Gate {
     private final List<String> parameterNames;
     private final List<String> qubitNames;
     private final List<GateBodyOperation> bodyOperations;
+    private final GateMatrix matrix;
 
     private GateDefinition(
         final GateName name,
@@ -39,7 +40,8 @@ public final class GateDefinition implements Gate {
         final GateDefinitionKind kind,
         final List<String> parameterNames,
         final List<String> qubitNames,
-        final List<GateBodyOperation> bodyOperations
+        final List<GateBodyOperation> bodyOperations,
+        final GateMatrix matrix
     ) {
         this.name = name;
         this.arity = arity;
@@ -49,6 +51,7 @@ public final class GateDefinition implements Gate {
         this.parameterNames = parameterNames;
         this.qubitNames = qubitNames;
         this.bodyOperations = bodyOperations;
+        this.matrix = matrix;
     }
 
     public static GateDefinition of(
@@ -109,7 +112,8 @@ public final class GateDefinition implements Gate {
             GateDefinitionKind.INTRINSIC,
             List.of(),
             List.of(),
-            List.of()
+            List.of(),
+            null
         );
     }
 
@@ -142,7 +146,8 @@ public final class GateDefinition implements Gate {
             GateDefinitionKind.OPAQUE,
             checkedParameterNames,
             checkedQubitNames,
-            List.of()
+            List.of(),
+            null
         );
     }
 
@@ -170,9 +175,6 @@ public final class GateDefinition implements Gate {
             QUBIT_NAME_SUBJECT
         );
         final List<GateBodyOperation> checkedBodyOperations = validateAndCopyBodyOperations(bodyOperations);
-        if (checkedBodyOperations.isEmpty()) {
-            throw new IllegalArgumentException("Composite gate body must not be empty.");
-        }
         return new GateDefinition(
             GateName.of(name),
             checkedQubitNames.size(),
@@ -181,7 +183,45 @@ public final class GateDefinition implements Gate {
             GateDefinitionKind.COMPOSITE,
             checkedParameterNames,
             checkedQubitNames,
-            checkedBodyOperations
+            checkedBodyOperations,
+            null
+        );
+    }
+
+    public static GateDefinition matrix(
+        final String name,
+        final List<String> parameterNames,
+        final List<String> qubitNames,
+        final GateMatrix matrix
+    ) {
+        final List<String> checkedParameterNames = validateAndCopyNames(
+            parameterNames,
+            PARAMETER_NAME_SUBJECT
+        );
+        final List<String> checkedQubitNames = validateAndCopyNames(
+            qubitNames,
+            QUBIT_NAME_SUBJECT
+        );
+        if (matrix == null) {
+            throw new IllegalArgumentException("Gate matrix must not be null.");
+        }
+        final int expectedSize = 1 << checkedQubitNames.size();
+        if (
+            matrix.rowCount() != expectedSize
+            || matrix.columnCount() != expectedSize
+        ) {
+            throw new IllegalArgumentException("Gate matrix dimensions must match qubit argument count.");
+        }
+        return new GateDefinition(
+            GateName.of(name),
+            checkedQubitNames.size(),
+            checkedParameterNames.size(),
+            defaultValidationRules(checkedQubitNames.size()),
+            GateDefinitionKind.MATRIX,
+            checkedParameterNames,
+            checkedQubitNames,
+            List.of(),
+            matrix
         );
     }
 
@@ -223,6 +263,10 @@ public final class GateDefinition implements Gate {
 
     public List<GateBodyOperation> bodyOperations() {
         return bodyOperations;
+    }
+
+    public GateMatrix matrix() {
+        return matrix;
     }
 
     private static void validate(
@@ -324,6 +368,10 @@ public final class GateDefinition implements Gate {
             && Objects.equals(
                 bodyOperations,
                 definition.bodyOperations
+            )
+            && Objects.equals(
+                matrix,
+                definition.matrix
             );
     }
 
@@ -337,7 +385,8 @@ public final class GateDefinition implements Gate {
             kind,
             parameterNames,
             qubitNames,
-            bodyOperations
+            bodyOperations,
+            matrix
         );
     }
 }

@@ -87,7 +87,8 @@ public final class OpenQasm2Exporter implements QuantumExporter {
                 IntegrationCapability.COMPOSITE_GATES,
                 IntegrationCapability.CLASSICAL_REGISTER_CONDITIONS,
                 IntegrationCapability.GATE_DECOMPOSITION,
-                IntegrationCapability.GATE_MODIFIERS
+                IntegrationCapability.GATE_MODIFIERS,
+                IntegrationCapability.CLASSICAL_ASSIGNMENTS
             )
         );
     }
@@ -146,23 +147,22 @@ public final class OpenQasm2Exporter implements QuantumExporter {
                 );
             }
         }
-        final CapabilityPreflightResult preflightResult = preflightChecker.check(
+        final OpenQasm2ExportNormalizationResult normalizationResult = normalizer.normalize(
             program,
-            capabilityProfile()
+            options
         );
-        diagnostics.addAll(preflightResult.diagnostics());
+        diagnostics.addAll(normalizationResult.diagnostics());
         if (hasErrors(diagnostics)) {
             return ExportResult.failure(
                 format(),
                 diagnostics
             );
         }
-
-        final OpenQasm2ExportNormalizationResult normalizationResult = normalizer.normalize(
-            program,
-            options
+        final CapabilityPreflightResult preflightResult = preflightChecker.check(
+            normalizationResult.program(),
+            capabilityProfile()
         );
-        diagnostics.addAll(normalizationResult.diagnostics());
+        diagnostics.addAll(preflightResult.diagnostics());
         if (hasErrors(diagnostics)) {
             return ExportResult.failure(
                 format(),

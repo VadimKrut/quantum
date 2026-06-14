@@ -320,6 +320,22 @@ public final class CircuitComposer {
         if (expression.kind() == ClassicalExpressionKind.INTEGER) {
             return ClassicalExpression.integer(expression.integerValue());
         }
+        if (expression.kind() == ClassicalExpressionKind.VARIABLE_REFERENCE) {
+            return ClassicalExpression.variable(expression.variableName());
+        }
+        if (expression.kind() == ClassicalExpressionKind.BINARY_OPERATION) {
+            return ClassicalExpression.binary(
+                expression.binaryOperator(),
+                remapExpression(
+                    expression.leftExpression(),
+                    remap
+                ),
+                remapExpression(
+                    expression.rightExpression(),
+                    remap
+                )
+            );
+        }
         if (expression.kind() == ClassicalExpressionKind.BIT_REFERENCE) {
             return ClassicalExpression.bit(remap.classicalBit(expression.bit()));
         }

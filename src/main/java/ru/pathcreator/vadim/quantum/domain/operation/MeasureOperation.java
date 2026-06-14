@@ -15,37 +15,53 @@ import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 
 /**
- * Неизменяемая операция измерения кубита в классический бит.
+ * Неизменяемая операция измерения qubit reference в classical bit.
  */
 public final class MeasureOperation implements Operation {
 
     /**
-     * Измеряемый кубит.
+     * Измеряемая ссылка на qubit.
      */
-    private final Qubit qubit;
+    private final QuantumReference qubitReference;
 
     /**
-     * Классический бит, в который записывается результат измерения.
+     * Classical bit, в который записывается результат измерения.
      */
     private final ClassicalBit bit;
 
     /**
-     * Создает immutable операцию измерения.
+     * Создает измерение статического qubit.
      *
-     * @param qubit измеряемый кубит
-     * @param bit классический бит результата
+     * @param qubit измеряемый qubit
+     * @param bit classical bit результата
      */
     public MeasureOperation(
         final Qubit qubit,
         final ClassicalBit bit
     ) {
-        if (qubit == null) {
-            throw new IllegalArgumentException("Measured qubit must not be null.");
+        this(
+            QuantumReference.staticQubit(qubit),
+            bit
+        );
+    }
+
+    /**
+     * Создает измерение qubit reference.
+     *
+     * @param qubitReference измеряемая ссылка на qubit
+     * @param bit classical bit результата
+     */
+    public MeasureOperation(
+        final QuantumReference qubitReference,
+        final ClassicalBit bit
+    ) {
+        if (qubitReference == null) {
+            throw new IllegalArgumentException("Measured qubit reference must not be null.");
         }
         if (bit == null) {
             throw new IllegalArgumentException("Measurement classical bit must not be null.");
         }
-        this.qubit = qubit;
+        this.qubitReference = qubitReference;
         this.bit = bit;
     }
 
@@ -55,18 +71,27 @@ public final class MeasureOperation implements Operation {
     }
 
     /**
-     * Возвращает измеряемый кубит.
+     * Возвращает статический измеряемый qubit.
      *
-     * @return измеряемый кубит
+     * @return измеряемый qubit
      */
     public Qubit qubit() {
-        return qubit;
+        return qubitReference.qubit();
     }
 
     /**
-     * Возвращает классический бит результата.
+     * Возвращает измеряемую ссылку на qubit.
      *
-     * @return классический бит результата
+     * @return ссылка на qubit
+     */
+    public QuantumReference qubitReference() {
+        return qubitReference;
+    }
+
+    /**
+     * Возвращает classical bit результата.
+     *
+     * @return classical bit результата
      */
     public ClassicalBit bit() {
         return bit;
@@ -81,8 +106,8 @@ public final class MeasureOperation implements Operation {
             return false;
         }
         return Objects.equals(
-            qubit,
-            operation.qubit
+            qubitReference,
+            operation.qubitReference
         )
             && Objects.equals(
                 bit,
@@ -93,7 +118,7 @@ public final class MeasureOperation implements Operation {
     @Override
     public int hashCode() {
         return Objects.hash(
-            qubit,
+            qubitReference,
             bit
         );
     }

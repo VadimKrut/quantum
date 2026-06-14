@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RegisterNameTest {
+
     @Test
     void createsRegisterNameFromValidIdentifier() {
         final RegisterName name = RegisterName.of("q_1");

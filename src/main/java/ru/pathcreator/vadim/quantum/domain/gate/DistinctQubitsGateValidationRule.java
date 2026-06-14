@@ -9,8 +9,8 @@
 
 package ru.pathcreator.vadim.quantum.domain.gate;
 
-import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationErrorCode;
 
 /**
@@ -39,9 +39,9 @@ public final class DistinctQubitsGateValidationRule implements GateValidationRul
         }
 
         for (int i = 0; i < operation.qubitCount(); i++) {
-            final Qubit left = operation.qubit(i);
+            final QuantumReference left = operation.qubitReference(i);
             for (int j = i + 1; j < operation.qubitCount(); j++) {
-                if (left.equals(operation.qubit(j))) {
+                if (left.equals(operation.qubitReference(j))) {
                     collector.addError(
                         ValidationErrorCode.DUPLICATE_QUBIT_IN_GATE_OPERATION,
                         "Gate operation uses the same qubit more than once."

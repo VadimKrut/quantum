@@ -16,11 +16,22 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
+import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 
 /**
  * Generic preflight-проверка IR против target capability profile.
@@ -80,6 +91,16 @@ public final class CapabilityPreflightChecker {
         final IntegrationCapabilityProfile profile,
         final ArrayList<IntegrationDiagnostic> diagnostics
     ) {
+        checkDynamicQubitReferences(
+            operation,
+            profile,
+            diagnostics
+        );
+        if (
+            operation instanceof GateOperation
+        ) {
+            return;
+        }
         if (
             operation instanceof MeasureOperation
             && !profile.supports(IntegrationCapability.MEASUREMENTS)
@@ -104,6 +125,123 @@ public final class CapabilityPreflightChecker {
         } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
             checkControlledOperation(
                 controlledOperation.operation(),
+                profile,
+                diagnostics
+            );
+        } else if (operation instanceof ClassicalAssignmentOperation) {
+            if (!profile.supports(IntegrationCapability.CLASSICAL_ASSIGNMENTS)) {
+                diagnostics.add(unsupportedCapability("classical assignments"));
+            }
+        } else if (operation instanceof BlockOperation blockOperation) {
+            checkStructuredOperation(
+                blockOperation.body(),
+                profile,
+                diagnostics
+            );
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            if (!profile.supports(IntegrationCapability.STRUCTURED_CONTROL_FLOW)) {
+                diagnostics.add(unsupportedCapability("structured conditional blocks"));
+            }
+            checkBlock(
+                conditionalOperation.thenBlock(),
+                profile,
+                diagnostics
+            );
+            if (conditionalOperation.hasElseBlock()) {
+                checkBlock(
+                    conditionalOperation.elseBlock(),
+                    profile,
+                    diagnostics
+                );
+            }
+        } else if (operation instanceof ForLoopOperation loopOperation) {
+            checkStructuredOperation(
+                loopOperation.body(),
+                profile,
+                diagnostics
+            );
+        } else if (operation instanceof WhileLoopOperation loopOperation) {
+            checkStructuredOperation(
+                loopOperation.body(),
+                profile,
+                diagnostics
+            );
+        } else if (operation instanceof DelayOperation) {
+            if (!profile.supports(IntegrationCapability.TIMING_OPERATIONS)) {
+                diagnostics.add(unsupportedCapability("timing operations"));
+            }
+        } else if (operation instanceof TimingBoxOperation boxOperation) {
+            if (!profile.supports(IntegrationCapability.TIMING_OPERATIONS)) {
+                diagnostics.add(unsupportedCapability("timing operations"));
+            }
+            checkBlock(
+                boxOperation.body(),
+                profile,
+                diagnostics
+            );
+        }
+    }
+
+    private static void checkDynamicQubitReferences(
+        final Operation operation,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (profile.supports(IntegrationCapability.DYNAMIC_QUBIT_REFERENCES)) {
+            return;
+        }
+        if (operation instanceof GateOperation gateOperation) {
+            for (int i = 0; i < gateOperation.qubitCount(); i++) {
+                checkDynamicQubitReference(
+                    gateOperation.qubitReference(i),
+                    diagnostics
+                );
+            }
+        } else if (operation instanceof MeasureOperation measureOperation) {
+            checkDynamicQubitReference(
+                measureOperation.qubitReference(),
+                diagnostics
+            );
+        } else if (operation instanceof ResetOperation resetOperation) {
+            checkDynamicQubitReference(
+                resetOperation.qubitReference(),
+                diagnostics
+            );
+        }
+    }
+
+    private static void checkDynamicQubitReference(
+        final QuantumReference reference,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (reference.kind() == QuantumReferenceKind.DYNAMIC_REGISTER_INDEX) {
+            diagnostics.add(unsupportedCapability("dynamic qubit references"));
+        }
+    }
+
+    private static void checkStructuredOperation(
+        final OperationBlock body,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (!profile.supports(IntegrationCapability.STRUCTURED_CONTROL_FLOW)) {
+            diagnostics.add(unsupportedCapability("structured control flow"));
+        }
+        checkBlock(
+            body,
+            profile,
+            diagnostics
+        );
+    }
+
+    private static void checkBlock(
+        final OperationBlock body,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        for (int i = 0; i < body.operationCount(); i++) {
+            checkOperation(
+                body.operation(i),
                 profile,
                 diagnostics
             );

@@ -11,6 +11,7 @@ package ru.pathcreator.vadim.quantum.domain.operation;
 
 import org.junit.jupiter.api.Test;
 
+import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +43,7 @@ class ResetOperationTest {
     void rejectsNullResetQubit() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> new ResetOperation(null)
+            () -> new ResetOperation((Qubit) null)
         );
     }
 

@@ -55,6 +55,11 @@ public enum IntegrationCapability {
     CLASSICAL_REGISTER_CONDITIONS,
 
     /**
+     * Adapter может писать qubit-ссылки вида quantum register + runtime classical index expression.
+     */
+    DYNAMIC_QUBIT_REFERENCES,
+
+    /**
      * Adapter может применять правила decomposition/lowering.
      */
     GATE_DECOMPOSITION,
@@ -62,5 +67,20 @@ public enum IntegrationCapability {
     /**
      * Adapter может писать gate modifiers напрямую или через lowering.
      */
-    GATE_MODIFIERS
+    GATE_MODIFIERS,
+
+    /**
+     * Adapter может писать блочное управление потоком вычислений.
+     */
+    STRUCTURED_CONTROL_FLOW,
+
+    /**
+     * Adapter может писать временные операции.
+     */
+    TIMING_OPERATIONS,
+
+    /**
+     * Adapter может писать классические присваивания.
+     */
+    CLASSICAL_ASSIGNMENTS
 }

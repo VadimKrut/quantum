@@ -36,13 +36,27 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
+import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.domain.register.RegisterName;
@@ -599,6 +613,122 @@ public final class QuantumProgramValidator {
                     i,
                     errors
                 );
+            } else if (operation instanceof BlockOperation blockOperation) {
+                validateOperationBlock(
+                    definitionsByName,
+                    circuit,
+                    blockOperation.body(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+                validateConditionalBlockOperation(
+                    definitionsByName,
+                    circuit,
+                    conditionalOperation,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof ForLoopOperation loopOperation) {
+                validateOperationBlock(
+                    definitionsByName,
+                    circuit,
+                    loopOperation.body(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof WhileLoopOperation loopOperation) {
+                validateClassicalPredicate(
+                    circuit,
+                    loopOperation.predicate(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+                validateOperationBlock(
+                    definitionsByName,
+                    circuit,
+                    loopOperation.body(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof DelayOperation delayOperation) {
+                validateDelayOperation(
+                    circuit,
+                    delayOperation,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof ClassicalDeclarationOperation declarationOperation) {
+                validateOptionalClassicalExpression(
+                    circuit,
+                    declarationOperation.hasInitializer() ? declarationOperation.initializer() : null,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+                validateClassicalArrayDeclarationOperation(
+                    circuit,
+                    arrayOperation,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+                validateCallableInvocationOperation(
+                    circuit,
+                    invocationOperation,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+                validateClassicalExpression(
+                    circuit,
+                    loopOperation.startInclusive(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+                validateOptionalClassicalExpression(
+                    circuit,
+                    loopOperation.step(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+                validateClassicalExpression(
+                    circuit,
+                    loopOperation.endInclusive(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+                validateOperationBlock(
+                    definitionsByName,
+                    circuit,
+                    loopOperation.body(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof TimingBoxOperation boxOperation) {
+                validateOperationBlock(
+                    definitionsByName,
+                    circuit,
+                    boxOperation.body(),
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (operation instanceof SourceFragmentOperation) {
+                continue;
             } else {
                 addError(
                     errors,
@@ -650,9 +780,9 @@ public final class QuantumProgramValidator {
             errors
         );
         for (int i = 0; i < operation.qubitCount(); i++) {
-            validateQubitOwnership(
+            validateQuantumReferenceOwnership(
                 circuit,
-                operation.qubit(i),
+                operation.qubitReference(i),
                 circuitIndex,
                 operationIndex,
                 errors
@@ -749,9 +879,9 @@ public final class QuantumProgramValidator {
         final int operationIndex,
         final ArrayList<ValidationError> errors
     ) {
-        validateQubitOwnership(
+        validateQuantumReferenceOwnership(
             circuit,
-            operation.qubit(),
+            operation.qubitReference(),
             circuitIndex,
             operationIndex,
             errors
@@ -772,9 +902,9 @@ public final class QuantumProgramValidator {
         final int operationIndex,
         final ArrayList<ValidationError> errors
     ) {
-        validateQubitOwnership(
+        validateQuantumReferenceOwnership(
             circuit,
-            operation.qubit(),
+            operation.qubitReference(),
             circuitIndex,
             operationIndex,
             errors
@@ -879,6 +1009,122 @@ public final class QuantumProgramValidator {
                 operationIndex,
                 errors
             );
+        } else if (operation instanceof BlockOperation blockOperation) {
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                blockOperation.body(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
+            validateConditionalBlockOperation(
+                definitionsByName,
+                circuit,
+                conditionalOperation,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof ForLoopOperation loopOperation) {
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                loopOperation.body(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof WhileLoopOperation loopOperation) {
+            validateClassicalPredicate(
+                circuit,
+                loopOperation.predicate(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                loopOperation.body(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof DelayOperation delayOperation) {
+            validateDelayOperation(
+                circuit,
+                delayOperation,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof ClassicalDeclarationOperation declarationOperation) {
+            validateOptionalClassicalExpression(
+                circuit,
+                declarationOperation.hasInitializer() ? declarationOperation.initializer() : null,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            validateClassicalArrayDeclarationOperation(
+                circuit,
+                arrayOperation,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+            validateCallableInvocationOperation(
+                circuit,
+                invocationOperation,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+            validateClassicalExpression(
+                circuit,
+                loopOperation.startInclusive(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            validateOptionalClassicalExpression(
+                circuit,
+                loopOperation.step(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            validateClassicalExpression(
+                circuit,
+                loopOperation.endInclusive(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                loopOperation.body(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof TimingBoxOperation boxOperation) {
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                boxOperation.body(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (operation instanceof SourceFragmentOperation) {
+            return;
         } else {
             addError(
                 errors,
@@ -925,6 +1171,152 @@ public final class QuantumProgramValidator {
             definitionsByName,
             circuit,
             operation.operation(),
+            circuitIndex,
+            operationIndex,
+            errors
+        );
+    }
+
+    private void validateConditionalBlockOperation(
+        final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final QuantumCircuit circuit,
+        final ConditionalBlockOperation operation,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        validateClassicalPredicate(
+            circuit,
+            operation.predicate(),
+            circuitIndex,
+            operationIndex,
+            errors
+        );
+        validateOperationBlock(
+            definitionsByName,
+            circuit,
+            operation.thenBlock(),
+            circuitIndex,
+            operationIndex,
+            errors
+        );
+        if (operation.hasElseBlock()) {
+            validateOperationBlock(
+                definitionsByName,
+                circuit,
+                operation.elseBlock(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+    }
+
+    private void validateOperationBlock(
+        final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final QuantumCircuit circuit,
+        final OperationBlock block,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        for (int i = 0; i < block.operationCount(); i++) {
+            validateNestedOperation(
+                definitionsByName,
+                circuit,
+                block.operation(i),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+    }
+
+    private void validateDelayOperation(
+        final QuantumCircuit circuit,
+        final DelayOperation operation,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        for (int i = 0; i < operation.qubitCount(); i++) {
+            validateQuantumReferenceOwnership(
+                circuit,
+                operation.reference(i),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+    }
+
+    private void validateClassicalArrayDeclarationOperation(
+        final QuantumCircuit circuit,
+        final ClassicalArrayDeclarationOperation operation,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        for (int i = 0; i < operation.dimensionCount(); i++) {
+            validateClassicalExpression(
+                circuit,
+                operation.dimension(i),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+    }
+
+    private void validateCallableInvocationOperation(
+        final QuantumCircuit circuit,
+        final CallableInvocationOperation operation,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        if (operation.hasTarget()) {
+            validateClassicalExpression(
+                circuit,
+                operation.target(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+        for (int i = 0; i < operation.quantumArguments().size(); i++) {
+            validateQuantumReferenceOwnership(
+                circuit,
+                operation.quantumArguments().get(i),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+        for (int i = 0; i < operation.classicalArguments().size(); i++) {
+            validateClassicalExpression(
+                circuit,
+                operation.classicalArguments().get(i),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
+    }
+
+    private void validateOptionalClassicalExpression(
+        final QuantumCircuit circuit,
+        final ClassicalExpression expression,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        if (expression == null) {
+            return;
+        }
+        validateClassicalExpression(
+            circuit,
+            expression,
             circuitIndex,
             operationIndex,
             errors
@@ -1084,7 +1476,68 @@ public final class QuantumProgramValidator {
                 operationIndex,
                 errors
             );
+        } else if (expression.kind() == ClassicalExpressionKind.BINARY_OPERATION) {
+            validateClassicalExpression(
+                circuit,
+                expression.leftExpression(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            validateClassicalExpression(
+                circuit,
+                expression.rightExpression(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (expression.kind() == ClassicalExpressionKind.CALL) {
+            for (int i = 0; i < expression.callArgumentCount(); i++) {
+                validateClassicalExpression(
+                    circuit,
+                    expression.callArgument(i),
+                    circuitIndex,
+                    operationIndex,
+                    errors
+                );
+            }
         }
+    }
+
+    private void validateQuantumReferenceOwnership(
+        final QuantumCircuit circuit,
+        final QuantumReference reference,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        if (reference.kind() == QuantumReferenceKind.STATIC_QUBIT) {
+            validateQubitOwnership(
+                circuit,
+                reference.qubit(),
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+            return;
+        }
+        if (reference.kind() == QuantumReferenceKind.HARDWARE_QUBIT) {
+            return;
+        }
+        validateQuantumRegisterOwnership(
+            circuit,
+            reference.register(),
+            circuitIndex,
+            operationIndex,
+            errors
+        );
+        validateClassicalExpression(
+            circuit,
+            reference.indexExpression(),
+            circuitIndex,
+            operationIndex,
+            errors
+        );
     }
 
     private void validateClassicalConditionRange(
@@ -1124,6 +1577,27 @@ public final class QuantumProgramValidator {
             errors,
             ValidationErrorCode.QUBIT_DOES_NOT_BELONG_TO_CIRCUIT,
             "Qubit does not belong to current circuit.",
+            circuitIndex,
+            operationIndex
+        );
+    }
+
+    private void validateQuantumRegisterOwnership(
+        final QuantumCircuit circuit,
+        final QuantumRegister register,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        for (int i = 0; i < circuit.quantumRegisterCount(); i++) {
+            if (circuit.quantumRegister(i) == register) {
+                return;
+            }
+        }
+        addError(
+            errors,
+            ValidationErrorCode.QUBIT_DOES_NOT_BELONG_TO_CIRCUIT,
+            "Quantum register does not belong to current circuit.",
             circuitIndex,
             operationIndex
         );

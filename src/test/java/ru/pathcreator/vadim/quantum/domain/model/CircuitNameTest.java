@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CircuitNameTest {
+
     @Test
     void createsCircuitNameFromValidIdentifier() {
         final CircuitName name = CircuitName.of("bell_circuit_1");

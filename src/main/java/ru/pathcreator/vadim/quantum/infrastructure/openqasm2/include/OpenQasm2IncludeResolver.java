@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
