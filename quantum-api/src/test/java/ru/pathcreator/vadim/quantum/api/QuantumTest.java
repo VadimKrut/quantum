@@ -17,8 +17,13 @@ import org.junit.jupiter.api.io.TempDir;
 
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightStatus;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
+import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
+import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumImportJsonWorkflowResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumJsonExportWorkflowResult;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
@@ -573,5 +578,127 @@ class QuantumTest {
             "dsl-test",
             program.circuit(0).operationMetadata(0).source().format()
         );
+    }
+
+    @Test
+    void workflowExportsProgramAfterValidationAndPreflight() {
+        final QuantumProgram program = Quantum.programBuilder()
+            .circuit("workflow_export")
+            .qreg(
+                "q",
+                2
+            )
+            .creg(
+                "c",
+                2
+            )
+            .h("q[0]")
+            .cx(
+                "q[0]",
+                "q[1]"
+            )
+            .measure(
+                "q[0]",
+                "c[0]"
+            )
+            .measure(
+                "q[1]",
+                "c[1]"
+            )
+            .build();
+
+        final QuantumExportWorkflowResult result = Quantum.validatePreflightExportOpenQasm2(program);
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.validationResult().isValid());
+        assertEquals(
+            CapabilityPreflightStatus.EXPORTABLE,
+            result.preflightResult().status()
+        );
+        assertTrue(result.content().contains("OPENQASM 2.0"));
+    }
+
+    @Test
+    void workflowBuildsProgramAndSupportsExplicitOptions() {
+        final QuantumProgramBuilder builder = Quantum.programBuilder();
+        builder.circuit("workflow_build")
+            .qreg(
+                "q",
+                1
+            )
+            .creg(
+                "c",
+                1
+            )
+            .h("q[0]")
+            .measure(
+                "q[0]",
+                "c[0]"
+            )
+            .endCircuit();
+
+        final QuantumExportWorkflowResult result = Quantum.buildValidatePreflightExportOpenQasm3(
+            builder,
+            ExportOptions.defaults()
+        );
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.hasContent());
+        assertTrue(Quantum.exportOpenQasm3(
+            result.program(),
+            ExportOptions.defaults()
+        ).isSuccess());
+    }
+
+    @Test
+    void workflowImportsValidatesAndWritesJsonThenExportsFromJson() {
+        final Path path = tempDir.resolve("bell.quantum.json");
+        final String source = """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[2];
+            creg c[2];
+            h q[0];
+            cx q[0],q[1];
+            measure q[0] -> c[0];
+            measure q[1] -> c[1];
+            """;
+
+        final QuantumImportJsonWorkflowResult importResult = Quantum.importOpenQasm2ValidateWriteJson(
+            source,
+            path,
+            ImportOptions.defaults()
+        );
+        final QuantumJsonExportWorkflowResult exportResult = Quantum.readJsonValidatePreflightExportOpenQasm3(
+            path,
+            ExportOptions.defaults()
+        );
+
+        assertTrue(importResult.isSuccess());
+        assertTrue(importResult.validationResult().isValid());
+        assertTrue(importResult.writeResult().isSuccess());
+        assertTrue(exportResult.isSuccess());
+        assertTrue(exportResult.content().contains("OPENQASM 3.0"));
+    }
+
+    @Test
+    void workflowStopsBeforePreflightWhenProgramIsInvalid() {
+        final QuantumProgram program = Quantum.gateBasedProgram();
+        final QuantumCircuit circuit = program.createCircuit("invalid");
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        circuit.cx(
+            q.get(0),
+            q.get(0)
+        );
+
+        final QuantumExportWorkflowResult result = Quantum.validatePreflightExportQuil(program);
+
+        assertTrue(!result.isSuccess());
+        assertTrue(!result.validationResult().isValid());
+        assertTrue(!result.hasPreflightResult());
+        assertTrue(!result.hasExportResult());
     }
 }

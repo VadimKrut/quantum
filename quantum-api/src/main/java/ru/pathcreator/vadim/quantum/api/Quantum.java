@@ -22,6 +22,9 @@ import ru.pathcreator.vadim.quantum.application.integration.result.ImportResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumImportJsonWorkflowResult;
+import ru.pathcreator.vadim.quantum.api.workflow.QuantumJsonExportWorkflowResult;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
@@ -120,6 +123,24 @@ public final class Quantum {
     }
 
     /**
+     * Импортирует OpenQASM 2 в Quantum IR с явными настройками.
+     *
+     * @param source OpenQASM 2 текст
+     * @param options настройки import
+     * @return результат import
+     */
+    public static ImportResult importOpenQasm2(
+        final String source,
+        final ImportOptions options
+    ) {
+        return importProgram(
+            IntegrationFormat.OPENQASM_2,
+            source,
+            options
+        );
+    }
+
+    /**
      * Импортирует OpenQASM 3 в Quantum IR.
      *
      * @param source OpenQASM 3 текст
@@ -133,6 +154,24 @@ public final class Quantum {
     }
 
     /**
+     * Импортирует OpenQASM 3 в Quantum IR с явными настройками.
+     *
+     * @param source OpenQASM 3 текст
+     * @param options настройки import
+     * @return результат import
+     */
+    public static ImportResult importOpenQasm3(
+        final String source,
+        final ImportOptions options
+    ) {
+        return importProgram(
+            IntegrationFormat.OPENQASM_3,
+            source,
+            options
+        );
+    }
+
+    /**
      * Импортирует Quil в Quantum IR.
      *
      * @param source Quil текст
@@ -142,6 +181,24 @@ public final class Quantum {
         return importProgram(
             IntegrationFormat.QUIL,
             source
+        );
+    }
+
+    /**
+     * Импортирует Quil в Quantum IR с явными настройками.
+     *
+     * @param source Quil текст
+     * @param options настройки import
+     * @return результат import
+     */
+    public static ImportResult importQuil(
+        final String source,
+        final ImportOptions options
+    ) {
+        return importProgram(
+            IntegrationFormat.QUIL,
+            source,
+            options
         );
     }
 
@@ -192,6 +249,24 @@ public final class Quantum {
     }
 
     /**
+     * Экспортирует Quantum IR в OpenQASM 2 с явными настройками.
+     *
+     * @param program программа
+     * @param options настройки export
+     * @return результат export
+     */
+    public static ExportResult exportOpenQasm2(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return exportProgram(
+            IntegrationFormat.OPENQASM_2,
+            program,
+            options
+        );
+    }
+
+    /**
      * Экспортирует Quantum IR в OpenQASM 3.
      *
      * @param program программа
@@ -205,6 +280,24 @@ public final class Quantum {
     }
 
     /**
+     * Экспортирует Quantum IR в OpenQASM 3 с явными настройками.
+     *
+     * @param program программа
+     * @param options настройки export
+     * @return результат export
+     */
+    public static ExportResult exportOpenQasm3(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return exportProgram(
+            IntegrationFormat.OPENQASM_3,
+            program,
+            options
+        );
+    }
+
+    /**
      * Экспортирует Quantum IR в Quil.
      *
      * @param program программа
@@ -214,6 +307,24 @@ public final class Quantum {
         return exportProgram(
             IntegrationFormat.QUIL,
             program
+        );
+    }
+
+    /**
+     * Экспортирует Quantum IR в Quil с явными настройками.
+     *
+     * @param program программа
+     * @param options настройки export
+     * @return результат export
+     */
+    public static ExportResult exportQuil(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return exportProgram(
+            IntegrationFormat.QUIL,
+            program,
+            options
         );
     }
 
@@ -271,6 +382,669 @@ public final class Quantum {
         return new CapabilityPreflightChecker().check(
             program,
             integration.capabilityProfile()
+        );
+    }
+
+    /**
+     * Выполняет workflow: validation -> preflight -> export.
+     *
+     * @param format целевой внешний формат
+     * @param program Quantum IR программа
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExport(
+        final IntegrationFormat format,
+        final QuantumProgram program
+    ) {
+        return validatePreflightExport(
+            format,
+            program,
+            ExportOptions.defaults()
+        );
+    }
+
+    /**
+     * Выполняет workflow: validation -> preflight -> export с явными настройками export.
+     *
+     * @param format целевой внешний формат
+     * @param program Quantum IR программа
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExport(
+        final IntegrationFormat format,
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        final ValidationResult validationResult = validate(program);
+        if (!validationResult.isValid()) {
+            return QuantumExportWorkflowResult.of(
+                format,
+                program,
+                validationResult,
+                null,
+                null
+            );
+        }
+        final CapabilityPreflightResult preflightResult = preflight(
+            format,
+            program
+        );
+        if (!preflightResult.isSuccess()) {
+            return QuantumExportWorkflowResult.of(
+                format,
+                program,
+                validationResult,
+                preflightResult,
+                null
+            );
+        }
+        return QuantumExportWorkflowResult.of(
+            format,
+            program,
+            validationResult,
+            preflightResult,
+            exportProgram(
+                format,
+                program,
+                options
+            )
+        );
+    }
+
+    /**
+     * Выполняет workflow: build -> validation -> preflight -> export.
+     *
+     * @param format целевой внешний формат
+     * @param builder builder Quantum IR программы
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExport(
+        final IntegrationFormat format,
+        final QuantumProgramBuilder builder
+    ) {
+        return buildValidatePreflightExport(
+            format,
+            builder,
+            ExportOptions.defaults()
+        );
+    }
+
+    /**
+     * Выполняет workflow: build -> validation -> preflight -> export с явными настройками export.
+     *
+     * @param format целевой внешний формат
+     * @param builder builder Quantum IR программы
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExport(
+        final IntegrationFormat format,
+        final QuantumProgramBuilder builder,
+        final ExportOptions options
+    ) {
+        if (builder == null) {
+            throw new IllegalArgumentException("Quantum program builder must not be null.");
+        }
+        return validatePreflightExport(
+            format,
+            builder.build(),
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow export в OpenQASM 2.
+     *
+     * @param program Quantum IR программа
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportOpenQasm2(final QuantumProgram program) {
+        return validatePreflightExport(
+            IntegrationFormat.OPENQASM_2,
+            program
+        );
+    }
+
+    /**
+     * Выполняет workflow export в OpenQASM 2 с явными настройками export.
+     *
+     * @param program Quantum IR программа
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportOpenQasm2(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return validatePreflightExport(
+            IntegrationFormat.OPENQASM_2,
+            program,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в OpenQASM 2.
+     *
+     * @param builder builder Quantum IR программы
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportOpenQasm2(
+        final QuantumProgramBuilder builder
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.OPENQASM_2,
+            builder
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в OpenQASM 2 с явными настройками export.
+     *
+     * @param builder builder Quantum IR программы
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportOpenQasm2(
+        final QuantumProgramBuilder builder,
+        final ExportOptions options
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.OPENQASM_2,
+            builder,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow export в OpenQASM 3.
+     *
+     * @param program Quantum IR программа
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportOpenQasm3(final QuantumProgram program) {
+        return validatePreflightExport(
+            IntegrationFormat.OPENQASM_3,
+            program
+        );
+    }
+
+    /**
+     * Выполняет workflow export в OpenQASM 3 с явными настройками export.
+     *
+     * @param program Quantum IR программа
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportOpenQasm3(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return validatePreflightExport(
+            IntegrationFormat.OPENQASM_3,
+            program,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в OpenQASM 3.
+     *
+     * @param builder builder Quantum IR программы
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportOpenQasm3(
+        final QuantumProgramBuilder builder
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.OPENQASM_3,
+            builder
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в OpenQASM 3 с явными настройками export.
+     *
+     * @param builder builder Quantum IR программы
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportOpenQasm3(
+        final QuantumProgramBuilder builder,
+        final ExportOptions options
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.OPENQASM_3,
+            builder,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow export в Quil.
+     *
+     * @param program Quantum IR программа
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportQuil(final QuantumProgram program) {
+        return validatePreflightExport(
+            IntegrationFormat.QUIL,
+            program
+        );
+    }
+
+    /**
+     * Выполняет workflow export в Quil с явными настройками export.
+     *
+     * @param program Quantum IR программа
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult validatePreflightExportQuil(
+        final QuantumProgram program,
+        final ExportOptions options
+    ) {
+        return validatePreflightExport(
+            IntegrationFormat.QUIL,
+            program,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в Quil.
+     *
+     * @param builder builder Quantum IR программы
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportQuil(
+        final QuantumProgramBuilder builder
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.QUIL,
+            builder
+        );
+    }
+
+    /**
+     * Выполняет workflow build -> export в Quil с явными настройками export.
+     *
+     * @param builder builder Quantum IR программы
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumExportWorkflowResult buildValidatePreflightExportQuil(
+        final QuantumProgramBuilder builder,
+        final ExportOptions options
+    ) {
+        return buildValidatePreflightExport(
+            IntegrationFormat.QUIL,
+            builder,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow: import -> validation -> streaming JSON write.
+     *
+     * @param format исходный внешний формат
+     * @param source внешний текст
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importValidateWriteJson(
+        final IntegrationFormat format,
+        final String source,
+        final Path path
+    ) {
+        return importValidateWriteJson(
+            format,
+            source,
+            path,
+            ImportOptions.defaults()
+        );
+    }
+
+    /**
+     * Выполняет workflow: import -> validation -> streaming JSON write с явными настройками import.
+     *
+     * @param format исходный внешний формат
+     * @param source внешний текст
+     * @param path путь JSON-файла
+     * @param options настройки import
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importValidateWriteJson(
+        final IntegrationFormat format,
+        final String source,
+        final Path path,
+        final ImportOptions options
+    ) {
+        final ImportResult importResult = importProgram(
+            format,
+            source,
+            options
+        );
+        if (!importResult.isSuccess()) {
+            return QuantumImportJsonWorkflowResult.of(
+                format,
+                path,
+                importResult,
+                null,
+                null
+            );
+        }
+        final ValidationResult validationResult = validate(importResult.program());
+        if (!validationResult.isValid()) {
+            return QuantumImportJsonWorkflowResult.of(
+                format,
+                path,
+                importResult,
+                validationResult,
+                null
+            );
+        }
+        return QuantumImportJsonWorkflowResult.of(
+            format,
+            path,
+            importResult,
+            validationResult,
+            writeJsonStreaming(
+                path,
+                importResult.program()
+            )
+        );
+    }
+
+    /**
+     * Выполняет workflow import OpenQASM 2 -> validation -> JSON.
+     *
+     * @param source OpenQASM 2 текст
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importOpenQasm2ValidateWriteJson(
+        final String source,
+        final Path path
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.OPENQASM_2,
+            source,
+            path
+        );
+    }
+
+    /**
+     * Выполняет workflow import OpenQASM 2 -> validation -> JSON с явными настройками import.
+     *
+     * @param source OpenQASM 2 текст
+     * @param path путь JSON-файла
+     * @param options настройки import
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importOpenQasm2ValidateWriteJson(
+        final String source,
+        final Path path,
+        final ImportOptions options
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.OPENQASM_2,
+            source,
+            path,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow import OpenQASM 3 -> validation -> JSON.
+     *
+     * @param source OpenQASM 3 текст
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importOpenQasm3ValidateWriteJson(
+        final String source,
+        final Path path
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.OPENQASM_3,
+            source,
+            path
+        );
+    }
+
+    /**
+     * Выполняет workflow import OpenQASM 3 -> validation -> JSON с явными настройками import.
+     *
+     * @param source OpenQASM 3 текст
+     * @param path путь JSON-файла
+     * @param options настройки import
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importOpenQasm3ValidateWriteJson(
+        final String source,
+        final Path path,
+        final ImportOptions options
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.OPENQASM_3,
+            source,
+            path,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow import Quil -> validation -> JSON.
+     *
+     * @param source Quil текст
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importQuilValidateWriteJson(
+        final String source,
+        final Path path
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.QUIL,
+            source,
+            path
+        );
+    }
+
+    /**
+     * Выполняет workflow import Quil -> validation -> JSON с явными настройками import.
+     *
+     * @param source Quil текст
+     * @param path путь JSON-файла
+     * @param options настройки import
+     * @return результат workflow
+     */
+    public static QuantumImportJsonWorkflowResult importQuilValidateWriteJson(
+        final String source,
+        final Path path,
+        final ImportOptions options
+    ) {
+        return importValidateWriteJson(
+            IntegrationFormat.QUIL,
+            source,
+            path,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow: JSON read -> validation -> preflight -> export.
+     *
+     * @param path путь JSON-файла
+     * @param format целевой внешний формат
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExport(
+        final Path path,
+        final IntegrationFormat format
+    ) {
+        return readJsonValidatePreflightExport(
+            path,
+            format,
+            ExportOptions.defaults()
+        );
+    }
+
+    /**
+     * Выполняет workflow: JSON read -> validation -> preflight -> export с явными настройками export.
+     *
+     * @param path путь JSON-файла
+     * @param format целевой внешний формат
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExport(
+        final Path path,
+        final IntegrationFormat format,
+        final ExportOptions options
+    ) {
+        final QuantumIrReadResult readResult = readJson(path);
+        if (!readResult.isSuccess()) {
+            return QuantumJsonExportWorkflowResult.of(
+                format,
+                path,
+                readResult,
+                null,
+                null,
+                null
+            );
+        }
+        final ValidationResult validationResult = validate(readResult.program());
+        if (!validationResult.isValid()) {
+            return QuantumJsonExportWorkflowResult.of(
+                format,
+                path,
+                readResult,
+                validationResult,
+                null,
+                null
+            );
+        }
+        final CapabilityPreflightResult preflightResult = preflight(
+            format,
+            readResult.program()
+        );
+        if (!preflightResult.isSuccess()) {
+            return QuantumJsonExportWorkflowResult.of(
+                format,
+                path,
+                readResult,
+                validationResult,
+                preflightResult,
+                null
+            );
+        }
+        return QuantumJsonExportWorkflowResult.of(
+            format,
+            path,
+            readResult,
+            validationResult,
+            preflightResult,
+            exportProgram(
+                format,
+                readResult.program(),
+                options
+            )
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> OpenQASM 2.
+     *
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportOpenQasm2(final Path path) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.OPENQASM_2
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> OpenQASM 2 с явными настройками export.
+     *
+     * @param path путь JSON-файла
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportOpenQasm2(
+        final Path path,
+        final ExportOptions options
+    ) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.OPENQASM_2,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> OpenQASM 3.
+     *
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportOpenQasm3(final Path path) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.OPENQASM_3
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> OpenQASM 3 с явными настройками export.
+     *
+     * @param path путь JSON-файла
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportOpenQasm3(
+        final Path path,
+        final ExportOptions options
+    ) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.OPENQASM_3,
+            options
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> Quil.
+     *
+     * @param path путь JSON-файла
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportQuil(final Path path) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.QUIL
+        );
+    }
+
+    /**
+     * Выполняет workflow JSON -> Quil с явными настройками export.
+     *
+     * @param path путь JSON-файла
+     * @param options настройки export
+     * @return результат workflow
+     */
+    public static QuantumJsonExportWorkflowResult readJsonValidatePreflightExportQuil(
+        final Path path,
+        final ExportOptions options
+    ) {
+        return readJsonValidatePreflightExport(
+            path,
+            IntegrationFormat.QUIL,
+            options
         );
     }
 
