@@ -21,6 +21,8 @@ import ru.pathcreator.vadim.quantum.domain.gate.modifier.ModifiedGate;
  */
 public final class OpenQasm2GateMapper {
 
+    private static final StandardGate[] STANDARD_GATES = StandardGate.values();
+
     private OpenQasm2GateMapper() {
     }
 
@@ -60,8 +62,8 @@ public final class OpenQasm2GateMapper {
         ) {
             return definition.gateName();
         }
-        for (int i = 0; i < StandardGate.values().length; i++) {
-            final StandardGate standardGate = StandardGate.values()[i];
+        for (int i = 0; i < STANDARD_GATES.length; i++) {
+            final StandardGate standardGate = STANDARD_GATES[i];
             if (
                 standardGate.arity() == gate.arity()
                 && standardGate.parameterCount() == gate.parameterCount()
@@ -277,8 +279,8 @@ public final class OpenQasm2GateMapper {
         if ("cx".equals(normalizedGateName)) {
             return StandardGate.CX;
         }
-        for (int i = 0; i < StandardGate.values().length; i++) {
-            final StandardGate gate = StandardGate.values()[i];
+        for (int i = 0; i < STANDARD_GATES.length; i++) {
+            final StandardGate gate = STANDARD_GATES[i];
             if (gate.gateName().equals(normalizedGateName)) {
                 return gate;
             }

@@ -73,6 +73,7 @@ import ru.pathcreator.vadim.quantum.domain.register.RegisterName;
 public final class QuantumProgramValidator {
 
     private static final String PI_CONSTANT_NAME = "pi";
+    private static final HashSet<String> STANDARD_GATE_NAMES = standardGateNames();
 
     /**
      * Проверяет программу и возвращает все найденные ошибки.
@@ -175,17 +176,24 @@ public final class QuantumProgramValidator {
                 ValidationError.NO_INDEX
             );
         }
-        for (int i = 0; i < StandardGate.values().length; i++) {
-            if (StandardGate.values()[i].gateName().equals(definition.gateName())) {
-                addError(
-                    errors,
-                    ValidationErrorCode.GATE_DEFINITION_NAME_CONFLICT,
-                    "Gate definition name conflicts with a standard gate.",
-                    ValidationError.NO_INDEX,
-                    ValidationError.NO_INDEX
-                );
-            }
+        if (STANDARD_GATE_NAMES.contains(definition.gateName())) {
+            addError(
+                errors,
+                ValidationErrorCode.GATE_DEFINITION_NAME_CONFLICT,
+                "Gate definition name conflicts with a standard gate.",
+                ValidationError.NO_INDEX,
+                ValidationError.NO_INDEX
+            );
         }
+    }
+
+    private static HashSet<String> standardGateNames() {
+        final StandardGate[] gates = StandardGate.values();
+        final HashSet<String> names = new HashSet<>();
+        for (int i = 0; i < gates.length; i++) {
+            names.add(gates[i].gateName());
+        }
+        return names;
     }
 
     private void validateCompositeGateDefinition(

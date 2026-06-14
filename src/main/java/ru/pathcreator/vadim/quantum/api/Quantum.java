@@ -19,10 +19,13 @@ import ru.pathcreator.vadim.quantum.application.integration.options.ExportOption
 import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.result.ExportResult;
 import ru.pathcreator.vadim.quantum.application.integration.result.ImportResult;
+import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
+import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.storage.CompactQuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.validation.QuantumProgramValidator;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationResult;
 
@@ -147,6 +150,16 @@ public final class Quantum {
     }
 
     /**
+     * Собирает circuit в плотное представление для больших потоков gate-based операций.
+     *
+     * @param circuit схема
+     * @return плотное представление circuit
+     */
+    public static CompactQuantumCircuit compact(final QuantumCircuit circuit) {
+        return CompactQuantumCircuit.from(circuit);
+    }
+
+    /**
      * Проверяет, можно ли экспортировать Quantum IR в target format.
      *
      * @param format внешний формат
@@ -196,6 +209,23 @@ public final class Quantum {
         final QuantumProgram program
     ) {
         return QuantumIrFiles.write(
+            path,
+            program
+        );
+    }
+
+    /**
+     * Потоково записывает Quantum IR в JSON-файл без удержания полного JSON-текста в памяти.
+     *
+     * @param path путь к файлу
+     * @param program программа
+     * @return результат потоковой записи
+     */
+    public static QuantumIrFileWriteResult writeJsonStreaming(
+        final Path path,
+        final QuantumProgram program
+    ) {
+        return QuantumIrFiles.writeToFileStreaming(
             path,
             program
         );

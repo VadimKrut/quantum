@@ -31,7 +31,7 @@ public enum IntegrationFormat {
     ),
 
     /**
-     * РўРµРєСЃС‚РѕРІС‹Р№ С„РѕСЂРјР°С‚ Quil.
+     * Текстовый формат Quil.
      */
     QUIL(
         "quil",

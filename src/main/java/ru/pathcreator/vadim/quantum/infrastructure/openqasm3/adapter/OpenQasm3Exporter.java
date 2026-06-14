@@ -54,7 +54,7 @@ public final class OpenQasm3Exporter implements QuantumExporter {
     private final OpenQasm3ExportNormalizer normalizer;
 
     /**
-     * Generic preflight РїСЂРѕРІРµСЂРєР° РїРµСЂРµРґ adapter-specific lowering.
+     * Generic preflight проверка перед adapter-specific lowering.
      */
     private final CapabilityPreflightChecker preflightChecker;
 

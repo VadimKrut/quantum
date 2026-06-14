@@ -14,6 +14,11 @@ package ru.pathcreator.vadim.quantum.domain.metadata;
  */
 public final class OperationMetadata {
 
+    private static final OperationMetadata EMPTY = new OperationMetadata(
+        null,
+        null
+    );
+
     /**
      * Внешний источник операции.
      */
@@ -44,10 +49,7 @@ public final class OperationMetadata {
      * @return пустые метаданные
      */
     public static OperationMetadata empty() {
-        return new OperationMetadata(
-            null,
-            null
-        );
+        return EMPTY;
     }
 
     /**

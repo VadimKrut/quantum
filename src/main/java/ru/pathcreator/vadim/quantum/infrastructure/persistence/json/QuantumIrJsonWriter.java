@@ -9,16 +9,23 @@
 
 package ru.pathcreator.vadim.quantum.infrastructure.persistence.json;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.PersistenceDiagnostic;
 import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.PersistenceDiagnosticCode;
+import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
@@ -153,6 +160,215 @@ public final class QuantumIrJsonWriter {
                 "Quantum IR JSON could not be generated: " + exception.getMessage()
             )));
         }
+    }
+
+    /**
+     * Потоково записывает Quantum IR в JSON-файл, не создавая полный JSON-текст в heap.
+     *
+     * @param path путь к JSON-файлу
+     * @param program программа
+     * @return результат записи файла
+     */
+    public QuantumIrFileWriteResult writeStreaming(
+        final Path path,
+        final QuantumProgram program
+    ) {
+        if (path == null) {
+            return QuantumIrFileWriteResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.NULL_INPUT,
+                "Quantum IR JSON path must not be null."
+            )));
+        }
+        if (program == null) {
+            return QuantumIrFileWriteResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.NULL_INPUT,
+                "Quantum program must not be null."
+            )));
+        }
+        final ArrayList<PersistenceDiagnostic> diagnostics = new ArrayList<>();
+        final Path parent = path.getParent();
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            try (
+                BufferedWriter writer = Files.newBufferedWriter(
+                    path,
+                    StandardCharsets.UTF_8
+                );
+                JsonGenerator generator = objectMapper.getFactory().createGenerator(writer)
+            ) {
+                generator.useDefaultPrettyPrinter();
+                writeStreamingRoot(
+                    generator,
+                    program,
+                    diagnostics
+                );
+            }
+        } catch (final IOException exception) {
+            return QuantumIrFileWriteResult.failure(List.of(PersistenceDiagnostic.error(
+                PersistenceDiagnosticCode.IO_ERROR,
+                "Quantum IR JSON file could not be written: " + exception.getMessage()
+            )));
+        }
+        if (containsErrors(diagnostics)) {
+            return QuantumIrFileWriteResult.failure(diagnostics);
+        }
+        return QuantumIrFileWriteResult.success(
+            path,
+            diagnostics
+        );
+    }
+
+    private void writeStreamingRoot(
+        final JsonGenerator generator,
+        final QuantumProgram program,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) throws IOException {
+        generator.writeStartObject();
+        generator.writeStringField(
+            "format",
+            FORMAT_NAME
+        );
+        generator.writeNumberField(
+            "version",
+            FORMAT_VERSION
+        );
+        generator.writeFieldName("program");
+        writeStreamingProgram(
+            generator,
+            program,
+            diagnostics
+        );
+        generator.writeEndObject();
+    }
+
+    private void writeStreamingProgram(
+        final JsonGenerator generator,
+        final QuantumProgram program,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) throws IOException {
+        generator.writeStartObject();
+        generator.writeStringField(
+            "computationModel",
+            program.computationModel().name()
+        );
+        writeObjectArrayField(
+            generator,
+            "gateDefinitions",
+            program.gateDefinitionCount(),
+            index -> writeGateDefinition(
+                program.gateDefinition(index),
+                diagnostics
+            )
+        );
+        writeObjectArrayField(
+            generator,
+            "classicalDeclarations",
+            program.classicalDeclarationCount(),
+            index -> writeClassicalDeclaration(program.classicalDeclaration(index))
+        );
+        writeObjectArrayField(
+            generator,
+            "callableDefinitions",
+            program.callableDefinitionCount(),
+            index -> writeCallableDefinition(
+                program.callableDefinition(index),
+                diagnostics
+            )
+        );
+        writeObjectArrayField(
+            generator,
+            "externalCallableDeclarations",
+            program.externalCallableDeclarationCount(),
+            index -> writeExternalCallableDeclaration(program.externalCallableDeclaration(index))
+        );
+        writeObjectArrayField(
+            generator,
+            "calibrationDefinitions",
+            program.calibrationDefinitionCount(),
+            index -> writeCalibrationDefinition(program.calibrationDefinition(index))
+        );
+        generator.writeFieldName("circuits");
+        generator.writeStartArray();
+        for (int i = 0; i < program.circuitCount(); i++) {
+            writeStreamingCircuit(
+                generator,
+                program.circuit(i),
+                diagnostics
+            );
+        }
+        generator.writeEndArray();
+        generator.writeEndObject();
+    }
+
+    private void writeStreamingCircuit(
+        final JsonGenerator generator,
+        final QuantumCircuit circuit,
+        final ArrayList<PersistenceDiagnostic> diagnostics
+    ) throws IOException {
+        generator.writeStartObject();
+        generator.writeStringField(
+            "name",
+            circuit.name().value()
+        );
+        generator.writeFieldName("quantumRegisters");
+        generator.writeStartArray();
+        for (int i = 0; i < circuit.quantumRegisterCount(); i++) {
+            final QuantumRegister register = circuit.quantumRegister(i);
+            objectMapper.writeValue(
+                generator,
+                writeRegister(
+                    register.name().value(),
+                    register.size()
+                )
+            );
+        }
+        generator.writeEndArray();
+        generator.writeFieldName("classicalRegisters");
+        generator.writeStartArray();
+        for (int i = 0; i < circuit.classicalRegisterCount(); i++) {
+            final ClassicalRegister register = circuit.classicalRegister(i);
+            objectMapper.writeValue(
+                generator,
+                writeRegister(
+                    register.name().value(),
+                    register.size()
+                )
+            );
+        }
+        generator.writeEndArray();
+        generator.writeFieldName("operations");
+        generator.writeStartArray();
+        for (int i = 0; i < circuit.operationCount(); i++) {
+            objectMapper.writeValue(
+                generator,
+                writeOperation(
+                    circuit.operation(i),
+                    circuit.operationMetadata(i),
+                    diagnostics
+                )
+            );
+        }
+        generator.writeEndArray();
+        generator.writeEndObject();
+    }
+
+    private void writeObjectArrayField(
+        final JsonGenerator generator,
+        final String fieldName,
+        final int count,
+        final JsonObjectFactory factory
+    ) throws IOException {
+        generator.writeFieldName(fieldName);
+        generator.writeStartArray();
+        for (int i = 0; i < count; i++) {
+            objectMapper.writeValue(
+                generator,
+                factory.create(i)
+            );
+        }
+        generator.writeEndArray();
     }
 
     private static LinkedHashMap<String, Object> writeProgram(
@@ -1512,5 +1728,11 @@ public final class QuantumIrJsonWriter {
             }
         }
         return false;
+    }
+
+    @FunctionalInterface
+    private interface JsonObjectFactory {
+
+        LinkedHashMap<String, Object> create(int index);
     }
 }

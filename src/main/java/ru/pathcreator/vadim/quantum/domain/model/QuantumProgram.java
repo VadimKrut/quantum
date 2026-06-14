@@ -19,22 +19,22 @@ import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
 
 /**
- * РљРІР°РЅС‚РѕРІР°СЏ РїСЂРѕРіСЂР°РјРјР°, СЃРѕРґРµСЂР¶Р°С‰Р°СЏ РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅСѓСЋ РјРѕРґРµР»СЊ Рё РЅР°Р±РѕСЂ СЃС…РµРј.
+ * Квантовая программа, содержащая вычислительную модель и набор схем.
  */
 public final class QuantumProgram {
 
     /**
-     * Р’С‹С‡РёСЃР»РёС‚РµР»СЊРЅР°СЏ РјРѕРґРµР»СЊ РїСЂРѕРіСЂР°РјРјС‹.
+     * Вычислительная модель программы.
      */
     private final QuantumComputationModel computationModel;
 
     /**
-     * РЎС…РµРјС‹, СЃРѕР·РґР°РЅРЅС‹Рµ РІРЅСѓС‚СЂРё РїСЂРѕРіСЂР°РјРјС‹.
+     * Схемы, созданные внутри программы.
      */
     private final ArrayList<QuantumCircuit> circuits;
 
     /**
-     * РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ gate definitions, РґРѕСЃС‚СѓРїРЅС‹Рµ СЃС…РµРјР°Рј РїСЂРѕРіСЂР°РјРјС‹.
+     * Пользовательские gate definitions, доступные схемам программы.
      */
     private final ArrayList<GateDefinition> gateDefinitions;
     private final ArrayList<ClassicalDeclaration> classicalDeclarations;
@@ -53,19 +53,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * РЎРѕР·РґР°РµС‚ РїСЂРѕРіСЂР°РјРјСѓ РґР»СЏ gate-based quantum circuits.
+     * Создает программу для gate-based quantum circuits.
      *
-     * @return gate-based РєРІР°РЅС‚РѕРІР°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @return gate-based квантовая программа
      */
     public static QuantumProgram gateBased() {
         return create(QuantumComputationModel.GATE_BASED_CIRCUIT);
     }
 
     /**
-     * РЎРѕР·РґР°РµС‚ РїСЂРѕРіСЂР°РјРјСѓ РґР»СЏ СѓРєР°Р·Р°РЅРЅРѕР№ РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅРѕР№ РјРѕРґРµР»Рё.
+     * Создает программу для указанной вычислительной модели.
      *
-     * @param computationModel РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅР°СЏ РјРѕРґРµР»СЊ РїСЂРѕРіСЂР°РјРјС‹
-     * @return РєРІР°РЅС‚РѕРІР°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param computationModel вычислительная модель программы
+     * @return квантовая программа
      */
     public static QuantumProgram create(final QuantumComputationModel computationModel) {
         if (computationModel == null) {
@@ -75,19 +75,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅСѓСЋ РјРѕРґРµР»СЊ РїСЂРѕРіСЂР°РјРјС‹.
+     * Возвращает вычислительную модель программы.
      *
-     * @return РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅР°СЏ РјРѕРґРµР»СЊ
+     * @return вычислительная модель
      */
     public QuantumComputationModel computationModel() {
         return computationModel;
     }
 
     /**
-     * РЎРѕР·РґР°РµС‚ СЃС…РµРјСѓ РІРЅСѓС‚СЂРё РїСЂРѕРіСЂР°РјРјС‹.
+     * Создает схему внутри программы.
      *
-     * @param name РёРјСЏ СЃС…РµРјС‹
-     * @return СЃРѕР·РґР°РЅРЅР°СЏ СЃС…РµРјР°
+     * @param name имя схемы
+     * @return созданная схема
      */
     public QuantumCircuit createCircuit(final String name) {
         ensureGateBased();
@@ -100,10 +100,10 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р”РѕР±Р°РІР»СЏРµС‚ gate definition РІ РїСЂРѕРіСЂР°РјРјСѓ.
+     * Добавляет gate definition в программу.
      *
-     * @param definition РѕРїРёСЃР°РЅРёРµ РіРµР№С‚Р°
-     * @return С‚РµРєСѓС‰Р°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param definition описание гейта
+     * @return текущая программа
      */
     public QuantumProgram addGateDefinition(final GateDefinition definition) {
         if (definition == null) {
@@ -115,18 +115,18 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ gate definitions.
+     * Возвращает количество gate definitions.
      *
-     * @return РєРѕР»РёС‡РµСЃС‚РІРѕ gate definitions
+     * @return количество gate definitions
      */
     public int gateDefinitionCount() {
         return gateDefinitions.size();
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ gate definition РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает gate definition по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ gate definition
+     * @param index индекс gate definition
      * @return gate definition
      */
     public GateDefinition gateDefinition(final int index) {
@@ -135,19 +135,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє РѕРїРёСЃР°РЅРёР№ РіРµР№С‚РѕРІ.
+     * Возвращает неизменяемый снимок описаний гейтов.
      *
-     * @return СЃРїРёСЃРѕРє gate definitions
+     * @return список gate definitions
      */
     public List<GateDefinition> gateDefinitions() {
         return List.copyOf(gateDefinitions);
     }
 
     /**
-     * Р”РѕР±Р°РІР»СЏРµС‚ РєР»Р°СЃСЃРёС‡РµСЃРєРѕРµ РѕР±СЉСЏРІР»РµРЅРёРµ СѓСЂРѕРІРЅСЏ РїСЂРѕРіСЂР°РјРјС‹.
+     * Добавляет классическое объявление уровня программы.
      *
-     * @param declaration РєР»Р°СЃСЃРёС‡РµСЃРєРѕРµ РѕР±СЉСЏРІР»РµРЅРёРµ
-     * @return С‚РµРєСѓС‰Р°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param declaration классическое объявление
+     * @return текущая программа
      */
     public QuantumProgram addClassicalDeclaration(final ClassicalDeclaration declaration) {
         if (declaration == null) {
@@ -159,19 +159,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РєР»Р°СЃСЃРёС‡РµСЃРєРёС… РѕР±СЉСЏРІР»РµРЅРёР№.
+     * Возвращает количество классических объявлений.
      *
-     * @return РєРѕР»РёС‡РµСЃС‚РІРѕ РѕР±СЉСЏРІР»РµРЅРёР№
+     * @return количество объявлений
      */
     public int classicalDeclarationCount() {
         return classicalDeclarations.size();
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєР»Р°СЃСЃРёС‡РµСЃРєРѕРµ РѕР±СЉСЏРІР»РµРЅРёРµ РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает классическое объявление по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ РѕР±СЉСЏРІР»РµРЅРёСЏ
-     * @return РєР»Р°СЃСЃРёС‡РµСЃРєРѕРµ РѕР±СЉСЏРІР»РµРЅРёРµ
+     * @param index индекс объявления
+     * @return классическое объявление
      */
     public ClassicalDeclaration classicalDeclaration(final int index) {
         validateIndex(
@@ -183,19 +183,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє РєР»Р°СЃСЃРёС‡РµСЃРєРёС… РѕР±СЉСЏРІР»РµРЅРёР№.
+     * Возвращает неизменяемый снимок классических объявлений.
      *
-     * @return РѕР±СЉСЏРІР»РµРЅРёСЏ
+     * @return объявления
      */
     public List<ClassicalDeclaration> classicalDeclarations() {
         return List.copyOf(classicalDeclarations);
     }
 
     /**
-     * Р”РѕР±Р°РІР»СЏРµС‚ РїРѕРґРїСЂРѕРіСЂР°РјРјСѓ СѓСЂРѕРІРЅСЏ РїСЂРѕРіСЂР°РјРјС‹.
+     * Добавляет подпрограмму уровня программы.
      *
-     * @param definition РїРѕРґРїСЂРѕРіСЂР°РјРјР°
-     * @return С‚РµРєСѓС‰Р°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param definition подпрограмма
+     * @return текущая программа
      */
     public QuantumProgram addCallableDefinition(final CallableDefinition definition) {
         if (definition == null) {
@@ -207,19 +207,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРґРїСЂРѕРіСЂР°РјРј.
+     * Возвращает количество подпрограмм.
      *
-     * @return РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРґРїСЂРѕРіСЂР°РјРј
+     * @return количество подпрограмм
      */
     public int callableDefinitionCount() {
         return callableDefinitions.size();
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РїРѕРґРїСЂРѕРіСЂР°РјРјСѓ РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает подпрограмму по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ РїРѕРґРїСЂРѕРіСЂР°РјРјС‹
-     * @return РїРѕРґРїСЂРѕРіСЂР°РјРјР°
+     * @param index индекс подпрограммы
+     * @return подпрограмма
      */
     public CallableDefinition callableDefinition(final int index) {
         validateIndex(
@@ -231,19 +231,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє РїРѕРґРїСЂРѕРіСЂР°РјРј.
+     * Возвращает неизменяемый снимок подпрограмм.
      *
-     * @return РїРѕРґРїСЂРѕРіСЂР°РјРјС‹
+     * @return подпрограммы
      */
     public List<CallableDefinition> callableDefinitions() {
         return List.copyOf(callableDefinitions);
     }
 
     /**
-     * Р”РѕР±Р°РІР»СЏРµС‚ РІРЅРµС€РЅРµРµ РѕР±СЉСЏРІР»РµРЅРёРµ.
+     * Добавляет внешнее объявление.
      *
-     * @param declaration РІРЅРµС€РЅРµРµ РѕР±СЉСЏРІР»РµРЅРёРµ
-     * @return С‚РµРєСѓС‰Р°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param declaration внешнее объявление
+     * @return текущая программа
      */
     public QuantumProgram addExternalCallableDeclaration(final ExternalCallableDeclaration declaration) {
         if (declaration == null) {
@@ -255,19 +255,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РІРЅРµС€РЅРёС… РѕР±СЉСЏРІР»РµРЅРёР№.
+     * Возвращает количество внешних объявлений.
      *
-     * @return РєРѕР»РёС‡РµСЃС‚РІРѕ РѕР±СЉСЏРІР»РµРЅРёР№
+     * @return количество объявлений
      */
     public int externalCallableDeclarationCount() {
         return externalCallableDeclarations.size();
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РІРЅРµС€РЅРµРµ РѕР±СЉСЏРІР»РµРЅРёРµ РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает внешнее объявление по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ РѕР±СЉСЏРІР»РµРЅРёСЏ
-     * @return РІРЅРµС€РЅРµРµ РѕР±СЉСЏРІР»РµРЅРёРµ
+     * @param index индекс объявления
+     * @return внешнее объявление
      */
     public ExternalCallableDeclaration externalCallableDeclaration(final int index) {
         validateIndex(
@@ -279,19 +279,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє РІРЅРµС€РЅРёС… РѕР±СЉСЏРІР»РµРЅРёР№.
+     * Возвращает неизменяемый снимок внешних объявлений.
      *
-     * @return РІРЅРµС€РЅРёРµ РѕР±СЉСЏРІР»РµРЅРёСЏ
+     * @return внешние объявления
      */
     public List<ExternalCallableDeclaration> externalCallableDeclarations() {
         return List.copyOf(externalCallableDeclarations);
     }
 
     /**
-     * Р”РѕР±Р°РІР»СЏРµС‚ РєР°Р»РёР±СЂРѕРІРєСѓ.
+     * Добавляет калибровку.
      *
-     * @param definition РєР°Р»РёР±СЂРѕРІРєР°
-     * @return С‚РµРєСѓС‰Р°СЏ РїСЂРѕРіСЂР°РјРјР°
+     * @param definition калибровка
+     * @return текущая программа
      */
     public QuantumProgram addCalibrationDefinition(final CalibrationDefinition definition) {
         if (definition == null) {
@@ -302,19 +302,19 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РєР°Р»РёР±СЂРѕРІРѕРє.
+     * Возвращает количество калибровок.
      *
-     * @return РєРѕР»РёС‡РµСЃС‚РІРѕ РєР°Р»РёР±СЂРѕРІРѕРє
+     * @return количество калибровок
      */
     public int calibrationDefinitionCount() {
         return calibrationDefinitions.size();
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РєР°Р»РёР±СЂРѕРІРєСѓ РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает калибровку по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ РєР°Р»РёР±СЂРѕРІРєРё
-     * @return РєР°Р»РёР±СЂРѕРІРєР°
+     * @param index индекс калибровки
+     * @return калибровка
      */
     public CalibrationDefinition calibrationDefinition(final int index) {
         validateIndex(
@@ -326,9 +326,9 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє РєР°Р»РёР±СЂРѕРІРѕРє.
+     * Возвращает неизменяемый снимок калибровок.
      *
-     * @return РєР°Р»РёР±СЂРѕРІРєРё
+     * @return калибровки
      */
     public List<CalibrationDefinition> calibrationDefinitions() {
         return List.copyOf(calibrationDefinitions);
@@ -344,10 +344,10 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС…РµРјСѓ РїРѕ РёРЅРґРµРєСЃСѓ.
+     * Возвращает схему по индексу.
      *
-     * @param index РёРЅРґРµРєСЃ СЃС…РµРјС‹
-     * @return СЃС…РµРјР°
+     * @param index индекс схемы
+     * @return схема
      */
     public QuantumCircuit circuit(final int index) {
         validateCircuitIndex(index);
@@ -355,9 +355,9 @@ public final class QuantumProgram {
     }
 
     /**
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРёР·РјРµРЅСЏРµРјС‹Р№ СЃРЅРёРјРѕРє СЃРїРёСЃРєР° СЃС…РµРј.
+     * Возвращает неизменяемый снимок списка схем.
      *
-     * @return СЃРїРёСЃРѕРє СЃС…РµРј
+     * @return список схем
      */
     public List<QuantumCircuit> circuits() {
         return List.copyOf(circuits);

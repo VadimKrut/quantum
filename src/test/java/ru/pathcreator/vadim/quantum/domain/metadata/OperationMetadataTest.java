@@ -50,7 +50,7 @@ class OperationMetadataTest {
             metadata
         );
 
-        assertSame(
+        assertEquals(
             operation,
             circuit.operation(0)
         );

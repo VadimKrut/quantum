@@ -98,7 +98,7 @@ public final class OpenQasm3Writer {
             throw new IllegalArgumentException("Quantum circuit must not be null.");
         }
         final Map<String, GateDefinition> definitionsByName = definitionsByName(program);
-        final StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder(estimatedOutputCapacity(circuit));
         builder.append("OPENQASM 3.0;\n");
         builder.append("include \"stdgates.inc\";\n");
 
@@ -1178,5 +1178,12 @@ public final class OpenQasm3Writer {
         String registerName,
         long expectedValue
     ) {
+    }
+
+    private static int estimatedOutputCapacity(final QuantumCircuit circuit) {
+        final long estimated = 256L + (long) circuit.operationCount() * 48L;
+        return estimated > Integer.MAX_VALUE
+            ? Integer.MAX_VALUE
+            : (int) estimated;
     }
 }

@@ -43,7 +43,7 @@ public final class OpenQasm2Importer implements QuantumImporter {
     private final QuantumProgramValidator validator;
 
     /**
-     * Resolver include sources РґР»СЏ OpenQASM 2.
+     * Resolver include sources для OpenQASM 2.
      */
     private final OpenQasm2IncludeResolver includeResolver;
 

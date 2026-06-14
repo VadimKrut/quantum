@@ -54,8 +54,6 @@ public final class QuilParser {
     private static final Pattern CONDITIONAL_JUMP_PATTERN = Pattern.compile("^JUMP-(WHEN|UNLESS)\\s+@?([A-Za-z_][A-Za-z0-9_]*)\\s+(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern CALIBRATION_HEADER_PATTERN = Pattern.compile("^(DEFCAL|DEFFRAME|DEFWAVEFORM)\\s+([A-Za-z_][A-Za-z0-9_]*).*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
-    private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d+$");
-
     public QuilParserResult parse(final String source) {
         final ArrayList<IntegrationDiagnostic> diagnostics = new ArrayList<>();
         if (source == null) {
@@ -97,6 +95,7 @@ public final class QuilParser {
             );
         }
         final QuantumCircuit circuit = program.createCircuit("main");
+        circuit.reserveOperationCapacity(statements.size());
         final QuantumRegister qubits = plan.maxQubitIndex() < 0
             ? null
             : circuit.createQuantumRegister(
@@ -141,7 +140,7 @@ public final class QuilParser {
 
     private static ArrayList<Statement> statements(final String source) {
         final ArrayList<Statement> statements = new ArrayList<>();
-        final String[] lines = source.split("\\R");
+        final String[] lines = splitLines(source);
         for (int i = 0; i < lines.length; i++) {
             final String text = stripComment(lines[i]).trim();
             if (!text.isBlank()) {
@@ -181,20 +180,48 @@ public final class QuilParser {
     }
 
     private static boolean isBlockHeader(final String text) {
-        final String upper = text.toUpperCase();
         return text.endsWith(":")
             && (
-                upper.startsWith("DEFGATE ")
-                || upper.startsWith("DEFCAL ")
-                || upper.startsWith("DEFCIRCUIT ")
-                || upper.startsWith("DEFFRAME ")
-                || upper.startsWith("DEFWAVEFORM ")
+                startsWithIgnoreCase(
+                    text,
+                    "DEFGATE "
+                )
+                || startsWithIgnoreCase(
+                    text,
+                    "DEFCAL "
+                )
+                || startsWithIgnoreCase(
+                    text,
+                    "DEFCIRCUIT "
+                )
+                || startsWithIgnoreCase(
+                    text,
+                    "DEFFRAME "
+                )
+                || startsWithIgnoreCase(
+                    text,
+                    "DEFWAVEFORM "
+                )
             );
     }
 
     private static boolean startsWithWhitespace(final String line) {
         return !line.isEmpty()
             && Character.isWhitespace(line.charAt(0));
+    }
+
+    private static boolean startsWithIgnoreCase(
+        final String value,
+        final String prefix
+    ) {
+        return value.length() >= prefix.length()
+            && value.regionMatches(
+                true,
+                0,
+                prefix,
+                0,
+                prefix.length()
+            );
     }
 
     private static String rstrip(final String value) {
@@ -212,18 +239,50 @@ public final class QuilParser {
     }
 
     private static boolean shouldPreserveSourceStatement(final String text) {
-        final String upper = text.toUpperCase();
-        return upper.startsWith("PRAGMA ")
-            || upper.startsWith("INCLUDE ")
-            || upper.startsWith("DELAY ")
-            || upper.startsWith("FENCE")
-            || upper.startsWith("PULSE ")
-            || upper.startsWith("CAPTURE ")
-            || upper.startsWith("RAW-CAPTURE ")
-            || upper.startsWith("SET-")
-            || upper.startsWith("SHIFT-")
-            || upper.startsWith("SWAP-PHASES ")
-            || upper.startsWith("NONBLOCKING ");
+        return startsWithIgnoreCase(
+            text,
+            "PRAGMA "
+        )
+            || startsWithIgnoreCase(
+                text,
+                "INCLUDE "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "DELAY "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "FENCE"
+            )
+            || startsWithIgnoreCase(
+                text,
+                "PULSE "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "CAPTURE "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "RAW-CAPTURE "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "SET-"
+            )
+            || startsWithIgnoreCase(
+                text,
+                "SHIFT-"
+            )
+            || startsWithIgnoreCase(
+                text,
+                "SWAP-PHASES "
+            )
+            || startsWithIgnoreCase(
+                text,
+                "NONBLOCKING "
+            );
     }
 
     private static String stripComment(final String line) {
@@ -279,7 +338,7 @@ public final class QuilParser {
         ) {
             return List.of();
         }
-        final String[] parts = text.split(",");
+        final String[] parts = splitComma(text);
         final String[] names = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             final String trimmed = parts[i].trim();
@@ -306,14 +365,14 @@ public final class QuilParser {
     }
 
     private static GateMatrix parseDefgateMatrix(final Statement statement) {
-        final String[] lines = statement.content().split("\\R");
+        final String[] lines = splitLines(statement.content());
         final ArrayList<String[]> rows = new ArrayList<>();
         for (int i = 1; i < lines.length; i++) {
             final String line = stripComment(lines[i]).trim();
             if (line.isBlank()) {
                 continue;
             }
-            final String[] parts = line.split(",");
+            final String[] parts = splitComma(line);
             for (int j = 0; j < parts.length; j++) {
                 parts[j] = parts[j].trim();
             }
@@ -406,18 +465,47 @@ public final class QuilParser {
 
     private static int maxQubitIndex(final String text) {
         int result = -1;
-        final String[] parts = text.replace(
-            ",",
-            " "
-        ).split("\\s+");
-        for (int i = 1; i < parts.length; i++) {
-            final String token = parts[i].trim();
-            if (INTEGER_PATTERN.matcher(token).matches()) {
+        int tokenIndex = 0;
+        int index = 0;
+        while (index < text.length()) {
+            while (
+                index < text.length()
+                && isQuilTokenSeparator(text.charAt(index))
+            ) {
+                index++;
+            }
+            final int start = index;
+            long parsed = 0L;
+            boolean digitsOnly = start < text.length();
+            while (
+                index < text.length()
+                && !isQuilTokenSeparator(text.charAt(index))
+            ) {
+                final char character = text.charAt(index);
+                if (
+                    character < '0'
+                    || character > '9'
+                ) {
+                    digitsOnly = false;
+                } else if (digitsOnly) {
+                    parsed = parsed * 10L + character - '0';
+                    if (parsed > Integer.MAX_VALUE) {
+                        digitsOnly = false;
+                    }
+                }
+                index++;
+            }
+            if (
+                tokenIndex > 0
+                && digitsOnly
+                && start < index
+            ) {
                 result = Math.max(
                     result,
-                    Integer.parseInt(token)
+                    (int) parsed
                 );
             }
+            tokenIndex++;
         }
         return result;
     }
@@ -533,18 +621,28 @@ public final class QuilParser {
         if (!statement.sourceOnly()) {
             return false;
         }
-        final String upper = statement.text().toUpperCase();
-        return upper.startsWith("DEFCAL ")
-            || upper.startsWith("DEFFRAME ")
-            || upper.startsWith("DEFWAVEFORM ");
+        return startsWithIgnoreCase(
+            statement.text(),
+            "DEFCAL "
+        )
+            || startsWithIgnoreCase(
+                statement.text(),
+                "DEFFRAME "
+            )
+            || startsWithIgnoreCase(
+                statement.text(),
+                "DEFWAVEFORM "
+            );
     }
 
     private static boolean isProgramSourceBlock(final Statement statement) {
         if (!statement.sourceOnly()) {
             return false;
         }
-        final String upper = statement.text().toUpperCase();
-        return upper.startsWith("DEFCIRCUIT ");
+        return startsWithIgnoreCase(
+            statement.text(),
+            "DEFCIRCUIT "
+        );
     }
 
     private static void parseMeasure(
@@ -694,20 +792,19 @@ public final class QuilParser {
         final Statement statement,
         final ArrayList<IntegrationDiagnostic> diagnostics
     ) {
-        final String upper = quilType.toUpperCase();
-        if ("REAL".equals(upper)) {
+        if ("REAL".equalsIgnoreCase(quilType)) {
             return ClassicalType.sized(
                 ClassicalTypeKind.FLOAT,
                 64
             );
         }
-        if ("INTEGER".equals(upper)) {
+        if ("INTEGER".equalsIgnoreCase(quilType)) {
             return ClassicalType.sized(
                 ClassicalTypeKind.SIGNED_INTEGER,
                 64
             );
         }
-        if ("OCTET".equals(upper)) {
+        if ("OCTET".equalsIgnoreCase(quilType)) {
             return ClassicalType.sized(
                 ClassicalTypeKind.UNSIGNED_INTEGER,
                 8
@@ -770,12 +867,12 @@ public final class QuilParser {
         final QuantumCircuit circuit,
         final ArrayList<IntegrationDiagnostic> diagnostics
     ) {
-        final String[] parts = statement.text().split("\\s+");
+        final String[] parts = splitWhitespace(statement.text());
         if (parts.length == 0) {
             return false;
         }
-        final String instruction = parts[0].toUpperCase();
-        if ("MOVE".equals(instruction) && parts.length == 3) {
+        final String instruction = parts[0];
+        if ("MOVE".equalsIgnoreCase(instruction) && parts.length == 3) {
             assign(
                 circuit,
                 parts[1],
@@ -783,7 +880,7 @@ public final class QuilParser {
             );
             return true;
         }
-        if ("EXCHANGE".equals(instruction) && parts.length == 3) {
+        if ("EXCHANGE".equalsIgnoreCase(instruction) && parts.length == 3) {
             assign(
                 circuit,
                 parts[1],
@@ -808,7 +905,7 @@ public final class QuilParser {
             );
             return true;
         }
-        if ("NEG".equals(instruction) && parts.length == 3) {
+        if ("NEG".equalsIgnoreCase(instruction) && parts.length == 3) {
             assignCall(
                 circuit,
                 "neg",
@@ -817,7 +914,7 @@ public final class QuilParser {
             );
             return true;
         }
-        if ("NOT".equals(instruction) && parts.length == 3) {
+        if ("NOT".equalsIgnoreCase(instruction) && parts.length == 3) {
             assignCall(
                 circuit,
                 "not",
@@ -845,7 +942,7 @@ public final class QuilParser {
                     circuit,
                     parts[1],
                     ClassicalExpression.call(
-                        instruction.toLowerCase(),
+                        classicalCallName(instruction),
                         List.of(
                             classicalOperand(parts[2]),
                             classicalOperand(parts[3])
@@ -856,7 +953,11 @@ public final class QuilParser {
             }
         }
         if (
-            ("LOAD".equals(instruction) || "STORE".equals(instruction) || "CONVERT".equals(instruction))
+            (
+                "LOAD".equalsIgnoreCase(instruction)
+                || "STORE".equalsIgnoreCase(instruction)
+                || "CONVERT".equalsIgnoreCase(instruction)
+            )
             && parts.length >= 3
         ) {
             final ArrayList<ClassicalExpression> arguments = new ArrayList<>();
@@ -867,7 +968,7 @@ public final class QuilParser {
                 circuit,
                 parts[1],
                 ClassicalExpression.call(
-                    instruction.toLowerCase(),
+                    classicalCallName(instruction),
                     arguments
                 )
             );
@@ -885,46 +986,86 @@ public final class QuilParser {
     }
 
     private static boolean isClassicalVmInstruction(final String instruction) {
-        return "MOVE".equals(instruction)
-            || "EXCHANGE".equals(instruction)
-            || "CONVERT".equals(instruction)
-            || "LOAD".equals(instruction)
-            || "STORE".equals(instruction)
-            || "ADD".equals(instruction)
-            || "SUB".equals(instruction)
-            || "MUL".equals(instruction)
-            || "DIV".equals(instruction)
-            || "NEG".equals(instruction)
-            || "EQ".equals(instruction)
-            || "GT".equals(instruction)
-            || "GE".equals(instruction)
-            || "LT".equals(instruction)
-            || "LE".equals(instruction)
-            || "AND".equals(instruction)
-            || "IOR".equals(instruction)
-            || "XOR".equals(instruction)
-            || "NOT".equals(instruction);
+        return "MOVE".equalsIgnoreCase(instruction)
+            || "EXCHANGE".equalsIgnoreCase(instruction)
+            || "CONVERT".equalsIgnoreCase(instruction)
+            || "LOAD".equalsIgnoreCase(instruction)
+            || "STORE".equalsIgnoreCase(instruction)
+            || "ADD".equalsIgnoreCase(instruction)
+            || "SUB".equalsIgnoreCase(instruction)
+            || "MUL".equalsIgnoreCase(instruction)
+            || "DIV".equalsIgnoreCase(instruction)
+            || "NEG".equalsIgnoreCase(instruction)
+            || "EQ".equalsIgnoreCase(instruction)
+            || "GT".equalsIgnoreCase(instruction)
+            || "GE".equalsIgnoreCase(instruction)
+            || "LT".equalsIgnoreCase(instruction)
+            || "LE".equalsIgnoreCase(instruction)
+            || "AND".equalsIgnoreCase(instruction)
+            || "IOR".equalsIgnoreCase(instruction)
+            || "XOR".equalsIgnoreCase(instruction)
+            || "NOT".equalsIgnoreCase(instruction);
     }
 
     private static boolean isClassicalCallInstruction(final String instruction) {
-        return "EQ".equals(instruction)
-            || "GT".equals(instruction)
-            || "GE".equals(instruction)
-            || "LT".equals(instruction)
-            || "LE".equals(instruction);
+        return "EQ".equalsIgnoreCase(instruction)
+            || "GT".equalsIgnoreCase(instruction)
+            || "GE".equalsIgnoreCase(instruction)
+            || "LT".equalsIgnoreCase(instruction)
+            || "LE".equalsIgnoreCase(instruction);
     }
 
     private static ClassicalBinaryOperator binaryOperator(final String instruction) {
-        return switch (instruction) {
-            case "ADD" -> ClassicalBinaryOperator.ADD;
-            case "SUB" -> ClassicalBinaryOperator.SUBTRACT;
-            case "MUL" -> ClassicalBinaryOperator.MULTIPLY;
-            case "DIV" -> ClassicalBinaryOperator.DIVIDE;
-            case "AND" -> ClassicalBinaryOperator.BITWISE_AND;
-            case "IOR" -> ClassicalBinaryOperator.BITWISE_OR;
-            case "XOR" -> ClassicalBinaryOperator.BITWISE_XOR;
-            default -> null;
-        };
+        if ("ADD".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.ADD;
+        }
+        if ("SUB".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.SUBTRACT;
+        }
+        if ("MUL".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.MULTIPLY;
+        }
+        if ("DIV".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.DIVIDE;
+        }
+        if ("AND".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.BITWISE_AND;
+        }
+        if ("IOR".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.BITWISE_OR;
+        }
+        if ("XOR".equalsIgnoreCase(instruction)) {
+            return ClassicalBinaryOperator.BITWISE_XOR;
+        }
+        return null;
+    }
+
+    private static String classicalCallName(final String instruction) {
+        if ("EQ".equalsIgnoreCase(instruction)) {
+            return "eq";
+        }
+        if ("GT".equalsIgnoreCase(instruction)) {
+            return "gt";
+        }
+        if ("GE".equalsIgnoreCase(instruction)) {
+            return "ge";
+        }
+        if ("LT".equalsIgnoreCase(instruction)) {
+            return "lt";
+        }
+        if ("LE".equalsIgnoreCase(instruction)) {
+            return "le";
+        }
+        if ("LOAD".equalsIgnoreCase(instruction)) {
+            return "load";
+        }
+        if ("STORE".equalsIgnoreCase(instruction)) {
+            return "store";
+        }
+        if ("CONVERT".equalsIgnoreCase(instruction)) {
+            return "convert";
+        }
+        return instruction;
     }
 
     private static void assignCall(
@@ -983,10 +1124,7 @@ public final class QuilParser {
         if (gate == null) {
             gate = gateDefinitions.get(matcher.group(1));
         }
-        final String[] qubitTokens = matcher.group(3).replace(
-            ",",
-            " "
-        ).trim().split("\\s+");
+        final String[] qubitTokens = splitWhitespaceWithComma(matcher.group(3));
         if (gate == null) {
             gate = createExternalGateDefinition(
                 program,
@@ -1103,7 +1241,7 @@ public final class QuilParser {
         ) {
             return 0;
         }
-        return text.split(",").length;
+        return commaSeparatedPartCount(text);
     }
 
     private static ParameterExpression[] parseParameters(
@@ -1120,7 +1258,7 @@ public final class QuilParser {
         if (text == null) {
             return null;
         }
-        final String[] parts = text.split(",");
+        final String[] parts = splitComma(text);
         if (parts.length != expectedCount) {
             return null;
         }
@@ -1244,6 +1382,225 @@ public final class QuilParser {
             ));
             return 0;
         }
+    }
+
+    private static String[] splitLines(final String text) {
+        final int lineCount = lineCount(text);
+        final String[] lines = new String[lineCount];
+        int start = 0;
+        int line = 0;
+        for (int i = 0; i < text.length(); i++) {
+            final char character = text.charAt(i);
+            if (
+                character == '\n'
+                || character == '\r'
+            ) {
+                lines[line] = text.substring(
+                    start,
+                    i
+                );
+                line++;
+                if (
+                    character == '\r'
+                    && i + 1 < text.length()
+                    && text.charAt(i + 1) == '\n'
+                ) {
+                    i++;
+                }
+                start = i + 1;
+            }
+        }
+        if (start < text.length()) {
+            lines[line] = text.substring(start);
+        }
+        return lines;
+    }
+
+    private static String[] splitComma(final String text) {
+        final int partCount = commaSeparatedPartCount(text);
+        final String[] parts = new String[partCount];
+        if (partCount == 0) {
+            return parts;
+        }
+        int start = 0;
+        int part = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == ',') {
+                if (part == partCount - 1) {
+                    parts[part] = text.substring(
+                        start,
+                        i
+                    );
+                    return parts;
+                }
+                parts[part] = text.substring(
+                    start,
+                    i
+                );
+                part++;
+                start = i + 1;
+            }
+        }
+        parts[part] = text.substring(start);
+        return parts;
+    }
+
+    private static String[] splitWhitespace(final String text) {
+        final String[] parts = new String[separatorTokenCount(
+            text,
+            false
+        )];
+        int index = 0;
+        int part = 0;
+        while (index < text.length()) {
+            while (
+                index < text.length()
+                && Character.isWhitespace(text.charAt(index))
+            ) {
+                index++;
+            }
+            final int start = index;
+            while (
+                index < text.length()
+                && !Character.isWhitespace(text.charAt(index))
+            ) {
+                index++;
+            }
+            if (start < index) {
+                parts[part] = text.substring(
+                    start,
+                    index
+                );
+                part++;
+            }
+        }
+        return parts;
+    }
+
+    private static String[] splitWhitespaceWithComma(final String text) {
+        final String[] parts = new String[separatorTokenCount(
+            text,
+            true
+        )];
+        int index = 0;
+        int part = 0;
+        while (index < text.length()) {
+            while (
+                index < text.length()
+                && isQuilTokenSeparator(text.charAt(index))
+            ) {
+                index++;
+            }
+            final int start = index;
+            while (
+                index < text.length()
+                && !isQuilTokenSeparator(text.charAt(index))
+            ) {
+                index++;
+            }
+            if (start < index) {
+                parts[part] = text.substring(
+                    start,
+                    index
+                );
+                part++;
+            }
+        }
+        return parts;
+    }
+
+    private static int lineCount(final String text) {
+        int count = 0;
+        int start = 0;
+        for (int i = 0; i < text.length(); i++) {
+            final char character = text.charAt(i);
+            if (
+                character == '\n'
+                || character == '\r'
+            ) {
+                count++;
+                if (
+                    character == '\r'
+                    && i + 1 < text.length()
+                    && text.charAt(i + 1) == '\n'
+                ) {
+                    i++;
+                }
+                start = i + 1;
+            }
+        }
+        if (start < text.length()) {
+            count++;
+        }
+        return count;
+    }
+
+    private static int separatorTokenCount(
+        final String text,
+        final boolean commaIsSeparator
+    ) {
+        int count = 0;
+        int index = 0;
+        while (index < text.length()) {
+            while (
+                index < text.length()
+                && isTokenSeparator(
+                    text.charAt(index),
+                    commaIsSeparator
+                )
+            ) {
+                index++;
+            }
+            final int start = index;
+            while (
+                index < text.length()
+                && !isTokenSeparator(
+                    text.charAt(index),
+                    commaIsSeparator
+                )
+            ) {
+                index++;
+            }
+            if (start < index) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static boolean isTokenSeparator(
+        final char character,
+        final boolean commaIsSeparator
+    ) {
+        return Character.isWhitespace(character)
+            || (
+                commaIsSeparator
+                && character == ','
+            );
+    }
+
+    private static boolean isQuilTokenSeparator(final char character) {
+        return character == ','
+            || Character.isWhitespace(character);
+    }
+
+    private static int commaSeparatedPartCount(final String text) {
+        int count = 1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == ',') {
+                count++;
+            }
+        }
+        int lastIndex = text.length() - 1;
+        while (
+            count > 0
+            && lastIndex >= 0
+            && text.charAt(lastIndex) == ','
+        ) {
+            count--;
+            lastIndex--;
+        }
+        return count;
     }
 
     private static IntegrationDiagnostic error(

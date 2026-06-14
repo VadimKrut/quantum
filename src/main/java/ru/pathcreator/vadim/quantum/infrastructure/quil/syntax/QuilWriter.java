@@ -9,8 +9,6 @@
 
 package ru.pathcreator.vadim.quantum.infrastructure.quil.syntax;
 
-import java.util.LinkedHashMap;
-
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
@@ -69,7 +67,7 @@ public final class QuilWriter {
         final QuantumProgram program,
         final QuantumCircuit circuit
     ) {
-        final StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder(estimatedOutputCapacity(circuit));
         final QuilWriterResult calibrationResult = appendCalibrationDefinitions(
             builder,
             program
@@ -84,8 +82,8 @@ public final class QuilWriter {
         if (!definitionsResult.isSuccess()) {
             return definitionsResult;
         }
-        final LinkedHashMap<Qubit, Integer> qubitAddresses = qubitAddresses(circuit);
-        final LinkedHashMap<ClassicalBit, String> memoryReferences = memoryReferences(
+        final QuilCircuitLayout layout = QuilCircuitLayout.from(circuit);
+        appendMemoryDeclarations(
             circuit,
             builder
         );
@@ -93,8 +91,7 @@ public final class QuilWriter {
             final QuilWriterResult result = appendOperation(
                 builder,
                 circuit.operation(i),
-                qubitAddresses,
-                memoryReferences
+                layout
             );
             if (!result.isSuccess()) {
                 return result;
@@ -163,27 +160,10 @@ public final class QuilWriter {
         return QuilWriterResult.success("");
     }
 
-    private static LinkedHashMap<Qubit, Integer> qubitAddresses(final QuantumCircuit circuit) {
-        final LinkedHashMap<Qubit, Integer> addresses = new LinkedHashMap<>();
-        int nextAddress = 0;
-        for (int i = 0; i < circuit.quantumRegisterCount(); i++) {
-            final QuantumRegister register = circuit.quantumRegister(i);
-            for (int j = 0; j < register.size(); j++) {
-                addresses.put(
-                    register.get(j),
-                    Integer.valueOf(nextAddress)
-                );
-                nextAddress++;
-            }
-        }
-        return addresses;
-    }
-
-    private static LinkedHashMap<ClassicalBit, String> memoryReferences(
+    private static void appendMemoryDeclarations(
         final QuantumCircuit circuit,
         final StringBuilder builder
     ) {
-        final LinkedHashMap<ClassicalBit, String> references = new LinkedHashMap<>();
         for (int i = 0; i < circuit.classicalRegisterCount(); i++) {
             final ClassicalRegister register = circuit.classicalRegister(i);
             builder.append("DECLARE ")
@@ -191,27 +171,19 @@ public final class QuilWriter {
                 .append(" BIT[")
                 .append(register.size())
                 .append("]\n");
-            for (int j = 0; j < register.size(); j++) {
-                references.put(
-                    register.get(j),
-                    register.name().value() + "[" + j + "]"
-                );
-            }
         }
-        return references;
     }
 
     private static QuilWriterResult appendOperation(
         final StringBuilder builder,
         final Operation operation,
-        final LinkedHashMap<Qubit, Integer> qubitAddresses,
-        final LinkedHashMap<ClassicalBit, String> memoryReferences
+        final QuilCircuitLayout layout
     ) {
         if (operation instanceof GateOperation gateOperation) {
             return appendGate(
                 builder,
                 gateOperation,
-                qubitAddresses
+                layout
             );
         }
         if (operation instanceof MeasureOperation measureOperation) {
@@ -220,11 +192,11 @@ public final class QuilWriter {
             }
             builder.append("MEASURE ")
                 .append(qubitAddress(
-                    qubitAddresses,
+                    layout,
                     measureOperation.qubit()
                 ))
                 .append(' ')
-                .append(memoryReferences.get(measureOperation.bit()))
+                .append(memoryReference(measureOperation.bit()))
                 .append('\n');
             return QuilWriterResult.success("");
         }
@@ -234,7 +206,7 @@ public final class QuilWriter {
             }
             builder.append("RESET ")
                 .append(qubitAddress(
-                    qubitAddresses,
+                    layout,
                     resetOperation.qubit()
                 ))
                 .append('\n');
@@ -321,7 +293,7 @@ public final class QuilWriter {
     private static QuilWriterResult appendGate(
         final StringBuilder builder,
         final GateOperation operation,
-        final LinkedHashMap<Qubit, Integer> qubitAddresses
+        final QuilCircuitLayout layout
     ) {
         final String gateName = QuilGateMapper.toQuilName(operation.gate());
         final String resolvedGateName = gateName == null
@@ -350,7 +322,7 @@ public final class QuilWriter {
         for (int i = 0; i < operation.qubitCount(); i++) {
             builder.append(' ')
                 .append(qubitAddress(
-                    qubitAddresses,
+                    layout,
                     operation.qubit(i)
                 ));
         }
@@ -379,14 +351,14 @@ public final class QuilWriter {
     }
 
     private static int qubitAddress(
-        final LinkedHashMap<Qubit, Integer> qubitAddresses,
+        final QuilCircuitLayout layout,
         final Qubit qubit
     ) {
-        final Integer address = qubitAddresses.get(qubit);
-        if (address == null) {
-            throw new IllegalArgumentException("Qubit is not mapped to a Quil address.");
-        }
-        return address.intValue();
+        return layout.qubitAddress(qubit);
+    }
+
+    private static String memoryReference(final ClassicalBit bit) {
+        return bit.register().name().value() + "[" + bit.index() + "]";
     }
 
     private static String formatParameter(final ParameterExpression parameter) {
@@ -459,5 +431,42 @@ public final class QuilWriter {
         }
         builder.append(')');
         return builder.toString();
+    }
+
+    private static int estimatedOutputCapacity(final QuantumCircuit circuit) {
+        final long estimated = 256L + (long) circuit.operationCount() * 32L;
+        return estimated > Integer.MAX_VALUE
+            ? Integer.MAX_VALUE
+            : (int) estimated;
+    }
+
+    private record QuilCircuitLayout(
+        QuantumRegister[] quantumRegisters,
+        int[] quantumRegisterOffsets
+    ) {
+
+        private static QuilCircuitLayout from(final QuantumCircuit circuit) {
+            final QuantumRegister[] registers = new QuantumRegister[circuit.quantumRegisterCount()];
+            final int[] offsets = new int[registers.length];
+            int offset = 0;
+            for (int i = 0; i < registers.length; i++) {
+                registers[i] = circuit.quantumRegister(i);
+                offsets[i] = offset;
+                offset += registers[i].size();
+            }
+            return new QuilCircuitLayout(
+                registers,
+                offsets
+            );
+        }
+
+        private int qubitAddress(final Qubit qubit) {
+            for (int i = 0; i < quantumRegisters.length; i++) {
+                if (quantumRegisters[i] == qubit.register()) {
+                    return quantumRegisterOffsets[i] + qubit.index();
+                }
+            }
+            throw new IllegalArgumentException("Qubit is not mapped to a Quil address.");
+        }
     }
 }

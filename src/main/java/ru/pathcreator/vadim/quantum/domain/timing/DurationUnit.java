@@ -20,6 +20,8 @@ public enum DurationUnit {
     MS("ms"),
     S("s");
 
+    private static final DurationUnit[] UNITS = values();
+
     private final String symbol;
 
     DurationUnit(final String symbol) {
@@ -34,9 +36,9 @@ public enum DurationUnit {
         if (symbol == null) {
             throw new IllegalArgumentException("Duration unit symbol must not be null.");
         }
-        for (int i = 0; i < values().length; i++) {
-            if (values()[i].symbol.equals(symbol)) {
-                return values()[i];
+        for (int i = 0; i < UNITS.length; i++) {
+            if (UNITS[i].symbol.equals(symbol)) {
+                return UNITS[i];
             }
         }
         throw new IllegalArgumentException("Unsupported duration unit: " + symbol + ".");

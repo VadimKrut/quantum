@@ -94,31 +94,79 @@ public final class QuilGateMapper {
         if (name == null) {
             throw new IllegalArgumentException("Quil gate name must not be null.");
         }
-        final String normalized = name.toUpperCase();
-        return switch (normalized) {
-            case "U", "U3" -> StandardGate.U;
-            case "H", "HADAMARD" -> StandardGate.H;
-            case "X" -> StandardGate.X;
-            case "Y" -> StandardGate.Y;
-            case "Z" -> StandardGate.Z;
-            case "S" -> StandardGate.S;
-            case "SDG" -> StandardGate.SDG;
-            case "T" -> StandardGate.T;
-            case "TDG" -> StandardGate.TDG;
-            case "RX" -> StandardGate.RX;
-            case "RY" -> StandardGate.RY;
-            case "RZ" -> StandardGate.RZ;
-            case "P", "PHASE" -> StandardGate.PHASE;
-            case "CNOT" -> StandardGate.CX;
-            case "CY" -> StandardGate.CY;
-            case "CZ" -> StandardGate.CZ;
-            case "CH" -> StandardGate.CH;
-            case "CPHASE" -> StandardGate.CPHASE;
-            case "SWAP" -> StandardGate.SWAP;
-            case "CCNOT" -> StandardGate.CCX;
-            case "I" -> StandardGate.ID;
-            default -> null;
-        };
+        if (
+            "U".equalsIgnoreCase(name)
+            || "U3".equalsIgnoreCase(name)
+        ) {
+            return StandardGate.U;
+        }
+        if (
+            "H".equalsIgnoreCase(name)
+            || "HADAMARD".equalsIgnoreCase(name)
+        ) {
+            return StandardGate.H;
+        }
+        if ("X".equalsIgnoreCase(name)) {
+            return StandardGate.X;
+        }
+        if ("Y".equalsIgnoreCase(name)) {
+            return StandardGate.Y;
+        }
+        if ("Z".equalsIgnoreCase(name)) {
+            return StandardGate.Z;
+        }
+        if ("S".equalsIgnoreCase(name)) {
+            return StandardGate.S;
+        }
+        if ("SDG".equalsIgnoreCase(name)) {
+            return StandardGate.SDG;
+        }
+        if ("T".equalsIgnoreCase(name)) {
+            return StandardGate.T;
+        }
+        if ("TDG".equalsIgnoreCase(name)) {
+            return StandardGate.TDG;
+        }
+        if ("RX".equalsIgnoreCase(name)) {
+            return StandardGate.RX;
+        }
+        if ("RY".equalsIgnoreCase(name)) {
+            return StandardGate.RY;
+        }
+        if ("RZ".equalsIgnoreCase(name)) {
+            return StandardGate.RZ;
+        }
+        if (
+            "P".equalsIgnoreCase(name)
+            || "PHASE".equalsIgnoreCase(name)
+        ) {
+            return StandardGate.PHASE;
+        }
+        if ("CNOT".equalsIgnoreCase(name)) {
+            return StandardGate.CX;
+        }
+        if ("CY".equalsIgnoreCase(name)) {
+            return StandardGate.CY;
+        }
+        if ("CZ".equalsIgnoreCase(name)) {
+            return StandardGate.CZ;
+        }
+        if ("CH".equalsIgnoreCase(name)) {
+            return StandardGate.CH;
+        }
+        if ("CPHASE".equalsIgnoreCase(name)) {
+            return StandardGate.CPHASE;
+        }
+        if ("SWAP".equalsIgnoreCase(name)) {
+            return StandardGate.SWAP;
+        }
+        if ("CCNOT".equalsIgnoreCase(name)) {
+            return StandardGate.CCX;
+        }
+        if ("I".equalsIgnoreCase(name)) {
+            return StandardGate.ID;
+        }
+        return null;
     }
 
     private static boolean isGate(

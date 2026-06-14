@@ -50,6 +50,8 @@ import ru.pathcreator.vadim.quantum.infrastructure.openqasm2.syntax.ast.OpenQasm
  */
 public final class OpenQasm2Parser {
 
+    private static final int PARAMETER_EXPRESSION_CACHE_LIMIT = 8_192;
+
     private static final Pattern VERSION_PATTERN = Pattern.compile("^OPENQASM\\s+2(?:\\.0)?$", Pattern.CASE_INSENSITIVE);
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^include\\s+\"([^\"]+)\"$", Pattern.CASE_INSENSITIVE);
     private static final Pattern QREG_PATTERN = Pattern.compile("^qreg\\s+([A-Za-z_][A-Za-z0-9_]*)\\[(\\d+)]$", Pattern.CASE_INSENSITIVE);
@@ -143,15 +145,21 @@ public final class OpenQasm2Parser {
                 diagnostics
             );
         }
-        final ArrayList<Statement> statements = statementsFromAst(ast);
+        circuit.reserveOperationCapacity(ast.statements().size());
         boolean versionSeen = false;
 
-        for (int i = 0; i < statements.size(); i++) {
-            final Statement statement = statements.get(i);
+        for (int i = 0; i < ast.statements().size(); i++) {
+            final Statement statement = statementFromAst(
+                ast,
+                i
+            );
             if (statement.text().isBlank()) {
                 continue;
             }
-            if (VERSION_PATTERN.matcher(statement.text()).matches()) {
+            if (
+                !versionSeen
+                && VERSION_PATTERN.matcher(statement.text()).matches()
+            ) {
                 versionSeen = true;
             } else if (!versionSeen) {
                 diagnostics.add(IntegrationDiagnostic.error(
@@ -195,23 +203,29 @@ public final class OpenQasm2Parser {
         return false;
     }
 
-    private static ArrayList<Statement> statementsFromAst(final OpenQasm2Ast ast) {
-        final ArrayList<Statement> statements = new ArrayList<>();
-        for (int i = 0; i < ast.statements().size(); i++) {
-            final OpenQasm2AstStatement statement = ast.statements().get(i);
-            statements.add(new Statement(
-                statement.text(),
-                statement.line(),
-                statement.column()
-            ));
-        }
-        return statements;
+    private static Statement statementFromAst(
+        final OpenQasm2Ast ast,
+        final int index
+    ) {
+        final OpenQasm2AstStatement statement = ast.statements().get(index);
+        return new Statement(
+            statement.text(),
+            statement.line(),
+            statement.column()
+        );
     }
 
     private static void parseStatement(
         final ParseContext context,
         final Statement statement
     ) {
+        if (!startsWithOpenQasmOperationKeyword(statement.text())) {
+            parseGate(
+                context,
+                statement
+            );
+            return;
+        }
         final Matcher includeMatcher = INCLUDE_PATTERN.matcher(statement.text());
         final Matcher qregMatcher = QREG_PATTERN.matcher(statement.text());
         final Matcher cregMatcher = CREG_PATTERN.matcher(statement.text());
@@ -291,9 +305,116 @@ public final class OpenQasm2Parser {
         }
     }
 
+    private static boolean startsWithOpenQasmOperationKeyword(final String text) {
+        int index = 0;
+        while (
+            index < text.length()
+            && Character.isWhitespace(text.charAt(index))
+        ) {
+            index++;
+        }
+        final int start = index;
+        while (
+            index < text.length()
+            && isIdentifierCharacter(text.charAt(index))
+        ) {
+            index++;
+        }
+        if (start == index) {
+            return false;
+        }
+        return isOpenQasmOperationKeyword(
+            text,
+            start,
+            index
+        );
+    }
+
+    private static boolean isOpenQasmOperationKeyword(
+        final String text,
+        final int start,
+        final int end
+    ) {
+        return regionEqualsIgnoreCase(
+            text,
+            start,
+            end,
+            "include"
+        )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "measure"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "reset"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "barrier"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "qreg"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "creg"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "if"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "opaque"
+            )
+            || regionEqualsIgnoreCase(
+                text,
+                start,
+                end,
+                "gate"
+            );
+    }
+
+    private static boolean regionEqualsIgnoreCase(
+        final String text,
+        final int start,
+        final int end,
+        final String expected
+    ) {
+        return end - start == expected.length()
+            && text.regionMatches(
+                true,
+                start,
+                expected,
+                0,
+                expected.length()
+            );
+    }
+
     private static boolean isUnsupportedStatement(final String statement) {
-        final String lowerCaseStatement = statement.toLowerCase();
-        return lowerCaseStatement.startsWith("if ");
+        return statement.regionMatches(
+            true,
+            0,
+            "if ",
+            0,
+            3
+        );
     }
 
     private static void parseInclude(
@@ -342,9 +463,11 @@ public final class OpenQasm2Parser {
             context.exitInclude(includeName);
             return;
         }
-        final ArrayList<Statement> statements = statementsFromAst(ast);
-        for (int i = 0; i < statements.size(); i++) {
-            final Statement statement = statements.get(i);
+        for (int i = 0; i < ast.statements().size(); i++) {
+            final Statement statement = statementFromAst(
+                ast,
+                i
+            );
             if (
                 statement.text().isBlank()
                 || VERSION_PATTERN.matcher(statement.text()).matches()
@@ -1014,8 +1137,8 @@ public final class OpenQasm2Parser {
         final ParseContext context,
         final Statement statement
     ) {
-        final Matcher matcher = GATE_PATTERN.matcher(statement.text());
-        if (!matcher.matches()) {
+        final GateCallParts gateCall = parseGateCallParts(statement.text());
+        if (gateCall == null) {
             context.addError(
                 IntegrationDiagnosticCode.PARSE_ERROR,
                 "Cannot parse OpenQASM 2 statement: " + statement.text() + ".",
@@ -1025,12 +1148,12 @@ public final class OpenQasm2Parser {
         }
         final Gate gate = resolveGate(
             context,
-            matcher.group(1)
+            gateCall.name()
         );
         if (gate == null) {
             context.addError(
                 IntegrationDiagnosticCode.UNSUPPORTED_GATE,
-                "OpenQASM 2 import does not support gate: " + matcher.group(1) + ".",
+                "OpenQASM 2 import does not support gate: " + gateCall.name() + ".",
                 statement
             );
             return;
@@ -1038,7 +1161,7 @@ public final class OpenQasm2Parser {
         final ParameterExpression[] parameters = parseParameters(
             context,
             statement,
-            matcher.group(2),
+            gateCall.parameters(),
             gate.parameterCount()
         );
         if (parameters == null) {
@@ -1047,7 +1170,7 @@ public final class OpenQasm2Parser {
         final QuantumOperand[] operands = parseQuantumOperands(
             context,
             statement,
-            matcher.group(3)
+            gateCall.operands()
         );
         if (operands == null) {
             return;
@@ -1061,8 +1184,92 @@ public final class OpenQasm2Parser {
         );
     }
 
+    private static GateCallParts parseGateCallParts(final String text) {
+        int index = 0;
+        while (
+            index < text.length()
+            && Character.isWhitespace(text.charAt(index))
+        ) {
+            index++;
+        }
+        final int nameStart = index;
+        while (
+            index < text.length()
+            && isIdentifierCharacter(text.charAt(index))
+        ) {
+            index++;
+        }
+        if (nameStart == index) {
+            return null;
+        }
+        final String name = text.substring(
+            nameStart,
+            index
+        );
+        while (
+            index < text.length()
+            && Character.isWhitespace(text.charAt(index))
+        ) {
+            index++;
+        }
+        String parameters = null;
+        if (
+            index < text.length()
+            && text.charAt(index) == '('
+        ) {
+            final int parametersStart = index + 1;
+            int depth = 1;
+            index++;
+            while (index < text.length()) {
+                final char character = text.charAt(index);
+                if (character == '(') {
+                    depth++;
+                } else if (character == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        parameters = text.substring(
+                            parametersStart,
+                            index
+                        );
+                        index++;
+                        break;
+                    }
+                }
+                index++;
+            }
+            if (depth != 0) {
+                return new GateCallParts(
+                    name,
+                    text.substring(parametersStart - 1),
+                    ""
+                );
+            }
+            while (
+                index < text.length()
+                && Character.isWhitespace(text.charAt(index))
+            ) {
+                index++;
+            }
+        }
+        if (index >= text.length()) {
+            return null;
+        }
+        return new GateCallParts(
+            name,
+            parameters,
+            text.substring(index).trim()
+        );
+    }
+
+    private static boolean isIdentifierCharacter(final char character) {
+        return Character.isLetterOrDigit(character)
+            || character == '_';
+    }
+
     private static boolean isOpenQasmOperationKeyword(final String name) {
-        return "measure".equalsIgnoreCase(name)
+        return "include".equalsIgnoreCase(name)
+            || "measure".equalsIgnoreCase(name)
+            || "reset".equalsIgnoreCase(name)
             || "barrier".equalsIgnoreCase(name)
             || "qreg".equalsIgnoreCase(name)
             || "creg".equalsIgnoreCase(name)
@@ -1099,16 +1306,78 @@ public final class OpenQasm2Parser {
             );
             return null;
         }
-        final ListParts parts = parseCommaAwareParts(
+        return parseParameterArray(
             context,
             statement,
             parameterText,
-            "parameter list"
+            expectedCount
         );
-        if (parts == null) {
+    }
+
+    private static ParameterExpression[] parseParameterArray(
+        final ParseContext context,
+        final Statement statement,
+        final String text,
+        final int expectedCount
+    ) {
+        final ParameterExpression[] parameters = new ParameterExpression[expectedCount];
+        int depth = 0;
+        int partStart = 0;
+        int partCount = 0;
+        for (int i = 0; i < text.length(); i++) {
+            final char current = text.charAt(i);
+            if (current == '(') {
+                depth++;
+            } else if (current == ')') {
+                depth--;
+                if (depth < 0) {
+                    context.addError(
+                        IntegrationDiagnosticCode.PARSE_ERROR,
+                        "OpenQASM 2 parameter list has an unexpected closing parenthesis.",
+                        statement
+                    );
+                    return null;
+                }
+            }
+            if (
+                current == ','
+                && depth == 0
+            ) {
+                if (!parseParameterPart(
+                    context,
+                    statement,
+                    text,
+                    partStart,
+                    i,
+                    parameters,
+                    partCount
+                )) {
+                    return null;
+                }
+                partCount++;
+                partStart = i + 1;
+            }
+        }
+        if (depth != 0) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "OpenQASM 2 parameter list has an unclosed parenthesis.",
+                statement
+            );
             return null;
         }
-        if (parts.parts().size() != expectedCount) {
+        if (!parseParameterPart(
+            context,
+            statement,
+            text,
+            partStart,
+            text.length(),
+            parameters,
+            partCount
+        )) {
+            return null;
+        }
+        if (partCount + 1 != expectedCount) {
             context.addError(
                 IntegrationDiagnosticCode.PARSE_ERROR,
                 "Gate parameter count does not match supported gate.",
@@ -1116,19 +1385,79 @@ public final class OpenQasm2Parser {
             );
             return null;
         }
-        final ParameterExpression[] parameters = new ParameterExpression[parts.parts().size()];
-        for (int i = 0; i < parts.parts().size(); i++) {
-            final ParameterExpression parameter = parseParameter(
-                context,
-                statement,
-                parts.parts().get(i).trim()
-            );
-            if (parameter == null) {
-                return null;
-            }
-            parameters[i] = parameter;
-        }
         return parameters;
+    }
+
+    private static boolean parseParameterPart(
+        final ParseContext context,
+        final Statement statement,
+        final String text,
+        final int start,
+        final int end,
+        final ParameterExpression[] parameters,
+        final int partIndex
+    ) {
+        if (partIndex >= parameters.length) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Gate parameter count does not match supported gate.",
+                statement
+            );
+            return false;
+        }
+        final int trimmedStart = firstNonWhitespaceIndex(
+            text,
+            start,
+            end
+        );
+        final int trimmedEnd = lastNonWhitespaceIndex(
+            text,
+            trimmedStart,
+            end
+        );
+        final ParameterExpression parameter = parseParameter(
+            context,
+            statement,
+            text.substring(
+                trimmedStart,
+                trimmedEnd
+            )
+        );
+        if (parameter == null) {
+            return false;
+        }
+        parameters[partIndex] = parameter;
+        return true;
+    }
+
+    private static int firstNonWhitespaceIndex(
+        final String text,
+        final int start,
+        final int end
+    ) {
+        int index = start;
+        while (
+            index < end
+            && Character.isWhitespace(text.charAt(index))
+        ) {
+            index++;
+        }
+        return index;
+    }
+
+    private static int lastNonWhitespaceIndex(
+        final String text,
+        final int start,
+        final int end
+    ) {
+        int index = end;
+        while (
+            index > start
+            && Character.isWhitespace(text.charAt(index - 1))
+        ) {
+            index--;
+        }
+        return index;
     }
 
     private static ParameterExpression parseParameter(
@@ -1136,6 +1465,10 @@ public final class OpenQasm2Parser {
         final Statement statement,
         final String value
     ) {
+        final ParameterExpression cached = context.parameterExpression(value);
+        if (cached != null) {
+            return cached;
+        }
         final ParameterParser parser = new ParameterParser(value);
         final ParameterExpression expression = parser.parse();
         if (expression == null) {
@@ -1146,6 +1479,10 @@ public final class OpenQasm2Parser {
             );
             return null;
         }
+        context.cacheParameterExpression(
+            value,
+            expression
+        );
         return expression;
     }
 
@@ -1200,7 +1537,7 @@ public final class OpenQasm2Parser {
         final Statement statement,
         final String operandText
     ) {
-        final String[] parts = operandText.split(",");
+        final String[] parts = splitComma(operandText);
         final QuantumOperand[] operands = new QuantumOperand[parts.length];
         for (int i = 0; i < parts.length; i++) {
             operands[i] = parseQuantumOperand(
@@ -1213,6 +1550,54 @@ public final class OpenQasm2Parser {
             }
         }
         return operands;
+    }
+
+    private static String[] splitComma(final String text) {
+        final int count = commaSeparatedPartCount(text);
+        final String[] parts = new String[count];
+        if (count == 0) {
+            return parts;
+        }
+        int start = 0;
+        int part = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == ',') {
+                if (part == count - 1) {
+                    parts[part] = text.substring(
+                        start,
+                        i
+                    );
+                    return parts;
+                }
+                parts[part] = text.substring(
+                    start,
+                    i
+                );
+                part++;
+                start = i + 1;
+            }
+        }
+        parts[part] = text.substring(start);
+        return parts;
+    }
+
+    private static int commaSeparatedPartCount(final String text) {
+        int count = 1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == ',') {
+                count++;
+            }
+        }
+        int lastIndex = text.length() - 1;
+        while (
+            count > 0
+            && lastIndex >= 0
+            && text.charAt(lastIndex) == ','
+        ) {
+            count--;
+            lastIndex--;
+        }
+        return count;
     }
 
     private static void appendGateOperations(
@@ -1282,18 +1667,32 @@ public final class OpenQasm2Parser {
         final Statement statement,
         final String value
     ) {
-        final Matcher indexedMatcher = INDEXED_ARGUMENT_PATTERN.matcher(value);
-        if (indexedMatcher.matches()) {
-            final QuantumRegister register = context.quantumRegister(indexedMatcher.group(1));
+        final ReferenceParts reference = parseReferenceParts(value);
+        if (reference == null) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Invalid quantum argument: " + value + ".",
+                statement
+            );
+            return null;
+        }
+        if (reference.hasIndex()) {
+            final QuantumRegister register = context.quantumRegister(
+                value,
+                reference.nameStart(),
+                reference.nameEnd()
+            );
             final int index = parseNonNegativeInteger(
                 context,
                 statement,
-                indexedMatcher.group(2)
+                value,
+                reference.indexStart(),
+                reference.indexEnd()
             );
             if (register == null) {
                 context.addError(
                     IntegrationDiagnosticCode.PARSE_ERROR,
-                    "Unknown quantum register: " + indexedMatcher.group(1) + ".",
+                    "Unknown quantum register: " + reference.nameText(value) + ".",
                     statement
                 );
                 return null;
@@ -1311,25 +1710,78 @@ public final class OpenQasm2Parser {
             }
             return QuantumOperand.single(register.get(index));
         }
-        final Matcher registerMatcher = REGISTER_ARGUMENT_PATTERN.matcher(value);
-        if (registerMatcher.matches()) {
-            final QuantumRegister register = context.quantumRegister(registerMatcher.group(1));
-            if (register == null) {
-                context.addError(
-                    IntegrationDiagnosticCode.PARSE_ERROR,
-                    "Unknown quantum register: " + registerMatcher.group(1) + ".",
-                    statement
-                );
-                return null;
-            }
-            return QuantumOperand.register(register);
-        }
-        context.addError(
-            IntegrationDiagnosticCode.PARSE_ERROR,
-            "Invalid quantum argument: " + value + ".",
-            statement
+        final QuantumRegister register = context.quantumRegister(
+            value,
+            reference.nameStart(),
+            reference.nameEnd()
         );
-        return null;
+        if (register == null) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Unknown quantum register: " + reference.nameText(value) + ".",
+                statement
+            );
+            return null;
+        }
+        return QuantumOperand.register(register);
+    }
+
+    private static ReferenceParts parseReferenceParts(final String value) {
+        if (value.isBlank()) {
+            return null;
+        }
+        int index = 0;
+        while (
+            index < value.length()
+            && isIdentifierCharacter(value.charAt(index))
+        ) {
+            index++;
+        }
+        if (index == 0) {
+            return null;
+        }
+        if (index == value.length()) {
+            return new ReferenceParts(
+                0,
+                index,
+                -1,
+                -1
+            );
+        }
+        if (
+            value.charAt(index) != '['
+            || value.charAt(value.length() - 1) != ']'
+        ) {
+            return null;
+        }
+        final int indexStart = index + 1;
+        final int indexEnd = value.length() - 1;
+        if (isBlankRange(
+            value,
+            indexStart,
+            indexEnd
+        )) {
+            return null;
+        }
+        return new ReferenceParts(
+            0,
+            index,
+            indexStart,
+            indexEnd
+        );
+    }
+
+    private static boolean isBlankRange(
+        final String value,
+        final int start,
+        final int end
+    ) {
+        for (int i = start; i < end; i++) {
+            if (!Character.isWhitespace(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static ClassicalOperand parseClassicalOperand(
@@ -1428,6 +1880,40 @@ public final class OpenQasm2Parser {
                 statement
             );
             return -1;
+        }
+        return (int) parsed;
+    }
+
+    private static int parseNonNegativeInteger(
+        final ParseContext context,
+        final Statement statement,
+        final String value,
+        final int start,
+        final int end
+    ) {
+        long parsed = 0L;
+        for (int i = start; i < end; i++) {
+            final char character = value.charAt(i);
+            if (
+                character < '0'
+                || character > '9'
+            ) {
+                context.addError(
+                    IntegrationDiagnosticCode.PARSE_ERROR,
+                    "Expected non-negative integer.",
+                    statement
+                );
+                return -1;
+            }
+            parsed = parsed * 10L + character - '0';
+            if (parsed > Integer.MAX_VALUE) {
+                context.addError(
+                    IntegrationDiagnosticCode.PARSE_ERROR,
+                    "Integer index or size is outside Java int range.",
+                    statement
+                );
+                return -1;
+            }
         }
         return (int) parsed;
     }
@@ -1679,6 +2165,7 @@ public final class OpenQasm2Parser {
         private final LinkedHashMap<String, QuantumRegister> quantumRegisters;
         private final LinkedHashMap<String, ClassicalRegister> classicalRegisters;
         private final LinkedHashMap<String, GateDefinition> gateDefinitions;
+        private final LinkedHashMap<String, ParameterExpression> parameterExpressions;
 
         private ParseContext(
             final QuantumProgram program,
@@ -1698,6 +2185,7 @@ public final class OpenQasm2Parser {
             this.quantumRegisters = new LinkedHashMap<>();
             this.classicalRegisters = new LinkedHashMap<>();
             this.gateDefinitions = new LinkedHashMap<>();
+            this.parameterExpressions = new LinkedHashMap<>();
         }
 
         private QuantumProgram program() {
@@ -1732,6 +2220,27 @@ public final class OpenQasm2Parser {
             return quantumRegisters.get(name);
         }
 
+        private QuantumRegister quantumRegister(
+            final String value,
+            final int start,
+            final int end
+        ) {
+            for (final String name : quantumRegisters.keySet()) {
+                if (
+                    end - start == name.length()
+                    && value.regionMatches(
+                        start,
+                        name,
+                        0,
+                        name.length()
+                    )
+                ) {
+                    return quantumRegisters.get(name);
+                }
+            }
+            return null;
+        }
+
         private ClassicalRegister classicalRegister(final String name) {
             return classicalRegisters.get(name);
         }
@@ -1745,6 +2254,22 @@ public final class OpenQasm2Parser {
 
         private GateDefinition gateDefinition(final String name) {
             return gateDefinitions.get(name);
+        }
+
+        private ParameterExpression parameterExpression(final String value) {
+            return parameterExpressions.get(value);
+        }
+
+        private void cacheParameterExpression(
+            final String value,
+            final ParameterExpression expression
+        ) {
+            if (parameterExpressions.size() < PARAMETER_EXPRESSION_CACHE_LIMIT) {
+                parameterExpressions.put(
+                    value,
+                    expression
+                );
+            }
         }
 
         private String includedSource(final String includeName) {
@@ -1863,6 +2388,32 @@ public final class OpenQasm2Parser {
 
         private ClassicalBit bit(final int index) {
             return bits[index];
+        }
+    }
+
+    private record GateCallParts(
+        String name,
+        String parameters,
+        String operands
+    ) {
+    }
+
+    private record ReferenceParts(
+        int nameStart,
+        int nameEnd,
+        int indexStart,
+        int indexEnd
+    ) {
+
+        private boolean hasIndex() {
+            return indexStart >= 0;
+        }
+
+        private String nameText(final String source) {
+            return source.substring(
+                nameStart,
+                nameEnd
+            );
         }
     }
 }

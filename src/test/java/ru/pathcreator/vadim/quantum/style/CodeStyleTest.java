@@ -37,6 +37,19 @@ class CodeStyleTest {
         "\\b(public\\s+)?(final\\s+)?(class|interface|enum|record)\\s+\\w[^\\{]*\\{"
     );
 
+    private static final String[] FORBIDDEN_MOJIBAKE_MARKERS = new String[] {
+        "\u0420\u040E",
+        "\u0420\u045F",
+        "\u0420\u0491",
+        "\u0420\u00B5",
+        "\u0420\u00B0",
+        "\u0420\u0451",
+        "\u0421\u0402",
+        "\u0421\u201A",
+        "\u0421\u040C",
+        "\u0421\u2039"
+    };
+
     @Test
     void javaFilesFollowProjectCodeStyle() throws IOException {
         final ArrayList<Path> files = new ArrayList<>();
@@ -124,6 +137,9 @@ class CodeStyleTest {
             if (containsForbiddenFunctionalApi(line)) {
                 issues.add("Forbidden functional API usage: " + path + ":" + lineNumber);
             }
+            if (containsForbiddenMojibake(line)) {
+                issues.add("Mojibake text: " + path + ":" + lineNumber);
+            }
         }
     }
 
@@ -136,6 +152,15 @@ class CodeStyleTest {
         return line.contains(".stream" + "()")
             || line.contains("java.util." + "stream")
             || line.contains("Optional" + "<");
+    }
+
+    private static boolean containsForbiddenMojibake(final String line) {
+        for (int index = 0; index < FORBIDDEN_MOJIBAKE_MARKERS.length; index++) {
+            if (line.contains(FORBIDDEN_MOJIBAKE_MARKERS[index])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void inspectBlankLineAfterFirstType(

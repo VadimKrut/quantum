@@ -41,7 +41,7 @@ public final class QuantumIntegrations {
     }
 
     /**
-     * РЎРѕР·РґР°РµС‚ РґРІСѓРЅР°РїСЂР°РІР»РµРЅРЅСѓСЋ РёРЅС‚РµРіСЂР°С†РёСЋ Quil.
+     * Создает двунаправленную интеграцию Quil.
      *
      * @return Quil integration adapter
      */

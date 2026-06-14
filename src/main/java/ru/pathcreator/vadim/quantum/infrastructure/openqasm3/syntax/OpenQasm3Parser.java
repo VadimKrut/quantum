@@ -117,6 +117,11 @@ public final class OpenQasm3Parser {
     private static final Pattern REGISTER_ARGUMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)$");
     private static final Pattern PHYSICAL_QUBIT_PATTERN = Pattern.compile("^\\$(\\d+)$");
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");
+    private static final Pattern FUNCTION_CALL_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*\\s*\\(.*\\)$", Pattern.DOTALL);
+    private static final Pattern CLASSICAL_TYPE_TEXT_PATTERN = Pattern.compile("^(int|uint|float|angle|bit|creg|bool|duration|stretch)(?:\\[(.+)])?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RETURN_MEASURE_PATTERN = Pattern.compile("^measure\\s+(.+)$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern POWER_MODIFIER_PATTERN = Pattern.compile("^pow\\((.+)\\)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PARAMETER_FUNCTION_PATTERN = Pattern.compile("(?<![A-Za-z0-9_])(?:sin|cos|tan|exp|ln|sqrt|arccos|arcsin|arctan)\\s*\\(", Pattern.CASE_INSENSITIVE);
     private static final String CALIBRATION_BODY_LANGUAGE = "openqasm3";
 
     private final OpenQasm3AstParser astParser;
@@ -186,11 +191,14 @@ public final class OpenQasm3Parser {
                 diagnostics
             );
         }
-        final ArrayList<Statement> statements = statementsFromAst(ast);
+        circuit.reserveOperationCapacity(ast.statements().size());
         boolean versionSeen = false;
 
-        for (int i = 0; i < statements.size(); i++) {
-            final Statement statement = statements.get(i);
+        for (int i = 0; i < ast.statements().size(); i++) {
+            final Statement statement = statementFromAst(
+                ast,
+                i
+            );
             if (statement.text().isBlank()) {
                 continue;
             }
@@ -237,10 +245,10 @@ public final class OpenQasm3Parser {
             .replace("Φ", "phi")
             .replace("λ", "lambda")
             .replace("Λ", "lambda")
-            .replace("Оё", "theta")
-            .replace("ПЂ", "pi")
-            .replace("РћС‘", "theta")
-            .replace("РџР‚", "pi");
+            .replace("\u041E\u0451", "theta")
+            .replace("\u041F\u0402", "pi")
+            .replace("\u0420\u045B\u0421\u2018", "theta")
+            .replace("\u0420\u045F\u0420\u201A", "pi");
     }
 
     private static ArrayList<Statement> statementsFromAst(final OpenQasm3Ast ast) {
@@ -254,6 +262,18 @@ public final class OpenQasm3Parser {
             ));
         }
         return statements;
+    }
+
+    private static Statement statementFromAst(
+        final OpenQasm3Ast ast,
+        final int index
+    ) {
+        final OpenQasm3AstStatement statement = ast.statements().get(index);
+        return new Statement(
+            statement.text(),
+            statement.line(),
+            statement.column()
+        );
     }
 
     private static IfInlineParts parseInlineIf(final String text) {
@@ -606,23 +626,58 @@ public final class OpenQasm3Parser {
 
     private static boolean shouldPreserveSourceStatement(final String statement) {
         final String trimmed = statement.trim();
-        final String lowerCaseStatement = trimmed.toLowerCase();
-        return lowerCaseStatement.startsWith("defcalgrammar")
-            || lowerCaseStatement.startsWith("defcal ")
-            || lowerCaseStatement.startsWith("extern ")
-            || lowerCaseStatement.startsWith("def ")
-            || lowerCaseStatement.startsWith("input ")
-            || lowerCaseStatement.startsWith("output ")
-            || lowerCaseStatement.startsWith("pragma ")
-            || lowerCaseStatement.startsWith("annotation ")
-            || lowerCaseStatement.startsWith("duration ")
-            || lowerCaseStatement.startsWith("stretch ");
+        return startsWithIgnoreCase(
+            trimmed,
+            "defcalgrammar"
+        )
+            || startsWithIgnoreCase(
+                trimmed,
+                "defcal "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "extern "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "def "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "input "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "output "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "pragma "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "annotation "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "duration "
+            )
+            || startsWithIgnoreCase(
+                trimmed,
+                "stretch "
+            );
     }
 
     private static boolean isCalibrationSourceStatement(final String statement) {
-        final String lowerCaseStatement = statement.trim().toLowerCase();
-        return lowerCaseStatement.startsWith("defcalgrammar")
-            || lowerCaseStatement.startsWith("defcal ");
+        final String trimmed = statement.trim();
+        return startsWithIgnoreCase(
+            trimmed,
+            "defcalgrammar"
+        )
+            || startsWithIgnoreCase(
+                trimmed,
+                "defcal "
+            );
     }
 
     private static void parseCalibrationDefinition(
@@ -640,7 +695,10 @@ public final class OpenQasm3Parser {
 
     private static String calibrationTargetName(final Statement statement) {
         final String trimmed = statement.text().trim();
-        if (trimmed.toLowerCase().startsWith("defcalgrammar")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "defcalgrammar"
+        )) {
             return "defcalgrammar_line_" + statement.line();
         }
         final Matcher matcher = DEFCAL_PATTERN.matcher(trimmed);
@@ -704,9 +762,15 @@ public final class OpenQasm3Parser {
     }
 
     private static boolean isOpenQasm2RegisterSyntax(final String statement) {
-        final String lowerCaseStatement = statement.trim().toLowerCase();
-        return lowerCaseStatement.startsWith("qreg ")
-            || lowerCaseStatement.startsWith("creg ");
+        final String trimmed = statement.trim();
+        return startsWithIgnoreCase(
+            trimmed,
+            "qreg "
+        )
+            || startsWithIgnoreCase(
+                trimmed,
+                "creg "
+            );
     }
 
     private static boolean shouldPreservePredicate(final String predicate) {
@@ -771,17 +835,11 @@ public final class OpenQasm3Parser {
     }
 
     private static boolean isFunctionCallStatement(final String statement) {
-        return Pattern.compile(
-            "^[A-Za-z_][A-Za-z0-9_]*\\s*\\(.*\\)$",
-            Pattern.DOTALL
-        ).matcher(statement).matches();
+        return FUNCTION_CALL_PATTERN.matcher(statement).matches();
     }
 
     private static boolean isFunctionCallExpression(final String value) {
-        return Pattern.compile(
-            "^[A-Za-z_][A-Za-z0-9_]*\\s*\\(.*\\)$",
-            Pattern.DOTALL
-        ).matcher(value).matches();
+        return FUNCTION_CALL_PATTERN.matcher(value).matches();
     }
 
     private static void rejectUnsupportedSource(
@@ -819,46 +877,115 @@ public final class OpenQasm3Parser {
     }
 
     private static String unsupportedStatementKind(final String statement) {
-        final String lowerCaseStatement = statement.trim().toLowerCase();
-        if (lowerCaseStatement.startsWith("defcalgrammar")) {
+        final String trimmed = statement.trim();
+        if (startsWithIgnoreCase(
+                trimmed,
+                "defcalgrammar"
+        )) {
             return "defcalgrammar";
         }
-        if (lowerCaseStatement.startsWith("defcal ")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "defcal "
+        )) {
             return "defcal";
         }
-        if (lowerCaseStatement.startsWith("extern ")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "extern "
+        )) {
             return "extern";
         }
-        if (lowerCaseStatement.startsWith("def ")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "def "
+        )) {
             return "def";
         }
-        if (lowerCaseStatement.startsWith("array")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "array"
+        )) {
             return "array";
         }
-        if (lowerCaseStatement.startsWith("let ")) {
+        if (startsWithIgnoreCase(
+                trimmed,
+                "let "
+        )) {
             return "let";
         }
-        if (lowerCaseStatement.contains("=")) {
+        if (trimmed.contains("=")) {
             return "classical_statement";
         }
         return "statement";
     }
 
     private static boolean isUnsupportedStatement(final String statement) {
-        final String lowerCaseStatement = statement.toLowerCase();
-        return lowerCaseStatement.startsWith("if ")
-            || lowerCaseStatement.startsWith("defcal")
-            || lowerCaseStatement.startsWith("def ")
-            || lowerCaseStatement.startsWith("extern ")
-            || lowerCaseStatement.startsWith("input ")
-            || lowerCaseStatement.startsWith("output ")
-            || lowerCaseStatement.startsWith("duration")
-            || lowerCaseStatement.startsWith("stretch")
-            || lowerCaseStatement.startsWith("angle")
-            || lowerCaseStatement.startsWith("uint")
-            || lowerCaseStatement.startsWith("int")
-            || lowerCaseStatement.startsWith("float")
-            || lowerCaseStatement.startsWith("bool");
+        return startsWithIgnoreCase(
+            statement,
+            "if "
+        )
+            || startsWithIgnoreCase(
+                statement,
+                "defcal"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "def "
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "extern "
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "input "
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "output "
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "duration"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "stretch"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "angle"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "uint"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "int"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "float"
+            )
+            || startsWithIgnoreCase(
+                statement,
+                "bool"
+            );
+    }
+
+    private static boolean startsWithIgnoreCase(
+        final String text,
+        final String prefix
+    ) {
+        return text.regionMatches(
+            true,
+            0,
+            prefix,
+            0,
+            prefix.length()
+        );
     }
 
     private static void parseInclude(
@@ -907,9 +1034,11 @@ public final class OpenQasm3Parser {
             context.exitInclude(includeName);
             return;
         }
-        final ArrayList<Statement> statements = statementsFromAst(ast);
-        for (int i = 0; i < statements.size(); i++) {
-            final Statement statement = statements.get(i);
+        for (int i = 0; i < ast.statements().size(); i++) {
+            final Statement statement = statementFromAst(
+                ast,
+                i
+            );
             if (
                 statement.text().isBlank()
                 || VERSION_PATTERN.matcher(statement.text()).matches()
@@ -1938,8 +2067,7 @@ public final class OpenQasm3Parser {
     }
 
     private static ClassicalType parseClassicalTypeText(final String text) {
-        final Matcher matcher = Pattern.compile("^(int|uint|float|angle|bit|creg|bool|duration|stretch)(?:\\[(.+)])?$", Pattern.CASE_INSENSITIVE)
-            .matcher(text.trim());
+        final Matcher matcher = CLASSICAL_TYPE_TEXT_PATTERN.matcher(text.trim());
         if (!matcher.matches()) {
             return null;
         }
@@ -3495,10 +3623,7 @@ public final class OpenQasm3Parser {
         final ClassicalOperand target
     ) {
         final String expression = returnExpression.trim();
-        final Matcher measureMatcher = Pattern.compile(
-            "^measure\\s+(.+)$",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-        ).matcher(expression);
+        final Matcher measureMatcher = RETURN_MEASURE_PATTERN.matcher(expression);
         if (measureMatcher.matches()) {
             return returnMeasureBindingOperations(
                 context,
@@ -4153,7 +4278,51 @@ public final class OpenQasm3Parser {
         final String bodyText,
         final String variableName
     ) {
-        return Pattern.compile("\\b" + Pattern.quote(variableName) + "\\b").matcher(bodyText).find();
+        return containsIdentifier(
+            bodyText,
+            variableName
+        );
+    }
+
+    private static boolean containsIdentifier(
+        final String text,
+        final String identifier
+    ) {
+        int position = text.indexOf(identifier);
+        while (position >= 0) {
+            final int end = position + identifier.length();
+            if (
+                isIdentifierBoundary(
+                    text,
+                    position - 1
+                )
+                && isIdentifierBoundary(
+                    text,
+                    end
+                )
+            ) {
+                return true;
+            }
+            position = text.indexOf(
+                identifier,
+                position + 1
+            );
+        }
+        return false;
+    }
+
+    private static boolean isIdentifierBoundary(
+        final String text,
+        final int index
+    ) {
+        return index < 0
+            || index >= text.length()
+            || !isIdentifierCharacter(text.charAt(index));
+    }
+
+    private static boolean isIdentifierCharacter(final char character) {
+        return Character.isLetterOrDigit(character)
+            || character == '_';
     }
 
     private static void unrollForLoop(
@@ -4657,8 +4826,7 @@ public final class OpenQasm3Parser {
         if ("negctrl".equalsIgnoreCase(text)) {
             return GateModifier.annotation("negctrl");
         }
-        final Matcher powerMatcher = Pattern.compile("^pow\\((.+)\\)$", Pattern.CASE_INSENSITIVE)
-            .matcher(text);
+        final Matcher powerMatcher = POWER_MODIFIER_PATTERN.matcher(text);
         if (powerMatcher.matches()) {
             final String expressionText = powerMatcher.group(1).trim();
             try {
@@ -6042,10 +6210,7 @@ public final class OpenQasm3Parser {
     }
 
     private static boolean containsParameterFunction(final String value) {
-        return Pattern.compile(
-            "(?<![A-Za-z0-9_])(?:sin|cos|tan|exp|ln|sqrt|arccos|arcsin|arctan)\\s*\\(",
-            Pattern.CASE_INSENSITIVE
-        ).matcher(value).find();
+        return PARAMETER_FUNCTION_PATTERN.matcher(value).find();
     }
 
     private static boolean containsNonAscii(final String value) {

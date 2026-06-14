@@ -17,6 +17,7 @@ import java.util.List;
 
 import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.PersistenceDiagnostic;
 import ru.pathcreator.vadim.quantum.application.persistence.diagnostic.PersistenceDiagnosticCode;
+import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
@@ -28,6 +29,9 @@ import ru.pathcreator.vadim.quantum.infrastructure.persistence.json.QuantumIrJso
  */
 public final class QuantumIrFiles {
 
+    private static final QuantumIrJsonWriter JSON_WRITER = new QuantumIrJsonWriter();
+    private static final QuantumIrJsonReader JSON_READER = new QuantumIrJsonReader();
+
     private QuantumIrFiles() {
     }
 
@@ -38,7 +42,7 @@ public final class QuantumIrFiles {
      * @return результат записи
      */
     public static QuantumIrWriteResult writeToString(final QuantumProgram program) {
-        return new QuantumIrJsonWriter().write(program);
+        return JSON_WRITER.write(program);
     }
 
     /**
@@ -48,7 +52,7 @@ public final class QuantumIrFiles {
      * @return результат чтения
      */
     public static QuantumIrReadResult readFromString(final String content) {
-        return new QuantumIrJsonReader().read(content);
+        return JSON_READER.read(content);
     }
 
     /**
@@ -89,6 +93,23 @@ public final class QuantumIrFiles {
                 "Quantum IR JSON file could not be written: " + exception.getMessage()
             )));
         }
+    }
+
+    /**
+     * Потоково записывает программу в JSON-файл без возврата полного JSON-текста в результате.
+     *
+     * @param path путь к файлу
+     * @param program программа
+     * @return результат потоковой записи
+     */
+    public static QuantumIrFileWriteResult writeToFileStreaming(
+        final Path path,
+        final QuantumProgram program
+    ) {
+        return JSON_WRITER.writeStreaming(
+            path,
+            program
+        );
     }
 
     /**

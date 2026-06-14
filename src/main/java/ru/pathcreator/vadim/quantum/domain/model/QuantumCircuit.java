@@ -52,6 +52,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.domain.register.RegisterName;
+import ru.pathcreator.vadim.quantum.domain.storage.MutableCompactOperationStorage;
 import ru.pathcreator.vadim.quantum.domain.timing.DurationExpression;
 
 /**
@@ -80,14 +81,9 @@ public final class QuantumCircuit {
     private final ArrayList<ClassicalRegister> classicalRegisters;
 
     /**
-     * Операции схемы в порядке добавления.
+     * Компактное хранилище операций схемы в порядке добавления.
      */
-    private final ArrayList<Operation> operations;
-
-    /**
-     * Metadata для операций по тем же индексам, что и operations.
-     */
-    private final ArrayList<OperationMetadata> operationMetadata;
+    private final MutableCompactOperationStorage operations;
 
     private QuantumCircuit(
         final QuantumProgram program,
@@ -97,8 +93,7 @@ public final class QuantumCircuit {
         this.name = name;
         this.quantumRegisters = new ArrayList<>();
         this.classicalRegisters = new ArrayList<>();
-        this.operations = new ArrayList<>();
-        this.operationMetadata = new ArrayList<>();
+        this.operations = new MutableCompactOperationStorage();
     }
 
     static QuantumCircuit create(
@@ -1008,7 +1003,7 @@ public final class QuantumCircuit {
      */
     public OperationMetadata operationMetadata(final int index) {
         validateOperationIndex(index);
-        return operationMetadata.get(index);
+        return operations.metadata(index);
     }
 
     /**
@@ -1026,7 +1021,7 @@ public final class QuantumCircuit {
         if (metadata == null) {
             throw new IllegalArgumentException("Operation metadata must not be null.");
         }
-        operationMetadata.set(
+        operations.setMetadata(
             index,
             metadata
         );
@@ -1039,7 +1034,19 @@ public final class QuantumCircuit {
      * @return список операций
      */
     public List<Operation> operations() {
-        return List.copyOf(operations);
+        return operations.operations();
+    }
+
+    /**
+     * Резервирует внутреннюю емкость для будущих операций без изменения содержимого схемы.
+     *
+     * @param minimumCapacity минимальная емкость для операций
+     */
+    public void reserveOperationCapacity(final int minimumCapacity) {
+        if (minimumCapacity < 0) {
+            throw new IllegalArgumentException("Operation capacity must not be negative.");
+        }
+        operations.ensureCapacity(minimumCapacity);
     }
 
     private void appendGate(
@@ -1068,7 +1075,6 @@ public final class QuantumCircuit {
 
     private void addOperation(final Operation operation) {
         operations.add(operation);
-        operationMetadata.add(OperationMetadata.empty());
     }
 
     private void ensureRegisterNameAvailable(final RegisterName name) {

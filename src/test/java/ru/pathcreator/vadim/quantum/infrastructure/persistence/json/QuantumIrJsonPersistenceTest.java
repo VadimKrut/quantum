@@ -9,6 +9,7 @@
 
 package ru.pathcreator.vadim.quantum.infrastructure.persistence.json;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -244,6 +245,28 @@ class QuantumIrJsonPersistenceTest {
             write.content(),
             writeAgain.content()
         );
+    }
+
+    @Test
+    void streamingFileWriterKeepsCanonicalJsonReadable() throws Exception {
+        final QuantumProgram program = createRichProgram();
+        final Path path = tempDir.resolve("program.streaming.quantum.json");
+        final QuantumIrWriteResult canonical = QuantumIrFiles.writeToString(program);
+
+        assertTrue(canonical.isSuccess());
+        assertTrue(QuantumIrFiles.writeToFileStreaming(
+            path,
+            program
+        ).isSuccess());
+
+        final String streamed = Files.readString(path);
+        final QuantumIrReadResult read = QuantumIrFiles.read(path);
+
+        assertEquals(
+            canonical.content(),
+            streamed
+        );
+        assertTrue(read.isSuccess());
     }
 
     @Test
