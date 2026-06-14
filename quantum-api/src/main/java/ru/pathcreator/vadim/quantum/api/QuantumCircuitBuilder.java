@@ -14,10 +14,12 @@ import java.util.LinkedHashMap;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
 import ru.pathcreator.vadim.quantum.domain.gate.Gate;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
+import ru.pathcreator.vadim.quantum.domain.gate.modifier.ModifiedGate;
 import ru.pathcreator.vadim.quantum.domain.metadata.OperationMetadata;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
@@ -108,6 +110,107 @@ public final class QuantumCircuitBuilder {
             )
         );
         return this;
+    }
+
+    /**
+     * Возвращает созданный builder-ом quantum register по имени.
+     *
+     * @param name имя регистра
+     * @return quantum register
+     */
+    public QuantumRegister quantumRegister(final String name) {
+        final QuantumRegister register = quantumRegisters.get(name);
+        if (register == null) {
+            throw new IllegalArgumentException("Unknown quantum register: " + name + ".");
+        }
+        return register;
+    }
+
+    /**
+     * Возвращает созданный builder-ом classical register по имени.
+     *
+     * @param name имя регистра
+     * @return classical register
+     */
+    public ClassicalRegister classicalRegister(final String name) {
+        final ClassicalRegister register = classicalRegisters.get(name);
+        if (register == null) {
+            throw new IllegalArgumentException("Unknown classical register: " + name + ".");
+        }
+        return register;
+    }
+
+    /**
+     * Возвращает qubit по стабильной строковой ссылке вида q[0].
+     *
+     * @param reference ссылка на qubit
+     * @return qubit схемы
+     */
+    public Qubit qubit(final String reference) {
+        final ReferenceParts parts = parseReference(
+            reference,
+            "Qubit reference"
+        );
+        final QuantumRegister register = quantumRegisters.get(parts.name());
+        if (register == null) {
+            throw new IllegalArgumentException("Unknown quantum register in reference: " + reference + ".");
+        }
+        return register.get(parts.index());
+    }
+
+    /**
+     * Возвращает classical bit по стабильной строковой ссылке вида c[0].
+     *
+     * @param reference ссылка на classical bit
+     * @return classical bit схемы
+     */
+    public ClassicalBit bit(final String reference) {
+        final ReferenceParts parts = parseReference(
+            reference,
+            "Classical bit reference"
+        );
+        final ClassicalRegister register = classicalRegisters.get(parts.name());
+        if (register == null) {
+            throw new IllegalArgumentException("Unknown classical register in reference: " + reference + ".");
+        }
+        return register.get(parts.index());
+    }
+
+    /**
+     * Создает статическую quantum reference по ссылке вида q[0].
+     *
+     * @param reference ссылка на qubit
+     * @return quantum reference
+     */
+    public QuantumReference qubitReference(final String reference) {
+        return QuantumReference.staticQubit(qubit(reference));
+    }
+
+    /**
+     * Создает динамическую ссылку register[indexExpression].
+     *
+     * @param registerName имя quantum register
+     * @param indexExpression classical expression индекса
+     * @return dynamic quantum reference
+     */
+    public QuantumReference dynamicQubitReference(
+        final String registerName,
+        final ClassicalExpression indexExpression
+    ) {
+        return QuantumReference.dynamicIndex(
+            quantumRegister(registerName),
+            indexExpression
+        );
+    }
+
+    /**
+     * Создает ссылку на физический qubit backend-а.
+     *
+     * @param index индекс физического qubit
+     * @return hardware quantum reference
+     */
+    public QuantumReference hardwareQubit(final int index) {
+        return QuantumReference.hardwareQubit(index);
     }
 
     /**
@@ -569,6 +672,23 @@ public final class QuantumCircuitBuilder {
     }
 
     /**
+     * Добавляет modified gate по строковым ссылкам на qubit.
+     *
+     * @param gate modified gate из доменной модели
+     * @param qubits ссылки на qubit
+     * @return текущий builder схемы
+     */
+    public QuantumCircuitBuilder modifiedGate(
+        final ModifiedGate gate,
+        final String... qubits
+    ) {
+        return gate(
+            gate,
+            qubits
+        );
+    }
+
+    /**
      * Добавляет произвольный gate через универсальные quantum references.
      *
      * @param gate gate из доменной модели
@@ -605,6 +725,23 @@ public final class QuantumCircuitBuilder {
             references
         );
         return this;
+    }
+
+    /**
+     * Добавляет modified gate через универсальные quantum references.
+     *
+     * @param gate modified gate из доменной модели
+     * @param references ссылки на quantum-аргументы
+     * @return текущий builder схемы
+     */
+    public QuantumCircuitBuilder modifiedGateReferences(
+        final ModifiedGate gate,
+        final QuantumReference... references
+    ) {
+        return gateReferences(
+            gate,
+            references
+        );
     }
 
     /**
@@ -974,30 +1111,6 @@ public final class QuantumCircuitBuilder {
      */
     public QuantumProgram build() {
         return program;
-    }
-
-    private Qubit qubit(final String reference) {
-        final ReferenceParts parts = parseReference(
-            reference,
-            "Qubit reference"
-        );
-        final QuantumRegister register = quantumRegisters.get(parts.name());
-        if (register == null) {
-            throw new IllegalArgumentException("Unknown quantum register in reference: " + reference + ".");
-        }
-        return register.get(parts.index());
-    }
-
-    private ClassicalBit bit(final String reference) {
-        final ReferenceParts parts = parseReference(
-            reference,
-            "Classical bit reference"
-        );
-        final ClassicalRegister register = classicalRegisters.get(parts.name());
-        if (register == null) {
-            throw new IllegalArgumentException("Unknown classical register in reference: " + reference + ".");
-        }
-        return register.get(parts.index());
     }
 
     private Qubit[] qubits(final String[] references) {

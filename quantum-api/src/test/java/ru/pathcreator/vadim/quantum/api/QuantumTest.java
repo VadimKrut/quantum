@@ -9,8 +9,8 @@
 
 package ru.pathcreator.vadim.quantum.api;
 
-import java.util.List;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,10 +30,11 @@ import ru.pathcreator.vadim.quantum.domain.callable.CallableArgument;
 import ru.pathcreator.vadim.quantum.domain.callable.template.CallableGateOperation;
 import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationBlock;
 import ru.pathcreator.vadim.quantum.domain.gate.GateBodyOperation;
-import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
 import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
+import ru.pathcreator.vadim.quantum.domain.gate.modifier.GateModifier;
+import ru.pathcreator.vadim.quantum.domain.gate.modifier.ModifiedGate;
 import ru.pathcreator.vadim.quantum.domain.metadata.ExternalSource;
 import ru.pathcreator.vadim.quantum.domain.metadata.OperationMetadata;
 import ru.pathcreator.vadim.quantum.domain.metadata.SourceLocation;
@@ -174,6 +175,192 @@ class QuantumTest {
             program.circuit(0).operation(5).kind()
         );
         assertTrue(Quantum.exportOpenQasm3(program).isSuccess());
+    }
+
+    @Test
+    void dslProducesSameIrAsManualDomainCode() {
+        final QuantumProgram manual = Quantum.gateBasedProgram();
+        final QuantumCircuit manualCircuit = manual.createCircuit("same_ir");
+        final QuantumRegister q = manualCircuit.createQuantumRegister(
+            "q",
+            2
+        );
+        final ClassicalRegister c = manualCircuit.createClassicalRegister(
+            "c",
+            2
+        );
+        manualCircuit.h(q.get(0))
+            .cx(
+                q.get(0),
+                q.get(1)
+            )
+            .measure(
+                q.get(0),
+                c.get(0)
+            )
+            .measure(
+                q.get(1),
+                c.get(1)
+            );
+
+        final QuantumProgram dsl = Quantum.programBuilder()
+            .circuit("same_ir")
+            .qreg(
+                "q",
+                2
+            )
+            .creg(
+                "c",
+                2
+            )
+            .h("q[0]")
+            .cx(
+                "q[0]",
+                "q[1]"
+            )
+            .measure(
+                "q[0]",
+                "c[0]"
+            )
+            .measure(
+                "q[1]",
+                "c[1]"
+            )
+            .build();
+
+        assertEquals(
+            Quantum.writeJson(manual).content(),
+            Quantum.writeJson(dsl).content()
+        );
+    }
+
+    @Test
+    void dslExposesEveryCurrentStandardGate() {
+        final QuantumProgram program = Quantum.programBuilder()
+            .circuit("standard_gates")
+            .qreg(
+                "q",
+                3
+            )
+            .h("q[0]")
+            .x("q[0]")
+            .y("q[0]")
+            .z("q[0]")
+            .s("q[0]")
+            .sdg("q[0]")
+            .t("q[0]")
+            .tdg("q[0]")
+            .rx(
+                0.1,
+                "q[0]"
+            )
+            .ry(
+                0.2,
+                "q[0]"
+            )
+            .rz(
+                0.3,
+                "q[0]"
+            )
+            .phase(
+                0.4,
+                "q[0]"
+            )
+            .id("q[0]")
+            .u(
+                ParameterExpression.of(0.5),
+                ParameterExpression.of(0.6),
+                ParameterExpression.of(0.7),
+                "q[0]"
+            )
+            .cx(
+                "q[0]",
+                "q[1]"
+            )
+            .cy(
+                "q[0]",
+                "q[1]"
+            )
+            .cz(
+                "q[0]",
+                "q[1]"
+            )
+            .ch(
+                "q[0]",
+                "q[1]"
+            )
+            .cphase(
+                0.8,
+                "q[0]",
+                "q[1]"
+            )
+            .swap(
+                "q[0]",
+                "q[1]"
+            )
+            .ccx(
+                "q[0]",
+                "q[1]",
+                "q[2]"
+            )
+            .build();
+
+        assertTrue(Quantum.validate(program).isValid());
+        assertEquals(
+            StandardGate.values().length,
+            program.circuit(0).operationCount()
+        );
+    }
+
+    @Test
+    void dslSupportsModifiedGatesAndDynamicReferences() {
+        final QuantumCircuitBuilder circuit = Quantum.programBuilder()
+            .circuit("dynamic_surface")
+            .qreg(
+                "q",
+                2
+            )
+            .qreg(
+                "buffer",
+                4
+            )
+            .creg(
+                "c",
+                1
+            );
+        final QuantumReference dynamic = circuit.dynamicQubitReference(
+            "buffer",
+            ClassicalExpression.integer(2)
+        );
+        final ModifiedGate controlledX = ModifiedGate.of(
+            StandardGate.X,
+            List.of(GateModifier.controlled(1))
+        );
+        final QuantumProgram program = circuit
+            .modifiedGate(
+                controlledX,
+                "q[0]",
+                "q[1]"
+            )
+            .gateReferences(
+                StandardGate.H,
+                dynamic
+            )
+            .measureReference(
+                dynamic,
+                "c[0]"
+            )
+            .build();
+
+        assertTrue(Quantum.validate(program).isValid());
+        assertEquals(
+            OperationKind.GATE,
+            program.circuit(0).operation(1).kind()
+        );
+        assertEquals(
+            dynamic,
+            ((GateOperation) program.circuit(0).operation(1)).qubitReference(0)
+        );
     }
 
     @Test
