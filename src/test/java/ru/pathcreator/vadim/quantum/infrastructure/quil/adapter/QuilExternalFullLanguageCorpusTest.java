@@ -25,7 +25,14 @@ import ru.pathcreator.vadim.quantum.application.integration.result.ImportResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +76,24 @@ class QuilExternalFullLanguageCorpusTest {
                 "unit",
                 "data",
                 "calibration_program_measure.quil"
+            ),
+            Path.of(
+                "target",
+                "external-quil",
+                "pyquil",
+                "test",
+                "unit",
+                "data",
+                "calibration_program_rx.quil"
+            ),
+            Path.of(
+                "target",
+                "external-quil",
+                "pyquil",
+                "test",
+                "unit",
+                "data",
+                "calibration_program_xy.quil"
             ),
             Path.of(
                 "target",
@@ -123,6 +148,10 @@ class QuilExternalFullLanguageCorpusTest {
             imported.program(),
             file
         );
+        assertExpectedStructuralImport(
+            imported.program(),
+            file
+        );
 
         final QuantumIrWriteResult json = QuantumIrFiles.writeToString(imported.program());
 
@@ -153,6 +182,10 @@ class QuilExternalFullLanguageCorpusTest {
             importedAgain.program(),
             file
         );
+        verifyCrossFormatBoundary(
+            fromJson.program(),
+            file
+        );
     }
 
     private static void assertProgramHasContent(
@@ -170,6 +203,97 @@ class QuilExternalFullLanguageCorpusTest {
                 || program.sourceFragmentCount() > 0,
             file + " must create non-empty IR"
         );
+    }
+
+    private static void assertExpectedStructuralImport(
+        final QuantumProgram program,
+        final Path file
+    ) {
+        if (!file.getFileName().toString().equals("test1.quil")) {
+            return;
+        }
+        assertEquals(
+            2,
+            circuitFragmentCount(program),
+            "test1.quil must keep only malformed/non-real gate instructions as source fragments"
+        );
+        assertEquals(
+            2,
+            operationCount(program, LabelOperation.class),
+            "test1.quil labels must be structural IR"
+        );
+        assertEquals(
+            2,
+            operationCount(program, BranchOperation.class),
+            "test1.quil jumps must be structural IR"
+        );
+        assertEquals(
+            1,
+            operationCount(program, HaltOperation.class),
+            "test1.quil halt must be structural IR"
+        );
+        assertEquals(
+            1,
+            operationCount(program, WaitOperation.class),
+            "test1.quil wait must be structural IR"
+        );
+    }
+
+    private static void verifyCrossFormatBoundary(
+        final QuantumProgram program,
+        final Path file
+    ) {
+        final ExportResult openQasm2 = QuantumIntegrations.openQasm2().exportProgram(program);
+        final ExportResult openQasm3 = QuantumIntegrations.openQasm3().exportProgram(program);
+        if (
+            program.sourceFragmentCount() == 0
+            && circuitFragmentCount(program) == 0
+            && operationCount(program, BranchOperation.class) == 0
+            && operationCount(program, LabelOperation.class) == 0
+            && operationCount(program, HaltOperation.class) == 0
+            && operationCount(program, WaitOperation.class) == 0
+        ) {
+            assertTrue(
+                openQasm2.isSuccess(),
+                file + " portable Quil IR must export to OpenQASM 2: " + diagnostics(openQasm2)
+            );
+            assertTrue(
+                openQasm3.isSuccess(),
+                file + " portable Quil IR must export to OpenQASM 3: " + diagnostics(openQasm3)
+            );
+        } else {
+            assertFalse(
+                openQasm2.isSuccess(),
+                file + " non-portable Quil IR must not be silently exported to OpenQASM 2"
+            );
+            assertFalse(
+                openQasm3.isSuccess(),
+                file + " non-portable Quil IR must not be silently exported to OpenQASM 3"
+            );
+        }
+    }
+
+    private static int circuitFragmentCount(final QuantumProgram program) {
+        return operationCount(
+            program,
+            SourceFragmentOperation.class
+        );
+    }
+
+    private static int operationCount(
+        final QuantumProgram program,
+        final Class<?> operationClass
+    ) {
+        int count = 0;
+        for (int i = 0; i < program.circuitCount(); i++) {
+            for (int j = 0; j < program.circuit(i).operationCount(); j++) {
+                final Operation operation = program.circuit(i).operation(j);
+                if (operationClass.isInstance(operation)) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private static String diagnostics(final ImportResult result) {
@@ -195,4 +319,5 @@ class QuilExternalFullLanguageCorpusTest {
         }
         return messages.toString();
     }
+
 }

@@ -37,6 +37,7 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
@@ -47,6 +48,8 @@ import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
@@ -56,6 +59,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -727,6 +731,20 @@ public final class QuantumProgramValidator {
                     i,
                     errors
                 );
+            } else if (operation instanceof BranchOperation branchOperation) {
+                validateOptionalClassicalExpression(
+                    circuit,
+                    branchOperation.hasCondition() ? branchOperation.condition() : null,
+                    circuitIndex,
+                    i,
+                    errors
+                );
+            } else if (
+                operation instanceof LabelOperation
+                || operation instanceof HaltOperation
+                || operation instanceof WaitOperation
+            ) {
+                continue;
             } else if (operation instanceof SourceFragmentOperation) {
                 continue;
             } else {
@@ -1123,6 +1141,20 @@ public final class QuantumProgramValidator {
                 operationIndex,
                 errors
             );
+        } else if (operation instanceof BranchOperation branchOperation) {
+            validateOptionalClassicalExpression(
+                circuit,
+                branchOperation.hasCondition() ? branchOperation.condition() : null,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        } else if (
+            operation instanceof LabelOperation
+            || operation instanceof HaltOperation
+            || operation instanceof WaitOperation
+        ) {
+            return;
         } else if (operation instanceof SourceFragmentOperation) {
             return;
         } else {

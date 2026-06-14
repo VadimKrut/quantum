@@ -25,6 +25,6 @@ public final class OpenQasm2GateNames {
      * @return true, если имя зарезервировано OpenQASM 2/qelib1
      */
     public static boolean isReservedQelibAlias(final String name) {
-        return OpenQasm2QelibGates.containsName(name);
+        return OpenQasm2QelibGates.containsExactName(name);
     }
 }

@@ -107,7 +107,7 @@ public final class OpenQasm2IncludeResolver {
                 )
             );
         } catch (final IOException exception) {
-            throw new IllegalArgumentException("OpenQASM 2 include file cannot be read.", exception);
+            return;
         }
     }
 }

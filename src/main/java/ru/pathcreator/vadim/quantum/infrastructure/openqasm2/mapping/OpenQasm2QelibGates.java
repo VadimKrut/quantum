@@ -99,6 +99,13 @@ public final class OpenQasm2QelibGates {
         return byName(name) != null;
     }
 
+    public static boolean containsExactName(final String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("OpenQASM gate name must not be null.");
+        }
+        return GATES_BY_NAME.containsKey(name);
+    }
+
     /**
      * Проверяет, является ли gate adapter-level qelib1 intrinsic.
      *

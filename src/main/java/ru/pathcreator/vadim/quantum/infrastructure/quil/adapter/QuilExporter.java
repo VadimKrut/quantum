@@ -59,7 +59,11 @@ public final class QuilExporter implements QuantumExporter {
                 IntegrationCapability.CLASSICAL_REGISTERS,
                 IntegrationCapability.MEASUREMENTS,
                 IntegrationCapability.RESET,
-                IntegrationCapability.BARRIER
+                IntegrationCapability.BARRIER,
+                IntegrationCapability.CLASSICAL_ASSIGNMENTS,
+                IntegrationCapability.CLASSICAL_EXTENDED_EXPRESSIONS,
+                IntegrationCapability.STRUCTURED_CONTROL_FLOW,
+                IntegrationCapability.INSTRUCTION_CONTROL_FLOW
             )
         );
     }

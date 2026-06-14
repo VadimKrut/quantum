@@ -144,6 +144,34 @@ class QuantumIrJsonPersistenceTest {
     }
 
     @Test
+    void readsInlineIntrinsicGateDefinitionReference() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("inline");
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        circuit.gate(
+            GateDefinition.of(
+                "sx",
+                1,
+                0
+            ),
+            q.get(0)
+        );
+
+        final QuantumIrWriteResult written = new QuantumIrJsonWriter().write(program);
+        final QuantumIrReadResult read = new QuantumIrJsonReader().read(written.content());
+
+        assertTrue(written.isSuccess());
+        assertTrue(read.isSuccess());
+        assertEquals(
+            "sx",
+            ((GateOperation) read.program().circuit(0).operation(0)).gate().gateName()
+        );
+    }
+
+    @Test
     void writesAndReadsDynamicQuantumReferences() {
         final QuantumProgram program = QuantumProgram.gateBased();
         final QuantumCircuit circuit = program.createCircuit("dynamic_json");

@@ -25,6 +25,7 @@ import ru.pathcreator.vadim.quantum.domain.metadata.OperationMetadata;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
@@ -36,6 +37,8 @@ import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
@@ -45,6 +48,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
@@ -952,6 +956,29 @@ public final class QuantumCircuit {
             duration,
             body
         ));
+        return this;
+    }
+
+    public QuantumCircuit label(final String name) {
+        addOperation(new LabelOperation(name));
+        return this;
+    }
+
+    public QuantumCircuit branch(final BranchOperation operation) {
+        if (operation == null) {
+            throw new IllegalArgumentException("Branch operation must not be null.");
+        }
+        addOperation(operation);
+        return this;
+    }
+
+    public QuantumCircuit halt() {
+        addOperation(HaltOperation.INSTANCE);
+        return this;
+    }
+
+    public QuantumCircuit waitInstruction() {
+        addOperation(WaitOperation.INSTANCE);
         return this;
     }
 

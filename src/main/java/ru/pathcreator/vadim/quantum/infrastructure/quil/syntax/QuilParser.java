@@ -17,12 +17,20 @@ import java.util.regex.Pattern;
 
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalType;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind;
 import ru.pathcreator.vadim.quantum.domain.gate.Gate;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
 import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.source.ProgramSourceFragment;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -42,6 +50,9 @@ public final class QuilParser {
     private static final Pattern DEFGATE_PATTERN = Pattern.compile("^DEFGATE\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?:$", Pattern.CASE_INSENSITIVE);
     private static final Pattern MEASURE_PATTERN = Pattern.compile("^MEASURE\\s+(\\d+)(?:\\s+(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\[(\\d+)])?|(\\d+)|\\[(\\d+)\\]))?$", Pattern.CASE_INSENSITIVE);
     private static final Pattern RESET_PATTERN = Pattern.compile("^RESET(?:\\s+(\\d+))?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LABEL_PATTERN = Pattern.compile("^LABEL\\s+@?([A-Za-z_][A-Za-z0-9_]*)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern JUMP_PATTERN = Pattern.compile("^JUMP\\s+@?([A-Za-z_][A-Za-z0-9_]*)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CONDITIONAL_JUMP_PATTERN = Pattern.compile("^JUMP-(WHEN|UNLESS)\\s+@?([A-Za-z_][A-Za-z0-9_]*)\\s+(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
     private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d+$");
 
@@ -204,30 +215,6 @@ public final class QuilParser {
         final String upper = text.toUpperCase();
         return upper.startsWith("PRAGMA ")
             || upper.startsWith("INCLUDE ")
-            || upper.startsWith("LABEL ")
-            || upper.startsWith("JUMP")
-            || upper.equals("HALT")
-            || upper.equals("WAIT")
-            || upper.equals("NOP")
-            || upper.startsWith("MOVE ")
-            || upper.startsWith("EXCHANGE ")
-            || upper.startsWith("CONVERT ")
-            || upper.startsWith("LOAD ")
-            || upper.startsWith("STORE ")
-            || upper.startsWith("ADD ")
-            || upper.startsWith("SUB ")
-            || upper.startsWith("MUL ")
-            || upper.startsWith("DIV ")
-            || upper.startsWith("NEG ")
-            || upper.startsWith("EQ ")
-            || upper.startsWith("GT ")
-            || upper.startsWith("GE ")
-            || upper.startsWith("LT ")
-            || upper.startsWith("LE ")
-            || upper.startsWith("AND ")
-            || upper.startsWith("IOR ")
-            || upper.startsWith("XOR ")
-            || upper.startsWith("NOT ")
             || upper.startsWith("DELAY ")
             || upper.startsWith("FENCE")
             || upper.startsWith("PULSE ")
@@ -386,10 +373,7 @@ public final class QuilParser {
             } else {
                 maxQubitIndex = Math.max(
                     maxQubitIndex,
-                    maxKnownGateQubitIndex(
-                        statement.text(),
-                        gateDefinitions
-                    )
+                    maxGateQubitIndex(statement.text())
                 );
             }
         }
@@ -438,19 +422,9 @@ public final class QuilParser {
         return result;
     }
 
-    private static int maxKnownGateQubitIndex(
-        final String text,
-        final LinkedHashMap<String, GateDefinition> gateDefinitions
-    ) {
+    private static int maxGateQubitIndex(final String text) {
         final Matcher matcher = GATE_PATTERN.matcher(text);
         if (!matcher.matches()) {
-            return -1;
-        }
-        final Gate gate = QuilGateMapper.fromQuilName(matcher.group(1));
-        if (
-            gate == null
-            && !gateDefinitions.containsKey(matcher.group(1))
-        ) {
             return -1;
         }
         return maxQubitIndex(text);
@@ -484,9 +458,11 @@ public final class QuilParser {
             final Matcher declareMatcher = DECLARE_PATTERN.matcher(statement.text());
             if (declareMatcher.matches()) {
                 if (!isBitDeclaration(declareMatcher)) {
-                    preserveSource(
+                    parseClassicalArrayDeclaration(
+                        statement,
                         circuit,
-                        statement
+                        declareMatcher,
+                        diagnostics
                     );
                 }
                 continue;
@@ -511,6 +487,17 @@ public final class QuilParser {
                     resetMatcher,
                     diagnostics
                 );
+            } else if (parseControlFlow(
+                statement,
+                circuit
+            )) {
+                continue;
+            } else if (parseClassicalInstruction(
+                statement,
+                circuit,
+                diagnostics
+            )) {
+                continue;
             } else {
                 parseGate(
                     statement,
@@ -569,8 +556,17 @@ public final class QuilParser {
                     statement,
                     diagnostics
                 );
+                final ru.pathcreator.vadim.quantum.domain.bit.Qubit qubit = qubitAt(
+                    qubits,
+                    qubitIndex,
+                    statement,
+                    diagnostics
+                );
+                if (qubit == null) {
+                    return;
+                }
                 circuit.measure(
-                    qubits.get(qubitIndex),
+                    qubit,
                     register.get(bitIndex)
                 );
             }
@@ -600,8 +596,17 @@ public final class QuilParser {
             ));
             return;
         }
+        final ru.pathcreator.vadim.quantum.domain.bit.Qubit qubit = qubitAt(
+            qubits,
+            qubitIndex,
+            statement,
+            diagnostics
+        );
+        if (qubit == null) {
+            return;
+        }
         circuit.measure(
-            qubits.get(qubitIndex),
+            qubit,
             register.get(bitIndex)
         );
     }
@@ -626,11 +631,322 @@ public final class QuilParser {
             }
             return;
         }
-        circuit.reset(qubits.get(parseNonNegativeInt(
-            matcher.group(1),
+        final ru.pathcreator.vadim.quantum.domain.bit.Qubit qubit = qubitAt(
+            qubits,
+            parseNonNegativeInt(
+                matcher.group(1),
+                statement,
+                diagnostics
+            ),
             statement,
             diagnostics
-        )));
+        );
+        if (qubit == null) {
+            return;
+        }
+        circuit.reset(qubit);
+    }
+
+    private static void parseClassicalArrayDeclaration(
+        final Statement statement,
+        final QuantumCircuit circuit,
+        final Matcher matcher,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final ClassicalType type = classicalType(
+            matcher.group(2),
+            statement,
+            diagnostics
+        );
+        final ArrayList<ClassicalExpression> dimensions = new ArrayList<>();
+        dimensions.add(ClassicalExpression.integer(
+            matcher.group(3) == null
+                ? 1L
+                : parsePositiveInt(
+                    matcher.group(3),
+                    statement,
+                    diagnostics
+                )
+        ));
+        circuit.classicalArrayDeclaration(new ClassicalArrayDeclarationOperation(
+            matcher.group(1),
+            type,
+            dimensions,
+            null
+        ));
+    }
+
+    private static ClassicalType classicalType(
+        final String quilType,
+        final Statement statement,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final String upper = quilType.toUpperCase();
+        if ("REAL".equals(upper)) {
+            return ClassicalType.sized(
+                ClassicalTypeKind.FLOAT,
+                64
+            );
+        }
+        if ("INTEGER".equals(upper)) {
+            return ClassicalType.sized(
+                ClassicalTypeKind.SIGNED_INTEGER,
+                64
+            );
+        }
+        if ("OCTET".equals(upper)) {
+            return ClassicalType.sized(
+                ClassicalTypeKind.UNSIGNED_INTEGER,
+                8
+            );
+        }
+        diagnostics.add(error(
+            IntegrationDiagnosticCode.PARSE_ERROR,
+            "Unsupported Quil memory type: " + quilType + ".",
+            statement
+        ));
+        return ClassicalType.sized(
+            ClassicalTypeKind.UNSIGNED_INTEGER,
+            1
+        );
+    }
+
+    private static boolean parseControlFlow(
+        final Statement statement,
+        final QuantumCircuit circuit
+    ) {
+        final Matcher labelMatcher = LABEL_PATTERN.matcher(statement.text());
+        if (labelMatcher.matches()) {
+            circuit.label(labelMatcher.group(1));
+            return true;
+        }
+        final Matcher jumpMatcher = JUMP_PATTERN.matcher(statement.text());
+        if (jumpMatcher.matches()) {
+            circuit.branch(BranchOperation.always(jumpMatcher.group(1)));
+            return true;
+        }
+        final Matcher conditionalMatcher = CONDITIONAL_JUMP_PATTERN.matcher(statement.text());
+        if (conditionalMatcher.matches()) {
+            final ClassicalExpression condition = classicalOperand(conditionalMatcher.group(3));
+            if ("WHEN".equalsIgnoreCase(conditionalMatcher.group(1))) {
+                circuit.branch(BranchOperation.whenTrue(
+                    conditionalMatcher.group(2),
+                    condition
+                ));
+            } else {
+                circuit.branch(BranchOperation.whenFalse(
+                    conditionalMatcher.group(2),
+                    condition
+                ));
+            }
+            return true;
+        }
+        if ("HALT".equalsIgnoreCase(statement.text())) {
+            circuit.halt();
+            return true;
+        }
+        if ("WAIT".equalsIgnoreCase(statement.text())) {
+            circuit.waitInstruction();
+            return true;
+        }
+        return "NOP".equalsIgnoreCase(statement.text());
+    }
+
+    private static boolean parseClassicalInstruction(
+        final Statement statement,
+        final QuantumCircuit circuit,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        final String[] parts = statement.text().split("\\s+");
+        if (parts.length == 0) {
+            return false;
+        }
+        final String instruction = parts[0].toUpperCase();
+        if ("MOVE".equals(instruction) && parts.length == 3) {
+            assign(
+                circuit,
+                parts[1],
+                classicalOperand(parts[2])
+            );
+            return true;
+        }
+        if ("EXCHANGE".equals(instruction) && parts.length == 3) {
+            assign(
+                circuit,
+                parts[1],
+                ClassicalExpression.call(
+                    "exchange",
+                    List.of(
+                        classicalOperand(parts[1]),
+                        classicalOperand(parts[2])
+                    )
+                )
+            );
+            assign(
+                circuit,
+                parts[2],
+                ClassicalExpression.call(
+                    "exchange",
+                    List.of(
+                        classicalOperand(parts[2]),
+                        classicalOperand(parts[1])
+                    )
+                )
+            );
+            return true;
+        }
+        if ("NEG".equals(instruction) && parts.length == 3) {
+            assignCall(
+                circuit,
+                "neg",
+                parts[1],
+                parts[2]
+            );
+            return true;
+        }
+        if ("NOT".equals(instruction) && parts.length == 3) {
+            assignCall(
+                circuit,
+                "not",
+                parts[1],
+                parts[2]
+            );
+            return true;
+        }
+        if (parts.length == 4) {
+            final ClassicalBinaryOperator operator = binaryOperator(instruction);
+            if (operator != null) {
+                assign(
+                    circuit,
+                    parts[1],
+                    ClassicalExpression.binary(
+                        operator,
+                        classicalOperand(parts[2]),
+                        classicalOperand(parts[3])
+                    )
+                );
+                return true;
+            }
+            if (isClassicalCallInstruction(instruction)) {
+                assign(
+                    circuit,
+                    parts[1],
+                    ClassicalExpression.call(
+                        instruction.toLowerCase(),
+                        List.of(
+                            classicalOperand(parts[2]),
+                            classicalOperand(parts[3])
+                        )
+                    )
+                );
+                return true;
+            }
+        }
+        if (
+            ("LOAD".equals(instruction) || "STORE".equals(instruction) || "CONVERT".equals(instruction))
+            && parts.length >= 3
+        ) {
+            final ArrayList<ClassicalExpression> arguments = new ArrayList<>();
+            for (int i = 2; i < parts.length; i++) {
+                arguments.add(classicalOperand(parts[i]));
+            }
+            assign(
+                circuit,
+                parts[1],
+                ClassicalExpression.call(
+                    instruction.toLowerCase(),
+                    arguments
+                )
+            );
+            return true;
+        }
+        if (isClassicalVmInstruction(instruction)) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Malformed Quil classical instruction: " + statement.text() + ".",
+                statement
+            ));
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isClassicalVmInstruction(final String instruction) {
+        return "MOVE".equals(instruction)
+            || "EXCHANGE".equals(instruction)
+            || "CONVERT".equals(instruction)
+            || "LOAD".equals(instruction)
+            || "STORE".equals(instruction)
+            || "ADD".equals(instruction)
+            || "SUB".equals(instruction)
+            || "MUL".equals(instruction)
+            || "DIV".equals(instruction)
+            || "NEG".equals(instruction)
+            || "EQ".equals(instruction)
+            || "GT".equals(instruction)
+            || "GE".equals(instruction)
+            || "LT".equals(instruction)
+            || "LE".equals(instruction)
+            || "AND".equals(instruction)
+            || "IOR".equals(instruction)
+            || "XOR".equals(instruction)
+            || "NOT".equals(instruction);
+    }
+
+    private static boolean isClassicalCallInstruction(final String instruction) {
+        return "EQ".equals(instruction)
+            || "GT".equals(instruction)
+            || "GE".equals(instruction)
+            || "LT".equals(instruction)
+            || "LE".equals(instruction);
+    }
+
+    private static ClassicalBinaryOperator binaryOperator(final String instruction) {
+        return switch (instruction) {
+            case "ADD" -> ClassicalBinaryOperator.ADD;
+            case "SUB" -> ClassicalBinaryOperator.SUBTRACT;
+            case "MUL" -> ClassicalBinaryOperator.MULTIPLY;
+            case "DIV" -> ClassicalBinaryOperator.DIVIDE;
+            case "AND" -> ClassicalBinaryOperator.BITWISE_AND;
+            case "IOR" -> ClassicalBinaryOperator.BITWISE_OR;
+            case "XOR" -> ClassicalBinaryOperator.BITWISE_XOR;
+            default -> null;
+        };
+    }
+
+    private static void assignCall(
+        final QuantumCircuit circuit,
+        final String callName,
+        final String target,
+        final String value
+    ) {
+        assign(
+            circuit,
+            target,
+            ClassicalExpression.call(
+                callName,
+                List.of(classicalOperand(value))
+            )
+        );
+    }
+
+    private static void assign(
+        final QuantumCircuit circuit,
+        final String target,
+        final ClassicalExpression value
+    ) {
+        circuit.assign(new ClassicalAssignment(
+            classicalOperand(target),
+            value
+        ));
+    }
+
+    private static ClassicalExpression classicalOperand(final String token) {
+        final String trimmed = token.trim();
+        if (trimmed.matches("-?\\d+")) {
+            return ClassicalExpression.integer(Long.parseLong(trimmed));
+        }
+        return ClassicalExpression.symbolicReference(trimmed);
     }
 
     private static void parseGate(
@@ -687,11 +1003,19 @@ public final class QuilParser {
         }
         final ru.pathcreator.vadim.quantum.domain.bit.Qubit[] operationQubits = new ru.pathcreator.vadim.quantum.domain.bit.Qubit[qubitTokens.length];
         for (int i = 0; i < qubitTokens.length; i++) {
-            operationQubits[i] = qubits.get(parseNonNegativeInt(
-                qubitTokens[i],
+            operationQubits[i] = qubitAt(
+                qubits,
+                parseNonNegativeInt(
+                    qubitTokens[i],
+                    statement,
+                    diagnostics
+                ),
                 statement,
                 diagnostics
-            ));
+            );
+            if (operationQubits[i] == null) {
+                return;
+            }
         }
         circuit.parameterizedGate(
             gate,
@@ -726,6 +1050,34 @@ public final class QuilParser {
             definition
         );
         return definition;
+    }
+
+    private static ru.pathcreator.vadim.quantum.domain.bit.Qubit qubitAt(
+        final QuantumRegister qubits,
+        final int index,
+        final Statement statement,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (qubits == null) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Quil operation references a qubit, but no quantum register was planned.",
+                statement
+            ));
+            return null;
+        }
+        if (
+            index < 0
+            || index >= qubits.size()
+        ) {
+            diagnostics.add(error(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Quil qubit reference is outside planned quantum register.",
+                statement
+            ));
+            return null;
+        }
+        return qubits.get(index);
     }
 
     private static int parameterCount(final String text) {

@@ -96,6 +96,46 @@ class QuilIntegrationTest {
     }
 
     @Test
+    void importsStandardGateAliasesWithoutCreatingConflictingExternalDefinitions() {
+        final ImportResult result = QuantumIntegrations.quil().importProgram("""
+            U(0,0,0) 0
+            U3(0,0,0) 0
+            P(0) 0
+            SDG 0
+            TDG 0
+            CY 0 1
+            CH 0 1
+            """);
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            0,
+            result.program().gateDefinitionCount()
+        );
+        assertEquals(
+            7,
+            result.program().circuit(0).operationCount()
+        );
+    }
+
+    @Test
+    void plansSparseExternalGateQubitIndexesBeforeParsingOperations() {
+        final ImportResult result = QuantumIntegrations.quil().importProgram("""
+            ctu 3 4
+            """);
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            1,
+            result.program().gateDefinitionCount()
+        );
+        assertEquals(
+            5,
+            result.program().circuit(0).quantumRegister(0).size()
+        );
+    }
+
+    @Test
     void importsMatrixGateDefinitionWithoutSourceFragment() {
         final ImportResult result = QuantumIntegrations.quil().importProgram("""
             DECLARE ro BIT[1]

@@ -80,6 +80,8 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchConditionKind;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
@@ -91,6 +93,8 @@ import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
@@ -101,6 +105,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -229,6 +234,13 @@ public final class QuantumIrJsonReader {
             node,
             "gateDefinitions"
         );
+        for (int i = 0; i < gateDefinitions.size(); i++) {
+            state.addGateDefinition(readGateDefinitionStub(requiredArrayElementObject(
+                gateDefinitions,
+                i,
+                "program.gateDefinitions"
+            )));
+        }
         for (int i = 0; i < gateDefinitions.size(); i++) {
             final GateDefinition definition = readGateDefinition(
                 requiredArrayElementObject(
@@ -811,6 +823,49 @@ public final class QuantumIrJsonReader {
             }
         }
         return arguments;
+    }
+
+    private static GateDefinition readGateDefinitionStub(final JsonNode node) {
+        final String name = requiredText(
+            node,
+            "name"
+        );
+        final GateDefinitionKind kind = enumValue(
+            GateDefinitionKind.class,
+            requiredText(
+                node,
+                "kind"
+            ),
+            "gateDefinition.kind"
+        );
+        try {
+            if (kind == GateDefinitionKind.INTRINSIC) {
+                return GateDefinition.of(
+                    name,
+                    requiredInt(
+                        node,
+                        "arity"
+                    ),
+                    requiredInt(
+                        node,
+                        "parameterCount"
+                    )
+                );
+            }
+            return GateDefinition.of(
+                name,
+                requiredArray(
+                    node,
+                    "qubitNames"
+                ).size(),
+                requiredArray(
+                    node,
+                    "parameterNames"
+                ).size()
+            );
+        } catch (final IllegalArgumentException exception) {
+            throw invalidValue(exception);
+        }
     }
 
     private static GateDefinition readGateDefinition(
@@ -1400,6 +1455,35 @@ public final class QuantumIrJsonReader {
                         circuitState
                     )
                 );
+                case LABEL -> new LabelOperation(requiredText(
+                    node,
+                    "name"
+                ));
+                case BRANCH -> new BranchOperation(
+                    requiredText(
+                        node,
+                        "targetLabel"
+                    ),
+                    enumValue(
+                        BranchConditionKind.class,
+                        requiredText(
+                            node,
+                            "conditionKind"
+                        ),
+                        "branch.conditionKind"
+                    ),
+                    node.has("condition")
+                        ? readClassicalExpression(
+                            requiredObject(
+                                node,
+                                "condition"
+                            ),
+                            circuitState
+                        )
+                        : null
+                );
+                case HALT -> HaltOperation.INSTANCE;
+                case WAIT -> WaitOperation.INSTANCE;
                 case SOURCE_FRAGMENT -> new SourceFragmentOperation(readSourceFragment(requiredObject(
                     node,
                     "fragment"
@@ -1553,6 +1637,14 @@ public final class QuantumIrJsonReader {
                 boxOperation.hasDuration() ? boxOperation.duration() : null,
                 boxOperation.body()
             );
+        } else if (operation instanceof LabelOperation labelOperation) {
+            circuit.label(labelOperation.name());
+        } else if (operation instanceof BranchOperation branchOperation) {
+            circuit.branch(branchOperation);
+        } else if (operation instanceof HaltOperation) {
+            circuit.halt();
+        } else if (operation instanceof WaitOperation) {
+            circuit.waitInstruction();
         } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
             circuit.sourceFragment(fragmentOperation.fragment());
         } else {
@@ -1588,6 +1680,26 @@ public final class QuantumIrJsonReader {
             );
             final GateDefinition definition = state.gateDefinition(name);
             if (definition == null) {
+                if (
+                    node.has("arity")
+                    && node.has("parameterCount")
+                ) {
+                    try {
+                        return GateDefinition.of(
+                            name,
+                            requiredInt(
+                                node,
+                                "arity"
+                            ),
+                            requiredInt(
+                                node,
+                                "parameterCount"
+                            )
+                        );
+                    } catch (final IllegalArgumentException exception) {
+                        throw invalidValue(exception);
+                    }
+                }
                 throw error(
                     PersistenceDiagnosticCode.UNKNOWN_REFERENCE,
                     "Gate definition reference is unknown: " + name + "."

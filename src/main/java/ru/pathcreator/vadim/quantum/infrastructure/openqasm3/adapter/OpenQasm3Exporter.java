@@ -91,7 +91,8 @@ public final class OpenQasm3Exporter implements QuantumExporter {
                 IntegrationCapability.GATE_MODIFIERS,
                 IntegrationCapability.STRUCTURED_CONTROL_FLOW,
                 IntegrationCapability.TIMING_OPERATIONS,
-                IntegrationCapability.CLASSICAL_ASSIGNMENTS
+                IntegrationCapability.CLASSICAL_ASSIGNMENTS,
+                IntegrationCapability.CLASSICAL_EXTENDED_EXPRESSIONS
             )
         );
     }
@@ -150,6 +151,16 @@ public final class OpenQasm3Exporter implements QuantumExporter {
                 );
             }
         }
+        appendUnsupportedSourceFragmentDiagnostics(
+            program,
+            diagnostics
+        );
+        if (hasErrors(diagnostics)) {
+            return ExportResult.failure(
+                format(),
+                diagnostics
+            );
+        }
         final CapabilityPreflightResult preflightResult = preflightChecker.check(
             program,
             capabilityProfile()
@@ -187,6 +198,22 @@ public final class OpenQasm3Exporter implements QuantumExporter {
             writerResult.content(),
             diagnostics
         );
+    }
+
+    private static void appendUnsupportedSourceFragmentDiagnostics(
+        final QuantumProgram program,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        for (int i = 0; i < program.sourceFragmentCount(); i++) {
+            if (!"openqasm3".equals(program.sourceFragment(i).format())) {
+                diagnostics.add(IntegrationDiagnostic.error(
+                    IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
+                    "OpenQASM 3 export does not support program source fragment format: "
+                        + program.sourceFragment(i).format()
+                        + "."
+                ));
+            }
+        }
     }
 
     private static void appendValidationDiagnostics(

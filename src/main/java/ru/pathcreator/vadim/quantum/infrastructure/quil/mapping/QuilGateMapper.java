@@ -24,6 +24,9 @@ public final class QuilGateMapper {
         if (gate == null) {
             throw new IllegalArgumentException("Gate must not be null.");
         }
+        if (isGate(gate, StandardGate.U)) {
+            return "U";
+        }
         if (isGate(gate, StandardGate.H)) {
             return "H";
         }
@@ -39,8 +42,14 @@ public final class QuilGateMapper {
         if (isGate(gate, StandardGate.S)) {
             return "S";
         }
+        if (isGate(gate, StandardGate.SDG)) {
+            return "SDG";
+        }
         if (isGate(gate, StandardGate.T)) {
             return "T";
+        }
+        if (isGate(gate, StandardGate.TDG)) {
+            return "TDG";
         }
         if (isGate(gate, StandardGate.RX)) {
             return "RX";
@@ -52,13 +61,19 @@ public final class QuilGateMapper {
             return "RZ";
         }
         if (isGate(gate, StandardGate.PHASE)) {
-            return "PHASE";
+            return "P";
         }
         if (isGate(gate, StandardGate.CX)) {
             return "CNOT";
         }
+        if (isGate(gate, StandardGate.CY)) {
+            return "CY";
+        }
         if (isGate(gate, StandardGate.CZ)) {
             return "CZ";
+        }
+        if (isGate(gate, StandardGate.CH)) {
+            return "CH";
         }
         if (isGate(gate, StandardGate.CPHASE)) {
             return "CPHASE";
@@ -81,18 +96,23 @@ public final class QuilGateMapper {
         }
         final String normalized = name.toUpperCase();
         return switch (normalized) {
+            case "U", "U3" -> StandardGate.U;
             case "H", "HADAMARD" -> StandardGate.H;
             case "X" -> StandardGate.X;
             case "Y" -> StandardGate.Y;
             case "Z" -> StandardGate.Z;
             case "S" -> StandardGate.S;
+            case "SDG" -> StandardGate.SDG;
             case "T" -> StandardGate.T;
+            case "TDG" -> StandardGate.TDG;
             case "RX" -> StandardGate.RX;
             case "RY" -> StandardGate.RY;
             case "RZ" -> StandardGate.RZ;
-            case "PHASE" -> StandardGate.PHASE;
+            case "P", "PHASE" -> StandardGate.PHASE;
             case "CNOT" -> StandardGate.CX;
+            case "CY" -> StandardGate.CY;
             case "CZ" -> StandardGate.CZ;
+            case "CH" -> StandardGate.CH;
             case "CPHASE" -> StandardGate.CPHASE;
             case "SWAP" -> StandardGate.SWAP;
             case "CCNOT" -> StandardGate.CCX;

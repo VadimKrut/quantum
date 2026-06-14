@@ -67,6 +67,7 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
@@ -78,8 +79,10 @@ import ru.pathcreator.vadim.quantum.domain.operation.ControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.DelayOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationKind;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
@@ -1062,6 +1065,31 @@ public final class QuantumIrJsonWriter {
                     diagnostics
                 )
             );
+        } else if (operation instanceof LabelOperation labelOperation) {
+            json.put(
+                "name",
+                labelOperation.name()
+            );
+        } else if (operation instanceof BranchOperation branchOperation) {
+            json.put(
+                "targetLabel",
+                branchOperation.targetLabel()
+            );
+            json.put(
+                "conditionKind",
+                branchOperation.conditionKind().name()
+            );
+            if (branchOperation.hasCondition()) {
+                json.put(
+                    "condition",
+                    writeClassicalExpression(branchOperation.condition())
+                );
+            }
+        } else if (
+            operation.kind() == OperationKind.HALT
+            || operation.kind() == OperationKind.WAIT
+        ) {
+            return json;
         } else if (operation instanceof SourceFragmentOperation fragmentOperation) {
             json.put(
                 "fragment",
@@ -1179,6 +1207,18 @@ public final class QuantumIrJsonWriter {
             json.put(
                 "name",
                 definition.gateName()
+            );
+            json.put(
+                "definitionKind",
+                definition.kind().name()
+            );
+            json.put(
+                "arity",
+                definition.arity()
+            );
+            json.put(
+                "parameterCount",
+                definition.parameterCount()
             );
         } else {
             diagnostics.add(PersistenceDiagnostic.error(

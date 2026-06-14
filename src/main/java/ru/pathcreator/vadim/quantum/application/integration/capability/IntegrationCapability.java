@@ -82,5 +82,9 @@ public enum IntegrationCapability {
     /**
      * Adapter может писать классические присваивания.
      */
-    CLASSICAL_ASSIGNMENTS
+    CLASSICAL_ASSIGNMENTS,
+
+    CLASSICAL_EXTENDED_EXPRESSIONS,
+
+    INSTRUCTION_CONTROL_FLOW
 }

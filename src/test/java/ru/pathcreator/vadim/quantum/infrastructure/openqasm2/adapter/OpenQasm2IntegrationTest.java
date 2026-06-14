@@ -875,6 +875,62 @@ class OpenQasm2IntegrationTest {
     }
 
     @Test
+    void importsWithWhitespaceBeforeGateParametersAndCaseSensitiveCustomGateName() {
+        final ImportResult result = QuantumIntegrations.openQasm2().importProgram("""
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[2];
+            gate cH a,b {
+                h b;
+                cx a,b;
+            }
+            u1 (pi/2) q[0];
+            cH q[0],q[1];
+            """);
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            1,
+            result.program().gateDefinitionCount()
+        );
+        assertEquals(
+            "cH",
+            result.program().gateDefinition(0).gateName()
+        );
+    }
+
+    @Test
+    void skipsBinaryFilesWhileResolvingIncludeDirectory(
+        @TempDir final Path tempDir
+    ) throws IOException {
+        Files.writeString(
+            tempDir.resolve("qelib1.inc"),
+            ""
+        );
+        Files.write(
+            tempDir.resolve("preview.png"),
+            new byte[] {
+                (byte) 0x89,
+                (byte) 0x50,
+                (byte) 0x4E,
+                (byte) 0x47
+            }
+        );
+
+        final ImportResult result = QuantumIntegrations.openQasm2().importProgram(
+            """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[1];
+            h q[0];
+            """,
+            ImportOptions.defaults().withIncludeDirectory(tempDir.toString())
+        );
+
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
     void importsBellCircuitFromOpenQasm2() {
         final String source = """
             OPENQASM 2.0;

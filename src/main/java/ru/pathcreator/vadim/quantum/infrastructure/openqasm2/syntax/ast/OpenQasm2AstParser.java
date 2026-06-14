@@ -30,7 +30,7 @@ public final class OpenQasm2AstParser {
     private static final Pattern MEASURE_PATTERN = Pattern.compile("^measure\\s+.+$", Pattern.CASE_INSENSITIVE);
     private static final Pattern RESET_PATTERN = Pattern.compile("^reset\\s+.+$", Pattern.CASE_INSENSITIVE);
     private static final Pattern BARRIER_PATTERN = Pattern.compile("^barrier\\s+.+$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern GATE_CALL_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*(?:\\(.*\\))?\\s+.+$");
+    private static final Pattern GATE_CALL_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*(?:\\s*\\(.*\\))?\\s+.+$");
 
     public OpenQasm2Ast parse(final String source) {
         final ArrayList<OpenQasm2AstStatement> statements = new ArrayList<>();

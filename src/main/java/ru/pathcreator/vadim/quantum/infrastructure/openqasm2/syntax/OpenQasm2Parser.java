@@ -60,7 +60,7 @@ public final class OpenQasm2Parser {
     private static final Pattern IF_PATTERN = Pattern.compile("^if\\s*\\(\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*==\\s*(\\d+)\\s*\\)\\s*(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern OPAQUE_PATTERN = Pattern.compile("^opaque\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern GATE_DEFINITION_PATTERN = Pattern.compile("^gate\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+([^{}]+)\\s*\\{(.*)}$", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\((.*)\\))?\\s+(.+)$");
+    private static final Pattern GATE_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\((.*)\\))?\\s+(.+)$");
     private static final Pattern INDEXED_ARGUMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\[(\\d+)]$");
     private static final Pattern REGISTER_ARGUMENT_PATTERN = Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)$");
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");

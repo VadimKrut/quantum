@@ -15,6 +15,8 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpressionKind;
 import ru.pathcreator.vadim.quantum.domain.gate.GateDefinition;
@@ -22,13 +24,20 @@ import ru.pathcreator.vadim.quantum.domain.gate.GateDefinitionKind;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchConditionKind;
+import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.HaltOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.MeasureOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.Operation;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.SourceFragmentOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 import ru.pathcreator.vadim.quantum.infrastructure.quil.mapping.QuilGateMapper;
@@ -233,6 +242,45 @@ public final class QuilWriter {
         if (operation instanceof BarrierOperation) {
             return QuilWriterResult.success("");
         }
+        if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            builder.append("DECLARE ")
+                .append(arrayOperation.name())
+                .append(' ')
+                .append(formatClassicalArrayType(arrayOperation))
+                .append('[')
+                .append(formatClassicalExpression(arrayOperation.dimension(0)))
+                .append("]\n");
+            return QuilWriterResult.success("");
+        }
+        if (operation instanceof ClassicalAssignmentOperation assignmentOperation) {
+            builder.append("MOVE ")
+                .append(formatClassicalExpression(assignmentOperation.assignment().target()))
+                .append(' ')
+                .append(formatClassicalExpression(assignmentOperation.assignment().value()))
+                .append('\n');
+            return QuilWriterResult.success("");
+        }
+        if (operation instanceof LabelOperation labelOperation) {
+            builder.append("LABEL @")
+                .append(labelOperation.name())
+                .append('\n');
+            return QuilWriterResult.success("");
+        }
+        if (operation instanceof BranchOperation branchOperation) {
+            appendBranch(
+                builder,
+                branchOperation
+            );
+            return QuilWriterResult.success("");
+        }
+        if (operation instanceof HaltOperation) {
+            builder.append("HALT\n");
+            return QuilWriterResult.success("");
+        }
+        if (operation instanceof WaitOperation) {
+            builder.append("WAIT\n");
+            return QuilWriterResult.success("");
+        }
         if (operation instanceof SourceFragmentOperation fragmentOperation) {
             if (!SOURCE_FRAGMENT_FORMAT.equals(fragmentOperation.fragment().format())) {
                 return QuilWriterResult.failure(IntegrationDiagnostic.error(
@@ -248,6 +296,36 @@ public final class QuilWriter {
             IntegrationDiagnosticCode.UNSUPPORTED_OPERATION,
             "Quil export does not support operation kind: " + operation.kind() + "."
         ));
+    }
+
+    private static String formatClassicalArrayType(final ClassicalArrayDeclarationOperation operation) {
+        return switch (operation.elementType().kind()) {
+            case BIT, BOOLEAN -> "BIT";
+            case SIGNED_INTEGER -> "INTEGER";
+            case UNSIGNED_INTEGER -> operation.elementType().hasBitWidth()
+                && operation.elementType().bitWidth() == 8
+                ? "OCTET"
+                : "INTEGER";
+            case FLOAT -> "REAL";
+            case ANGLE, DURATION, STRETCH -> "REAL";
+        };
+    }
+
+    private static void appendBranch(
+        final StringBuilder builder,
+        final BranchOperation operation
+    ) {
+        if (operation.conditionKind() == BranchConditionKind.ALWAYS) {
+            builder.append("JUMP @")
+                .append(operation.targetLabel())
+                .append('\n');
+            return;
+        }
+        builder.append(operation.conditionKind() == BranchConditionKind.WHEN_TRUE ? "JUMP-WHEN @" : "JUMP-UNLESS @")
+            .append(operation.targetLabel())
+            .append(' ')
+            .append(formatClassicalExpression(operation.condition()))
+            .append('\n');
     }
 
     private static QuilWriterResult appendGate(
@@ -346,5 +424,48 @@ public final class QuilWriter {
             return Long.toString(Math.round(value));
         }
         return Double.toString(value);
+    }
+
+    private static String formatClassicalExpression(final ClassicalExpression expression) {
+        return switch (expression.kind()) {
+            case INTEGER -> Long.toString(expression.integerValue());
+            case VARIABLE_REFERENCE -> expression.variableName();
+            case BIT_REFERENCE -> expression.bit().register().name().value() + "[" + expression.bit().index() + "]";
+            case REGISTER_REFERENCE -> expression.register().name().value();
+            case SYMBOLIC_REFERENCE -> expression.symbolicText();
+            case BINARY_OPERATION -> "("
+                + formatClassicalExpression(expression.leftExpression())
+                + binaryOperatorSymbol(expression.binaryOperator())
+                + formatClassicalExpression(expression.rightExpression())
+                + ")";
+            case CALL -> formatClassicalCall(expression);
+        };
+    }
+
+    private static String binaryOperatorSymbol(final ClassicalBinaryOperator operator) {
+        return switch (operator) {
+            case ADD -> "+";
+            case SUBTRACT -> "-";
+            case MULTIPLY -> "*";
+            case DIVIDE -> "/";
+            case MODULO -> "%";
+            case BITWISE_AND -> "&";
+            case BITWISE_OR -> "|";
+            case BITWISE_XOR -> "^";
+        };
+    }
+
+    private static String formatClassicalCall(final ClassicalExpression expression) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(expression.callableName())
+            .append('(');
+        for (int i = 0; i < expression.callArgumentCount(); i++) {
+            if (i > 0) {
+                builder.append(',');
+            }
+            builder.append(formatClassicalExpression(expression.callArgument(i)));
+        }
+        builder.append(')');
+        return builder.toString();
     }
 }
