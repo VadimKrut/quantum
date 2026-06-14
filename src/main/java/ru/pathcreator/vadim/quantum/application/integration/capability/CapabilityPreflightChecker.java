@@ -22,6 +22,8 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BlockOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicalAssignmentOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ClassicallyControlledOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.ConditionalBlockOperation;
@@ -57,10 +59,12 @@ public final class CapabilityPreflightChecker {
             throw new IllegalArgumentException("Integration capability profile must not be null.");
         }
         final ArrayList<IntegrationDiagnostic> diagnostics = new ArrayList<>();
+        final boolean[] loweringRequired = new boolean[] {false};
         checkProgramLevelFeatures(
             program,
             profile,
-            diagnostics
+            diagnostics,
+            loweringRequired
         );
         for (int i = 0; i < program.circuitCount(); i++) {
             final QuantumCircuit circuit = program.circuit(i);
@@ -73,23 +77,49 @@ public final class CapabilityPreflightChecker {
                 checkOperation(
                     circuit.operation(j),
                     profile,
-                    diagnostics
+                    diagnostics,
+                    loweringRequired
                 );
             }
         }
-        return CapabilityPreflightResult.of(diagnostics);
+        return CapabilityPreflightResult.of(
+            CapabilityPreflightResult.deriveStatus(
+                diagnostics,
+                loweringRequired[0]
+            ),
+            diagnostics
+        );
     }
 
     private static void checkProgramLevelFeatures(
         final QuantumProgram program,
         final IntegrationCapabilityProfile profile,
-        final ArrayList<IntegrationDiagnostic> diagnostics
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
     ) {
         if (
             program.calibrationDefinitionCount() > 0
             && !profile.supports(IntegrationCapability.CALIBRATIONS)
         ) {
-            diagnostics.add(unsupportedCapability("calibration definitions"));
+            diagnostics.add(unsupportedWithoutLoss("calibration definitions"));
+        }
+        if (
+            program.callableDefinitionCount() > 0
+            && !profile.supports(IntegrationCapability.CALLABLE_DEFINITIONS)
+        ) {
+            diagnostics.add(unsupportedWithoutLoss("callable definitions"));
+        }
+        if (
+            program.externalCallableDeclarationCount() > 0
+            && !profile.supports(IntegrationCapability.EXTERNAL_CALLABLES)
+        ) {
+            diagnostics.add(unsupportedWithoutLoss("external callable declarations"));
+        }
+        if (
+            program.gateDefinitionCount() > 0
+            && profile.supports(IntegrationCapability.GATE_DECOMPOSITION)
+        ) {
+            loweringRequired[0] = true;
         }
     }
 
@@ -115,16 +145,23 @@ public final class CapabilityPreflightChecker {
     private static void checkOperation(
         final Operation operation,
         final IntegrationCapabilityProfile profile,
-        final ArrayList<IntegrationDiagnostic> diagnostics
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
     ) {
         checkDynamicQubitReferences(
             operation,
             profile,
-            diagnostics
+            diagnostics,
+            loweringRequired
         );
         if (
             operation instanceof GateOperation
         ) {
+            checkGateOperation(
+                (GateOperation) operation,
+                profile,
+                loweringRequired
+            );
             return;
         }
         if (
@@ -146,7 +183,8 @@ public final class CapabilityPreflightChecker {
             checkControlledOperation(
                 controlledOperation.operation(),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
         } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
             checkPredicate(
@@ -157,8 +195,20 @@ public final class CapabilityPreflightChecker {
             checkControlledOperation(
                 controlledOperation.operation(),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
+        } else if (operation instanceof ClassicalArrayDeclarationOperation arrayOperation) {
+            if (!profile.supports(IntegrationCapability.CLASSICAL_ARRAYS)) {
+                diagnostics.add(unsupportedCapability("classical arrays"));
+            }
+            for (int i = 0; i < arrayOperation.dimensionCount(); i++) {
+                checkExpression(
+                    arrayOperation.dimension(i),
+                    profile,
+                    diagnostics
+                );
+            }
         } else if (operation instanceof ClassicalAssignmentOperation assignmentOperation) {
             if (!profile.supports(IntegrationCapability.CLASSICAL_ASSIGNMENTS)) {
                 diagnostics.add(unsupportedCapability("classical assignments"));
@@ -177,7 +227,8 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 blockOperation.body(),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
         } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
             if (!profile.supports(IntegrationCapability.STRUCTURED_CONTROL_FLOW)) {
@@ -191,12 +242,14 @@ public final class CapabilityPreflightChecker {
             checkBlock(
                 conditionalOperation.thenBlock(),
                 profile,
+                loweringRequired,
                 diagnostics
             );
             if (conditionalOperation.hasElseBlock()) {
                 checkBlock(
                     conditionalOperation.elseBlock(),
                     profile,
+                    loweringRequired,
                     diagnostics
                 );
             }
@@ -204,7 +257,8 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 loopOperation.body(),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
         } else if (operation instanceof WhileLoopOperation loopOperation) {
             checkPredicate(
@@ -215,7 +269,8 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 loopOperation.body(),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
         } else if (operation instanceof DelayOperation) {
             if (!profile.supports(IntegrationCapability.TIMING_OPERATIONS)) {
@@ -228,8 +283,27 @@ public final class CapabilityPreflightChecker {
             checkBlock(
                 boxOperation.body(),
                 profile,
+                loweringRequired,
                 diagnostics
             );
+        } else if (operation instanceof CallableInvocationOperation invocationOperation) {
+            if (!profile.supports(IntegrationCapability.CALLABLE_INVOCATIONS)) {
+                diagnostics.add(unsupportedWithoutLoss("callable invocations"));
+            }
+            if (invocationOperation.hasTarget()) {
+                checkExpression(
+                    invocationOperation.target(),
+                    profile,
+                    diagnostics
+                );
+            }
+            for (int i = 0; i < invocationOperation.classicalArguments().size(); i++) {
+                checkExpression(
+                    invocationOperation.classicalArguments().get(i),
+                    profile,
+                    diagnostics
+                );
+            }
         } else if (
             operation instanceof LabelOperation
             || operation instanceof BranchOperation
@@ -245,7 +319,8 @@ public final class CapabilityPreflightChecker {
     private static void checkDynamicQubitReferences(
         final Operation operation,
         final IntegrationCapabilityProfile profile,
-        final ArrayList<IntegrationDiagnostic> diagnostics
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
     ) {
         if (profile.supports(IntegrationCapability.DYNAMIC_QUBIT_REFERENCES)) {
             return;
@@ -270,6 +345,19 @@ public final class CapabilityPreflightChecker {
                 profile,
                 diagnostics
             );
+        }
+    }
+
+    private static void checkGateOperation(
+        final GateOperation operation,
+        final IntegrationCapabilityProfile profile,
+        final boolean[] loweringRequired
+    ) {
+        if (
+            operation.gate().parameterCount() > 0
+            && profile.supports(IntegrationCapability.GATE_DECOMPOSITION)
+        ) {
+            loweringRequired[0] = true;
         }
     }
 
@@ -362,7 +450,8 @@ public final class CapabilityPreflightChecker {
     private static void checkStructuredOperation(
         final OperationBlock body,
         final IntegrationCapabilityProfile profile,
-        final ArrayList<IntegrationDiagnostic> diagnostics
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
     ) {
         if (!profile.supports(IntegrationCapability.STRUCTURED_CONTROL_FLOW)) {
             diagnostics.add(unsupportedCapability("structured control flow"));
@@ -370,6 +459,7 @@ public final class CapabilityPreflightChecker {
         checkBlock(
             body,
             profile,
+            loweringRequired,
             diagnostics
         );
     }
@@ -377,13 +467,15 @@ public final class CapabilityPreflightChecker {
     private static void checkBlock(
         final OperationBlock body,
         final IntegrationCapabilityProfile profile,
+        final boolean[] loweringRequired,
         final ArrayList<IntegrationDiagnostic> diagnostics
     ) {
         for (int i = 0; i < body.operationCount(); i++) {
             checkOperation(
                 body.operation(i),
                 profile,
-                diagnostics
+                diagnostics,
+                loweringRequired
             );
         }
     }
@@ -391,7 +483,8 @@ public final class CapabilityPreflightChecker {
     private static void checkControlledOperation(
         final Operation operation,
         final IntegrationCapabilityProfile profile,
-        final ArrayList<IntegrationDiagnostic> diagnostics
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
     ) {
         if (!profile.supports(IntegrationCapability.CLASSICAL_REGISTER_CONDITIONS)) {
             diagnostics.add(unsupportedCapability("classical register conditions"));
@@ -399,7 +492,8 @@ public final class CapabilityPreflightChecker {
         checkOperation(
             operation,
             profile,
-            diagnostics
+            diagnostics,
+            loweringRequired
         );
     }
 
@@ -407,6 +501,13 @@ public final class CapabilityPreflightChecker {
         return IntegrationDiagnostic.error(
             IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
             "Target capability profile does not support " + featureName + "."
+        );
+    }
+
+    private static IntegrationDiagnostic unsupportedWithoutLoss(final String featureName) {
+        return IntegrationDiagnostic.error(
+            IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
+            "Target capability profile cannot represent " + featureName + " without semantic loss."
         );
     }
 }

@@ -967,6 +967,81 @@ public final class OpenQasm3Parser {
             bodyParts.returnExpression(),
             matcher.group(3) == null ? null : matcher.group(3).trim()
         ));
+        addSubroutineDeclaration(
+            context,
+            statement,
+            matcher.group(1),
+            arguments,
+            matcher.group(3) == null ? null : matcher.group(3).trim()
+        );
+    }
+
+    private static void addSubroutineDeclaration(
+        final ParseContext context,
+        final Statement statement,
+        final String name,
+        final SubroutineArgument[] arguments,
+        final String returnTypeText
+    ) {
+        final ClassicalType returnType = returnTypeText == null
+            ? null
+            : parseClassicalTypeText(returnTypeText);
+        if (
+            returnTypeText != null
+            && returnType == null
+        ) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                "Cannot parse OpenQASM 3 subroutine return type.",
+                statement
+            );
+            return;
+        }
+        final CallableArgument[] callableArguments = callableArguments(arguments);
+        try {
+            context.program().addExternalCallableDeclaration(new ExternalCallableDeclaration(
+                name,
+                returnType,
+                callableArguments
+            ));
+        } catch (final IllegalArgumentException exception) {
+            context.addError(
+                IntegrationDiagnosticCode.PARSE_ERROR,
+                exception.getMessage(),
+                statement
+            );
+        }
+    }
+
+    private static CallableArgument callableArgument(final SubroutineArgument argument) {
+        if (argument.kind() == SubroutineArgumentKind.QUANTUM) {
+            return CallableArgument.qubit(argument.name());
+        }
+        return CallableArgument.classical(
+            argument.name(),
+            ClassicalType.sized(
+                ClassicalTypeKind.SIGNED_INTEGER,
+                64
+            )
+        );
+    }
+
+    private static CallableArgument[] callableArguments(final SubroutineArgument[] arguments) {
+        final ArrayList<CallableArgument> callableArguments = new ArrayList<>();
+        for (int i = 0; i < arguments.length; i++) {
+            if (arguments[i].kind() == SubroutineArgumentKind.QUANTUM) {
+                for (int j = 0; j < arguments[i].quantumWidth(); j++) {
+                    callableArguments.add(CallableArgument.qubit(
+                        arguments[i].quantumWidth() == 1
+                            ? arguments[i].name()
+                            : arguments[i].name() + "_" + j
+                    ));
+                }
+            } else {
+                callableArguments.add(callableArgument(arguments[i]));
+            }
+        }
+        return callableArguments.toArray(new CallableArgument[0]);
     }
 
     private static boolean shouldPreserveSubroutineBody(final String body) {
@@ -1047,7 +1122,12 @@ public final class OpenQasm3Parser {
             if (type.startsWith("qubit")) {
                 arguments[i] = new SubroutineArgument(
                     name,
-                    SubroutineArgumentKind.QUANTUM
+                    SubroutineArgumentKind.QUANTUM,
+                    subroutineQuantumWidth(
+                        context,
+                        statement,
+                        type
+                    )
                 );
             } else if (
                 type.startsWith("bit")
@@ -1062,7 +1142,8 @@ public final class OpenQasm3Parser {
             ) {
                 arguments[i] = new SubroutineArgument(
                     name,
-                    SubroutineArgumentKind.CLASSICAL
+                    SubroutineArgumentKind.CLASSICAL,
+                    0
                 );
             } else if (
                 type.startsWith("int")
@@ -1070,13 +1151,38 @@ public final class OpenQasm3Parser {
             ) {
                 arguments[i] = new SubroutineArgument(
                     name,
-                    SubroutineArgumentKind.INTEGER
+                    SubroutineArgumentKind.INTEGER,
+                    0
                 );
             } else {
                 return null;
             }
         }
         return arguments;
+    }
+
+    private static int subroutineQuantumWidth(
+        final ParseContext context,
+        final Statement statement,
+        final String type
+    ) {
+        final int open = type.indexOf('[');
+        final int close = type.lastIndexOf(']');
+        if (
+            open < 0
+            || close <= open
+        ) {
+            return 1;
+        }
+        final int width = parseNonNegativeIntegerExpression(
+            context,
+            statement,
+            type.substring(
+                open + 1,
+                close
+            )
+        );
+        return width <= 0 ? 1 : width;
     }
 
     private static void parseStaticArrayDeclaration(
@@ -1196,6 +1302,10 @@ public final class OpenQasm3Parser {
         for (int i = 0; i < parts.parts().size(); i++) {
             final String argumentText = parts.parts().get(i).trim();
             if (argumentText.isBlank()) {
+                continue;
+            }
+            if (argumentText.toLowerCase().startsWith("qubit")) {
+                arguments.add(CallableArgument.qubit("arg" + i));
                 continue;
             }
             final ClassicalType type = parseClassicalTypeText(argumentText);
@@ -2037,7 +2147,8 @@ public final class OpenQasm3Parser {
         for (int i = 0; i < qubitNames.parts().size(); i++) {
             arguments[i] = new SubroutineArgument(
                 qubitNames.parts().get(i),
-                SubroutineArgumentKind.QUANTUM
+                SubroutineArgumentKind.QUANTUM,
+                1
             );
         }
         context.addSubroutine(new SubroutineDefinition(
@@ -7195,7 +7306,8 @@ public final class OpenQasm3Parser {
 
     private record SubroutineArgument(
         String name,
-        SubroutineArgumentKind kind
+        SubroutineArgumentKind kind,
+        int quantumWidth
     ) {
     }
 

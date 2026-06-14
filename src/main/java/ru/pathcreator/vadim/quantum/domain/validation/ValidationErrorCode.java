@@ -104,6 +104,12 @@ public enum ValidationErrorCode {
      */
     INVALID_GATE_PARAMETER,
 
+    UNDECLARED_CALLABLE,
+
+    INVALID_CALLABLE_ARGUMENT_COUNT,
+
+    INVALID_CALLABLE_TARGET,
+
     /**
      * Операция гейта использует один и тот же кубит в несовместимых ролях.
      */

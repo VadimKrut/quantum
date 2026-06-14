@@ -15,6 +15,7 @@ import ru.pathcreator.vadim.quantum.application.integration.options.ImportOption
 import ru.pathcreator.vadim.quantum.application.integration.result.ImportResult;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.contract.QuantumIntegration;
+import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 
 /**
@@ -43,6 +44,11 @@ public final class OpenQasm3Integration implements QuantumIntegration {
     @Override
     public IntegrationFormat format() {
         return IntegrationFormat.OPENQASM_3;
+    }
+
+    @Override
+    public IntegrationCapabilityProfile capabilityProfile() {
+        return exporter.capabilityProfile();
     }
 
     @Override

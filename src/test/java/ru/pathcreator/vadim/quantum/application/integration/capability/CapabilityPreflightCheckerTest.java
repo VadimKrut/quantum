@@ -50,6 +50,10 @@ class CapabilityPreflightCheckerTest {
         );
 
         assertTrue(result.isSuccess());
+        assertEquals(
+            CapabilityPreflightStatus.EXPORTABLE,
+            result.status()
+        );
     }
 
     @Test
@@ -68,6 +72,10 @@ class CapabilityPreflightCheckerTest {
         );
 
         assertFalse(result.isSuccess());
+        assertEquals(
+            CapabilityPreflightStatus.UNSUPPORTED_BY_TARGET,
+            result.status()
+        );
         assertEquals(
             IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
             result.diagnostics().get(0).code()
@@ -100,9 +108,33 @@ class CapabilityPreflightCheckerTest {
 
         assertFalse(result.isSuccess());
         assertEquals(
+            CapabilityPreflightStatus.UNSUPPORTED_BY_TARGET,
+            result.status()
+        );
+        assertEquals(
             IntegrationDiagnosticCode.UNSUPPORTED_TARGET_CAPABILITY,
             result.diagnostics().get(0).code()
         );
         assertTrue(result.diagnostics().get(0).message().contains("dynamic qubit references"));
+    }
+
+    @Test
+    void reportsSemanticLossForMissingCallableSupport() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        program.addExternalCallableDeclaration(new ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration(
+            "external_job",
+            null
+        ));
+
+        final CapabilityPreflightResult result = new CapabilityPreflightChecker().check(
+            program,
+            IntegrationCapabilityProfile.empty(IntegrationFormat.OPENQASM_2)
+        );
+
+        assertFalse(result.isSuccess());
+        assertEquals(
+            CapabilityPreflightStatus.UNSUPPORTED_WITHOUT_LOSS,
+            result.status()
+        );
     }
 }

@@ -10,6 +10,7 @@
 package ru.pathcreator.vadim.quantum.infrastructure.quil.adapter;
 
 import ru.pathcreator.vadim.quantum.application.integration.contract.QuantumIntegration;
+import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
@@ -33,6 +34,11 @@ public final class QuilIntegration implements QuantumIntegration {
     @Override
     public IntegrationFormat format() {
         return IntegrationFormat.QUIL;
+    }
+
+    @Override
+    public IntegrationCapabilityProfile capabilityProfile() {
+        return exporter.capabilityProfile();
     }
 
     @Override

@@ -14,6 +14,9 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgumentKind;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
@@ -105,11 +108,16 @@ public final class QuantumProgramValidator {
             program,
             errors
         );
+        final LinkedHashMap<String, CallableSignature> callableSignatures = validateCallableSignatures(
+            program,
+            errors
+        );
 
         for (int i = 0; i < program.circuitCount(); i++) {
             validateCircuit(
                 program,
                 definitionsByName,
+                callableSignatures,
                 program.circuit(i),
                 i,
                 errors
@@ -416,9 +424,53 @@ public final class QuantumProgramValidator {
         visited.add(name);
     }
 
+    private LinkedHashMap<String, CallableSignature> validateCallableSignatures(
+        final QuantumProgram program,
+        final ArrayList<ValidationError> errors
+    ) {
+        final LinkedHashMap<String, CallableSignature> signatures = new LinkedHashMap<>();
+        for (int i = 0; i < program.callableDefinitionCount(); i++) {
+            putCallableSignature(
+                signatures,
+                CallableSignature.from(program.callableDefinition(i)),
+                errors
+            );
+        }
+        for (int i = 0; i < program.externalCallableDeclarationCount(); i++) {
+            putCallableSignature(
+                signatures,
+                CallableSignature.from(program.externalCallableDeclaration(i)),
+                errors
+            );
+        }
+        return signatures;
+    }
+
+    private void putCallableSignature(
+        final LinkedHashMap<String, CallableSignature> signatures,
+        final CallableSignature signature,
+        final ArrayList<ValidationError> errors
+    ) {
+        if (signatures.containsKey(signature.name())) {
+            addError(
+                errors,
+                ValidationErrorCode.INVALID_GATE_DEFINITION,
+                "Callable name is duplicated.",
+                ValidationError.NO_INDEX,
+                ValidationError.NO_INDEX
+            );
+            return;
+        }
+        signatures.put(
+            signature.name(),
+            signature
+        );
+    }
+
     private void validateCircuit(
         final QuantumProgram program,
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final int circuitIndex,
         final ArrayList<ValidationError> errors
@@ -450,6 +502,7 @@ public final class QuantumProgramValidator {
         );
         validateOperations(
             definitionsByName,
+            callableSignatures,
             circuit,
             circuitIndex,
             errors
@@ -551,6 +604,7 @@ public final class QuantumProgramValidator {
 
     private void validateOperations(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final int circuitIndex,
         final ArrayList<ValidationError> errors
@@ -593,6 +647,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof ControlledOperation controlledOperation) {
                 validateControlledOperation(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     controlledOperation,
                     circuitIndex,
@@ -610,6 +665,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof ClassicallyControlledOperation controlledOperation) {
                 validateClassicallyControlledOperation(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     controlledOperation,
                     circuitIndex,
@@ -619,6 +675,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof BlockOperation blockOperation) {
                 validateOperationBlock(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     blockOperation.body(),
                     circuitIndex,
@@ -628,6 +685,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
                 validateConditionalBlockOperation(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     conditionalOperation,
                     circuitIndex,
@@ -637,6 +695,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof ForLoopOperation loopOperation) {
                 validateOperationBlock(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     loopOperation.body(),
                     circuitIndex,
@@ -653,6 +712,7 @@ public final class QuantumProgramValidator {
                 );
                 validateOperationBlock(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     loopOperation.body(),
                     circuitIndex,
@@ -685,6 +745,7 @@ public final class QuantumProgramValidator {
                 );
             } else if (operation instanceof CallableInvocationOperation invocationOperation) {
                 validateCallableInvocationOperation(
+                    callableSignatures,
                     circuit,
                     invocationOperation,
                     circuitIndex,
@@ -715,6 +776,7 @@ public final class QuantumProgramValidator {
                 );
                 validateOperationBlock(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     loopOperation.body(),
                     circuitIndex,
@@ -724,6 +786,7 @@ public final class QuantumProgramValidator {
             } else if (operation instanceof TimingBoxOperation boxOperation) {
                 validateOperationBlock(
                     definitionsByName,
+                    callableSignatures,
                     circuit,
                     boxOperation.body(),
                     circuitIndex,
@@ -946,6 +1009,7 @@ public final class QuantumProgramValidator {
 
     private void validateControlledOperation(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final ControlledOperation operation,
         final int circuitIndex,
@@ -967,6 +1031,7 @@ public final class QuantumProgramValidator {
         );
         validateNestedOperation(
             definitionsByName,
+            callableSignatures,
             circuit,
             operation.operation(),
             circuitIndex,
@@ -977,6 +1042,7 @@ public final class QuantumProgramValidator {
 
     private void validateNestedOperation(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final Operation operation,
         final int circuitIndex,
@@ -1027,6 +1093,7 @@ public final class QuantumProgramValidator {
         } else if (operation instanceof BlockOperation blockOperation) {
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 blockOperation.body(),
                 circuitIndex,
@@ -1036,6 +1103,7 @@ public final class QuantumProgramValidator {
         } else if (operation instanceof ConditionalBlockOperation conditionalOperation) {
             validateConditionalBlockOperation(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 conditionalOperation,
                 circuitIndex,
@@ -1045,6 +1113,7 @@ public final class QuantumProgramValidator {
         } else if (operation instanceof ForLoopOperation loopOperation) {
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 loopOperation.body(),
                 circuitIndex,
@@ -1061,6 +1130,7 @@ public final class QuantumProgramValidator {
             );
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 loopOperation.body(),
                 circuitIndex,
@@ -1093,6 +1163,7 @@ public final class QuantumProgramValidator {
             );
         } else if (operation instanceof CallableInvocationOperation invocationOperation) {
             validateCallableInvocationOperation(
+                callableSignatures,
                 circuit,
                 invocationOperation,
                 circuitIndex,
@@ -1123,6 +1194,7 @@ public final class QuantumProgramValidator {
             );
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 loopOperation.body(),
                 circuitIndex,
@@ -1132,6 +1204,7 @@ public final class QuantumProgramValidator {
         } else if (operation instanceof TimingBoxOperation boxOperation) {
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 boxOperation.body(),
                 circuitIndex,
@@ -1181,6 +1254,7 @@ public final class QuantumProgramValidator {
 
     private void validateClassicallyControlledOperation(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final ClassicallyControlledOperation operation,
         final int circuitIndex,
@@ -1196,6 +1270,7 @@ public final class QuantumProgramValidator {
         );
         validateNestedOperation(
             definitionsByName,
+            callableSignatures,
             circuit,
             operation.operation(),
             circuitIndex,
@@ -1206,6 +1281,7 @@ public final class QuantumProgramValidator {
 
     private void validateConditionalBlockOperation(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final ConditionalBlockOperation operation,
         final int circuitIndex,
@@ -1221,6 +1297,7 @@ public final class QuantumProgramValidator {
         );
         validateOperationBlock(
             definitionsByName,
+            callableSignatures,
             circuit,
             operation.thenBlock(),
             circuitIndex,
@@ -1230,6 +1307,7 @@ public final class QuantumProgramValidator {
         if (operation.hasElseBlock()) {
             validateOperationBlock(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 operation.elseBlock(),
                 circuitIndex,
@@ -1241,6 +1319,7 @@ public final class QuantumProgramValidator {
 
     private void validateOperationBlock(
         final LinkedHashMap<String, GateDefinition> definitionsByName,
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final OperationBlock block,
         final int circuitIndex,
@@ -1250,6 +1329,7 @@ public final class QuantumProgramValidator {
         for (int i = 0; i < block.operationCount(); i++) {
             validateNestedOperation(
                 definitionsByName,
+                callableSignatures,
                 circuit,
                 block.operation(i),
                 circuitIndex,
@@ -1296,12 +1376,31 @@ public final class QuantumProgramValidator {
     }
 
     private void validateCallableInvocationOperation(
+        final LinkedHashMap<String, CallableSignature> callableSignatures,
         final QuantumCircuit circuit,
         final CallableInvocationOperation operation,
         final int circuitIndex,
         final int operationIndex,
         final ArrayList<ValidationError> errors
     ) {
+        final CallableSignature signature = callableSignatures.get(operation.callableName());
+        if (signature == null) {
+            addError(
+                errors,
+                ValidationErrorCode.UNDECLARED_CALLABLE,
+                "Callable invocation references an undeclared callable.",
+                circuitIndex,
+                operationIndex
+            );
+        } else {
+            validateCallableInvocationSignature(
+                operation,
+                signature,
+                circuitIndex,
+                operationIndex,
+                errors
+            );
+        }
         if (operation.hasTarget()) {
             validateClassicalExpression(
                 circuit,
@@ -1327,6 +1426,57 @@ public final class QuantumProgramValidator {
                 circuitIndex,
                 operationIndex,
                 errors
+            );
+        }
+    }
+
+    private void validateCallableInvocationSignature(
+        final CallableInvocationOperation operation,
+        final CallableSignature signature,
+        final int circuitIndex,
+        final int operationIndex,
+        final ArrayList<ValidationError> errors
+    ) {
+        if (operation.classicalArguments().size() != signature.classicalArgumentCount()) {
+            addError(
+                errors,
+                ValidationErrorCode.INVALID_CALLABLE_ARGUMENT_COUNT,
+                "Callable invocation classical argument count does not match callable signature.",
+                circuitIndex,
+                operationIndex
+            );
+        }
+        if (operation.quantumArguments().size() != signature.quantumArgumentCount()) {
+            addError(
+                errors,
+                ValidationErrorCode.INVALID_CALLABLE_ARGUMENT_COUNT,
+                "Callable invocation quantum argument count does not match callable signature.",
+                circuitIndex,
+                operationIndex
+            );
+        }
+        if (
+            operation.hasTarget()
+            && !signature.hasReturnValue()
+        ) {
+            addError(
+                errors,
+                ValidationErrorCode.INVALID_CALLABLE_TARGET,
+                "Callable invocation target is present for callable without return value.",
+                circuitIndex,
+                operationIndex
+            );
+        }
+        if (
+            !operation.hasTarget()
+            && signature.hasReturnValue()
+        ) {
+            addError(
+                errors,
+                ValidationErrorCode.INVALID_CALLABLE_TARGET,
+                "Callable invocation target is required for callable with return value.",
+                circuitIndex,
+                operationIndex
             );
         }
     }
@@ -1741,6 +1891,50 @@ public final class QuantumProgramValidator {
                 message,
                 circuitIndex,
                 operationIndex
+            );
+        }
+    }
+
+    private record CallableSignature(
+        String name,
+        int classicalArgumentCount,
+        int quantumArgumentCount,
+        boolean hasReturnValue
+    ) {
+
+        private static CallableSignature from(final CallableDefinition definition) {
+            int classicalArgumentCount = 0;
+            int quantumArgumentCount = 0;
+            for (int i = 0; i < definition.argumentCount(); i++) {
+                if (definition.argument(i).kind() == CallableArgumentKind.CLASSICAL) {
+                    classicalArgumentCount++;
+                } else {
+                    quantumArgumentCount++;
+                }
+            }
+            return new CallableSignature(
+                definition.name(),
+                classicalArgumentCount,
+                quantumArgumentCount,
+                false
+            );
+        }
+
+        private static CallableSignature from(final ExternalCallableDeclaration declaration) {
+            int classicalArgumentCount = 0;
+            int quantumArgumentCount = 0;
+            for (int i = 0; i < declaration.argumentCount(); i++) {
+                if (declaration.argument(i).kind() == CallableArgumentKind.CLASSICAL) {
+                    classicalArgumentCount++;
+                } else {
+                    quantumArgumentCount++;
+                }
+            }
+            return new CallableSignature(
+                declaration.name(),
+                classicalArgumentCount,
+                quantumArgumentCount,
+                declaration.hasReturnType()
             );
         }
     }

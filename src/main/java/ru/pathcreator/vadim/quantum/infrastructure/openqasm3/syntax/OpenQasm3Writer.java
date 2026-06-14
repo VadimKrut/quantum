@@ -17,6 +17,7 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.calibration.CalibrationDefinition;
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgumentKind;
 import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalBinaryOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
@@ -195,7 +196,11 @@ public final class OpenQasm3Writer {
                 if (j > 0) {
                     builder.append(", ");
                 }
-                builder.append(formatClassicalType(declaration.argument(j).classicalType()));
+                if (declaration.argument(j).kind() == CallableArgumentKind.QUBIT) {
+                    builder.append("qubit");
+                } else {
+                    builder.append(formatClassicalType(declaration.argument(j).classicalType()));
+                }
             }
             builder.append(")");
             if (declaration.hasReturnType()) {

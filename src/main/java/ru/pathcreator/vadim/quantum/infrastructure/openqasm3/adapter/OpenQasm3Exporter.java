@@ -93,7 +93,11 @@ public final class OpenQasm3Exporter implements QuantumExporter {
                 IntegrationCapability.TIMING_OPERATIONS,
                 IntegrationCapability.CALIBRATIONS,
                 IntegrationCapability.CLASSICAL_ASSIGNMENTS,
-                IntegrationCapability.CLASSICAL_EXTENDED_EXPRESSIONS
+                IntegrationCapability.CLASSICAL_ARRAYS,
+                IntegrationCapability.CLASSICAL_EXTENDED_EXPRESSIONS,
+                IntegrationCapability.CALLABLE_DEFINITIONS,
+                IntegrationCapability.EXTERNAL_CALLABLES,
+                IntegrationCapability.CALLABLE_INVOCATIONS
             )
         );
     }

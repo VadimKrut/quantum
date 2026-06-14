@@ -15,6 +15,7 @@ import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFo
 import ru.pathcreator.vadim.quantum.application.integration.contract.QuantumIntegration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class QuantumIntegrationsTest {
@@ -28,6 +29,7 @@ class QuantumIntegrationsTest {
             IntegrationFormat.OPENQASM_2,
             integration.format()
         );
+        assertFalse(integration.capabilityProfile().capabilities().isEmpty());
     }
 
     @Test
@@ -39,6 +41,7 @@ class QuantumIntegrationsTest {
             IntegrationFormat.OPENQASM_3,
             integration.format()
         );
+        assertFalse(integration.capabilityProfile().capabilities().isEmpty());
     }
 
     @Test
@@ -50,5 +53,6 @@ class QuantumIntegrationsTest {
             IntegrationFormat.QUIL,
             integration.format()
         );
+        assertFalse(integration.capabilityProfile().capabilities().isEmpty());
     }
 }

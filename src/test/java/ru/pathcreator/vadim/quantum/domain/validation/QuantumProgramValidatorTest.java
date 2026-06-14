@@ -13,6 +13,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import ru.pathcreator.vadim.quantum.domain.callable.CallableArgument;
+import ru.pathcreator.vadim.quantum.domain.callable.ExternalCallableDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
@@ -29,6 +31,7 @@ import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumComputationModel;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -147,6 +150,84 @@ class QuantumProgramValidatorTest {
         assertEquals(
             3,
             circuit.operationCount()
+        );
+    }
+
+    @Test
+    void acceptsDeclaredExternalCallableInvocation() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        program.addExternalCallableDeclaration(new ExternalCallableDeclaration(
+            "notify",
+            null,
+            CallableArgument.classical(
+                "shot",
+                ru.pathcreator.vadim.quantum.domain.classical.ClassicalType.sized(
+                    ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind.SIGNED_INTEGER,
+                    32
+                )
+            )
+        ));
+        final QuantumCircuit circuit = program.createCircuit("main");
+        circuit.callableInvocation(new CallableInvocationOperation(
+            "notify",
+            null,
+            List.of(ClassicalExpression.integer(1)),
+            List.of()
+        ));
+
+        final ValidationResult result = new QuantumProgramValidator().validate(program);
+
+        assertTrue(result.isValid());
+    }
+
+    @Test
+    void rejectsUndeclaredCallableInvocation() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("main");
+        circuit.callableInvocation(new CallableInvocationOperation(
+            "missing",
+            null,
+            List.of(),
+            List.of()
+        ));
+
+        final ValidationResult result = new QuantumProgramValidator().validate(program);
+
+        assertFalse(result.isValid());
+        assertEquals(
+            ValidationErrorCode.UNDECLARED_CALLABLE,
+            result.error(0).code()
+        );
+    }
+
+    @Test
+    void rejectsCallableInvocationArgumentMismatch() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        program.addExternalCallableDeclaration(new ExternalCallableDeclaration(
+            "notify",
+            null,
+            CallableArgument.classical(
+                "shot",
+                ru.pathcreator.vadim.quantum.domain.classical.ClassicalType.sized(
+                    ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind.SIGNED_INTEGER,
+                    32
+                )
+            )
+        ));
+        final QuantumCircuit circuit = program.createCircuit("main");
+        circuit.callableInvocation(new CallableInvocationOperation(
+            "notify",
+            null,
+            List.of(),
+            List.of()
+        ));
+
+        final ValidationResult result = new QuantumProgramValidator().validate(program);
+
+        assertFalse(result.isValid());
+        assertEquals(
+            ValidationErrorCode.INVALID_CALLABLE_ARGUMENT_COUNT,
+            result.error(0).code()
         );
     }
 
