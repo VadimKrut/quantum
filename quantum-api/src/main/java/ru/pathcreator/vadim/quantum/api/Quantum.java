@@ -26,6 +26,9 @@ import ru.pathcreator.vadim.quantum.application.inspection.QuantumProgramInspect
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
+import ru.pathcreator.vadim.quantum.application.transformation.QuantumProgramTransformer;
+import ru.pathcreator.vadim.quantum.application.transformation.TransformationOptions;
+import ru.pathcreator.vadim.quantum.application.transformation.TransformationResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumImportJsonWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumJsonExportWorkflowResult;
@@ -433,6 +436,23 @@ public final class Quantum {
      */
     public static CompactQuantumCircuit compact(final QuantumCircuit circuit) {
         return CompactQuantumCircuit.from(circuit);
+    }
+
+    /**
+     * Выполняет явные консервативные трансформации Quantum IR без мутации исходной программы.
+     *
+     * @param program исходная программа
+     * @param options опции трансформации
+     * @return результат трансформации
+     */
+    public static TransformationResult transform(
+        final QuantumProgram program,
+        final TransformationOptions options
+    ) {
+        return new QuantumProgramTransformer().transform(
+            program,
+            options
+        );
     }
 
     /**

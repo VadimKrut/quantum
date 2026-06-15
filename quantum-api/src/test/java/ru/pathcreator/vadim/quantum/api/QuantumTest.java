@@ -23,6 +23,8 @@ import ru.pathcreator.vadim.quantum.application.integration.options.ImportOption
 import ru.pathcreator.vadim.quantum.application.inspection.ProgramInspectionResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
+import ru.pathcreator.vadim.quantum.application.transformation.TransformationOptions;
+import ru.pathcreator.vadim.quantum.application.transformation.TransformationResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumImportJsonWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumJsonExportWorkflowResult;
@@ -103,6 +105,39 @@ class QuantumTest {
 
         assertTrue(Quantum.exportOpenQasm2(restored).isSuccess());
         assertTrue(Quantum.exportOpenQasm3(restored).isSuccess());
+    }
+
+    @Test
+    void exposesConservativeTransformationFacade() {
+        final QuantumProgram program = Quantum.gateBasedProgram();
+        final QuantumCircuit circuit = program.createCircuit("transform");
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        circuit.id(q.get(0));
+        circuit.x(q.get(0));
+
+        final TransformationResult result = Quantum.transform(
+            program,
+            TransformationOptions.builder()
+                .removeIdentityGates()
+                .build()
+        );
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            2,
+            program.circuit(0).operationCount()
+        );
+        assertEquals(
+            1,
+            result.transformedProgram().circuit(0).operationCount()
+        );
+        assertEquals(
+            StandardGate.X,
+            ((GateOperation) result.transformedProgram().circuit(0).operation(0)).gate()
+        );
     }
 
     @Test
