@@ -20,6 +20,7 @@ import ru.pathcreator.vadim.quantum.application.integration.capability.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
+import ru.pathcreator.vadim.quantum.application.inspection.ProgramInspectionResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
@@ -121,6 +122,65 @@ class QuantumTest {
         assertEquals(
             "openqasm3",
             profile.metadata().get("adapter")
+        );
+    }
+
+    @Test
+    void exposesInspectionThroughPublicFacade() {
+        final QuantumProgram program = Quantum.programBuilder()
+            .circuit("inspect")
+            .qreg(
+                "q",
+                2
+            )
+            .creg(
+                "c",
+                1
+            )
+            .h("q[0]")
+            .cx(
+                "q[0]",
+                "q[1]"
+            )
+            .measure(
+                "q[0]",
+                "c[0]"
+            )
+            .build();
+
+        final ProgramInspectionResult result = Quantum.inspect(
+            program,
+            List.of(Quantum.openQasm3TargetProfile())
+        );
+
+        assertEquals(
+            1,
+            result.circuitCount()
+        );
+        assertEquals(
+            2,
+            result.qubitCount()
+        );
+        assertEquals(
+            3,
+            result.operationCount()
+        );
+        assertEquals(
+            2,
+            result.gateCount()
+        );
+        assertEquals(
+            1,
+            result.measurementCount()
+        );
+        assertEquals(
+            1,
+            result.circuitSummary(0).twoQubitGateCount()
+        );
+        assertTrue(result.circuitSummary(0).neverMeasuredQubits().contains("q[1]"));
+        assertEquals(
+            1,
+            result.targetCompatibilitySummaries().size()
         );
     }
 

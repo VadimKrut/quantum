@@ -41,6 +41,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.LabelOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReference;
 import ru.pathcreator.vadim.quantum.domain.operation.QuantumReferenceKind;
 import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
@@ -272,6 +273,29 @@ public final class CapabilityPreflightChecker {
                 );
             }
         } else if (operation instanceof ForLoopOperation loopOperation) {
+            checkStructuredOperation(
+                loopOperation.body(),
+                profile,
+                qubitOffsets,
+                diagnostics,
+                loweringRequired
+            );
+        } else if (operation instanceof SymbolicForLoopOperation loopOperation) {
+            checkExpression(
+                loopOperation.startInclusive(),
+                profile,
+                diagnostics
+            );
+            checkExpression(
+                loopOperation.step(),
+                profile,
+                diagnostics
+            );
+            checkExpression(
+                loopOperation.endInclusive(),
+                profile,
+                diagnostics
+            );
             checkStructuredOperation(
                 loopOperation.body(),
                 profile,

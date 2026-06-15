@@ -10,6 +10,7 @@
 package ru.pathcreator.vadim.quantum.api;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightChecker;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightResult;
@@ -20,6 +21,8 @@ import ru.pathcreator.vadim.quantum.application.integration.options.ExportOption
 import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.result.ExportResult;
 import ru.pathcreator.vadim.quantum.application.integration.result.ImportResult;
+import ru.pathcreator.vadim.quantum.application.inspection.ProgramInspectionResult;
+import ru.pathcreator.vadim.quantum.application.inspection.QuantumProgramInspector;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
@@ -393,6 +396,33 @@ public final class Quantum {
      */
     public static ValidationResult validate(final QuantumProgram program) {
         return new QuantumProgramValidator().validate(program);
+    }
+
+    /**
+     * Анализирует Quantum IR программу без target profile.
+     *
+     * @param program программа
+     * @return результат inspection
+     */
+    public static ProgramInspectionResult inspect(final QuantumProgram program) {
+        return new QuantumProgramInspector().inspect(program);
+    }
+
+    /**
+     * Анализирует Quantum IR программу с target compatibility summary.
+     *
+     * @param program программа
+     * @param targetProfiles target profiles
+     * @return результат inspection
+     */
+    public static ProgramInspectionResult inspect(
+        final QuantumProgram program,
+        final List<IntegrationCapabilityProfile> targetProfiles
+    ) {
+        return new QuantumProgramInspector().inspect(
+            program,
+            targetProfiles
+        );
     }
 
     /**
