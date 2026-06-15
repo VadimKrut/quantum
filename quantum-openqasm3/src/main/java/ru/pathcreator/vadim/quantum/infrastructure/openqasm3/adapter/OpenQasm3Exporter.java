@@ -11,12 +11,16 @@ package ru.pathcreator.vadim.quantum.infrastructure.openqasm3.adapter;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapability;
 import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightChecker;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightResult;
+import ru.pathcreator.vadim.quantum.application.integration.capability.TargetConnectivityGraph;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportTextMode;
 import ru.pathcreator.vadim.quantum.application.integration.result.ExportResult;
@@ -24,6 +28,8 @@ import ru.pathcreator.vadim.quantum.application.integration.diagnostic.Integrati
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.contract.QuantumExporter;
+import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpressionKind;
+import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.validation.QuantumProgramValidator;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationError;
@@ -77,6 +83,9 @@ public final class OpenQasm3Exporter implements QuantumExporter {
     public IntegrationCapabilityProfile capabilityProfile() {
         return IntegrationCapabilityProfile.of(
             format(),
+            "OpenQASM",
+            "3.0",
+            IntegrationCapabilityProfile.UNBOUNDED_QUBIT_COUNT,
             EnumSet.of(
                 IntegrationCapability.QUANTUM_REGISTERS,
                 IntegrationCapability.CLASSICAL_REGISTERS,
@@ -98,6 +107,15 @@ public final class OpenQasm3Exporter implements QuantumExporter {
                 IntegrationCapability.CALLABLE_DEFINITIONS,
                 IntegrationCapability.EXTERNAL_CALLABLES,
                 IntegrationCapability.CALLABLE_INVOCATIONS
+            ),
+            standardGateNames(),
+            EnumSet.allOf(ParameterExpressionKind.class),
+            TargetConnectivityGraph.allToAll(),
+            Map.of(
+                "adapter",
+                "openqasm3",
+                "targetType",
+                "text-format"
             )
         );
     }
@@ -215,5 +233,14 @@ public final class OpenQasm3Exporter implements QuantumExporter {
             }
         }
         return false;
+    }
+
+    private static Set<String> standardGateNames() {
+        final LinkedHashSet<String> names = new LinkedHashSet<>();
+        final StandardGate[] gates = StandardGate.values();
+        for (int i = 0; i < gates.length; i++) {
+            names.add(gates[i].gateName());
+        }
+        return names;
     }
 }

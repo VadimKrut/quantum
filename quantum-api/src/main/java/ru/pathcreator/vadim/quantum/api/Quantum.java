@@ -13,6 +13,7 @@ import java.nio.file.Path;
 
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightChecker;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightResult;
+import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
 import ru.pathcreator.vadim.quantum.application.integration.contract.QuantumIntegration;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
@@ -93,6 +94,43 @@ public final class Quantum {
             case OPENQASM_3 -> QuantumIntegrations.openQasm3();
             case QUIL -> QuantumIntegrations.quil();
         };
+    }
+
+    /**
+     * Возвращает target capability profile для внешнего формата.
+     *
+     * @param format внешний формат
+     * @return target capability profile
+     */
+    public static IntegrationCapabilityProfile targetProfile(final IntegrationFormat format) {
+        return integration(format).capabilityProfile();
+    }
+
+    /**
+     * Возвращает target profile OpenQASM 2.
+     *
+     * @return target profile OpenQASM 2
+     */
+    public static IntegrationCapabilityProfile openQasm2TargetProfile() {
+        return targetProfile(IntegrationFormat.OPENQASM_2);
+    }
+
+    /**
+     * Возвращает target profile OpenQASM 3.
+     *
+     * @return target profile OpenQASM 3
+     */
+    public static IntegrationCapabilityProfile openQasm3TargetProfile() {
+        return targetProfile(IntegrationFormat.OPENQASM_3);
+    }
+
+    /**
+     * Возвращает target profile Quil.
+     *
+     * @return target profile Quil
+     */
+    public static IntegrationCapabilityProfile quilTargetProfile() {
+        return targetProfile(IntegrationFormat.QUIL);
     }
 
     /**

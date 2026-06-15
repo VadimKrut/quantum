@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightStatus;
+import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
 import ru.pathcreator.vadim.quantum.application.integration.options.ExportOptions;
 import ru.pathcreator.vadim.quantum.application.integration.options.ImportOptions;
@@ -37,6 +38,7 @@ import ru.pathcreator.vadim.quantum.domain.callable.template.CallableOperationBl
 import ru.pathcreator.vadim.quantum.domain.gate.GateBodyOperation;
 import ru.pathcreator.vadim.quantum.domain.gate.GateMatrix;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
+import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpressionKind;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.gate.modifier.GateModifier;
 import ru.pathcreator.vadim.quantum.domain.gate.modifier.ModifiedGate;
@@ -100,6 +102,26 @@ class QuantumTest {
 
         assertTrue(Quantum.exportOpenQasm2(restored).isSuccess());
         assertTrue(Quantum.exportOpenQasm3(restored).isSuccess());
+    }
+
+    @Test
+    void exposesTargetProfilesThroughPublicFacade() {
+        final IntegrationCapabilityProfile profile = Quantum.openQasm3TargetProfile();
+
+        assertEquals(
+            "OpenQASM",
+            profile.targetName()
+        );
+        assertEquals(
+            "3.0",
+            profile.targetVersion()
+        );
+        assertTrue(profile.supportsNativeGate("h"));
+        assertTrue(profile.supportedParameterKinds().contains(ParameterExpressionKind.BINARY));
+        assertEquals(
+            "openqasm3",
+            profile.metadata().get("adapter")
+        );
     }
 
     @Test

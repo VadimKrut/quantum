@@ -10,6 +10,7 @@
 package ru.pathcreator.vadim.quantum.application.integration.capability;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnostic;
 import ru.pathcreator.vadim.quantum.application.integration.diagnostic.IntegrationDiagnosticCode;
@@ -17,6 +18,7 @@ import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpressionKind;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicateKind;
+import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.operation.BarrierOperation;
@@ -42,6 +44,7 @@ import ru.pathcreator.vadim.quantum.domain.operation.ResetOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.TimingBoxOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WaitOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.WhileLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
 
 /**
  * Generic preflight-проверка IR против target capability profile.
@@ -73,10 +76,17 @@ public final class CapabilityPreflightChecker {
                 profile,
                 diagnostics
             );
+            checkCircuitQubitLimit(
+                circuit,
+                profile,
+                diagnostics
+            );
+            final IdentityHashMap<QuantumRegister, Long> qubitOffsets = buildQubitOffsets(circuit);
             for (int j = 0; j < circuit.operationCount(); j++) {
                 checkOperation(
                     circuit.operation(j),
                     profile,
+                    qubitOffsets,
                     diagnostics,
                     loweringRequired
                 );
@@ -145,6 +155,7 @@ public final class CapabilityPreflightChecker {
     private static void checkOperation(
         final Operation operation,
         final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
         final ArrayList<IntegrationDiagnostic> diagnostics,
         final boolean[] loweringRequired
     ) {
@@ -160,6 +171,8 @@ public final class CapabilityPreflightChecker {
             checkGateOperation(
                 (GateOperation) operation,
                 profile,
+                qubitOffsets,
+                diagnostics,
                 loweringRequired
             );
             return;
@@ -183,6 +196,7 @@ public final class CapabilityPreflightChecker {
             checkControlledOperation(
                 controlledOperation.operation(),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -195,6 +209,7 @@ public final class CapabilityPreflightChecker {
             checkControlledOperation(
                 controlledOperation.operation(),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -227,6 +242,7 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 blockOperation.body(),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -242,6 +258,7 @@ public final class CapabilityPreflightChecker {
             checkBlock(
                 conditionalOperation.thenBlock(),
                 profile,
+                qubitOffsets,
                 loweringRequired,
                 diagnostics
             );
@@ -249,6 +266,7 @@ public final class CapabilityPreflightChecker {
                 checkBlock(
                     conditionalOperation.elseBlock(),
                     profile,
+                    qubitOffsets,
                     loweringRequired,
                     diagnostics
                 );
@@ -257,6 +275,7 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 loopOperation.body(),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -269,6 +288,7 @@ public final class CapabilityPreflightChecker {
             checkStructuredOperation(
                 loopOperation.body(),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -283,6 +303,7 @@ public final class CapabilityPreflightChecker {
             checkBlock(
                 boxOperation.body(),
                 profile,
+                qubitOffsets,
                 loweringRequired,
                 diagnostics
             );
@@ -351,8 +372,31 @@ public final class CapabilityPreflightChecker {
     private static void checkGateOperation(
         final GateOperation operation,
         final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
+        final ArrayList<IntegrationDiagnostic> diagnostics,
         final boolean[] loweringRequired
     ) {
+        if (!profile.supportsNativeGate(operation.gate().gateName())) {
+            if (profile.supports(IntegrationCapability.GATE_DECOMPOSITION)) {
+                loweringRequired[0] = true;
+            } else {
+                diagnostics.add(unsupportedCapability("native gate " + operation.gate().gateName()));
+            }
+        }
+        for (int i = 0; i < operation.parameterCount(); i++) {
+            checkParameterExpression(
+                operation.parameter(i),
+                profile,
+                diagnostics
+            );
+        }
+        checkConnectivity(
+            operation,
+            profile,
+            qubitOffsets,
+            diagnostics,
+            loweringRequired
+        );
         if (
             operation.gate().parameterCount() > 0
             && profile.supports(IntegrationCapability.GATE_DECOMPOSITION)
@@ -450,6 +494,7 @@ public final class CapabilityPreflightChecker {
     private static void checkStructuredOperation(
         final OperationBlock body,
         final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
         final ArrayList<IntegrationDiagnostic> diagnostics,
         final boolean[] loweringRequired
     ) {
@@ -459,6 +504,7 @@ public final class CapabilityPreflightChecker {
         checkBlock(
             body,
             profile,
+            qubitOffsets,
             loweringRequired,
             diagnostics
         );
@@ -467,6 +513,7 @@ public final class CapabilityPreflightChecker {
     private static void checkBlock(
         final OperationBlock body,
         final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
         final boolean[] loweringRequired,
         final ArrayList<IntegrationDiagnostic> diagnostics
     ) {
@@ -474,6 +521,7 @@ public final class CapabilityPreflightChecker {
             checkOperation(
                 body.operation(i),
                 profile,
+                qubitOffsets,
                 diagnostics,
                 loweringRequired
             );
@@ -483,6 +531,7 @@ public final class CapabilityPreflightChecker {
     private static void checkControlledOperation(
         final Operation operation,
         final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
         final ArrayList<IntegrationDiagnostic> diagnostics,
         final boolean[] loweringRequired
     ) {
@@ -492,9 +541,133 @@ public final class CapabilityPreflightChecker {
         checkOperation(
             operation,
             profile,
+            qubitOffsets,
             diagnostics,
             loweringRequired
         );
+    }
+
+    private static void checkCircuitQubitLimit(
+        final QuantumCircuit circuit,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (!profile.hasMaxQubitCount()) {
+            return;
+        }
+        long count = 0L;
+        for (int i = 0; i < circuit.quantumRegisterCount(); i++) {
+            count += circuit.quantumRegister(i).size();
+        }
+        if (count > profile.maxQubitCount()) {
+            diagnostics.add(unsupportedCapability(
+                "qubit count " + count + " above target limit " + profile.maxQubitCount()
+            ));
+        }
+    }
+
+    private static IdentityHashMap<QuantumRegister, Long> buildQubitOffsets(final QuantumCircuit circuit) {
+        final IdentityHashMap<QuantumRegister, Long> offsets = new IdentityHashMap<>();
+        long offset = 0L;
+        for (int i = 0; i < circuit.quantumRegisterCount(); i++) {
+            final QuantumRegister register = circuit.quantumRegister(i);
+            offsets.put(
+                register,
+                offset
+            );
+            offset += register.size();
+        }
+        return offsets;
+    }
+
+    private static void checkParameterExpression(
+        final ParameterExpression expression,
+        final IntegrationCapabilityProfile profile,
+        final ArrayList<IntegrationDiagnostic> diagnostics
+    ) {
+        if (!profile.supportsParameterKind(expression.kind())) {
+            diagnostics.add(unsupportedCapability("parameter expression kind " + expression.kind()));
+        }
+        if (expression.isUnary()) {
+            checkParameterExpression(
+                expression.left(),
+                profile,
+                diagnostics
+            );
+        } else if (expression.isBinary()) {
+            checkParameterExpression(
+                expression.left(),
+                profile,
+                diagnostics
+            );
+            checkParameterExpression(
+                expression.right(),
+                profile,
+                diagnostics
+            );
+        }
+    }
+
+    private static void checkConnectivity(
+        final GateOperation operation,
+        final IntegrationCapabilityProfile profile,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets,
+        final ArrayList<IntegrationDiagnostic> diagnostics,
+        final boolean[] loweringRequired
+    ) {
+        if (
+            operation.qubitCount() <= 1
+            || !profile.connectivityGraph().isConstrained()
+        ) {
+            return;
+        }
+        for (int i = 0; i < operation.qubitCount(); i++) {
+            final long first = physicalQubitIndex(
+                operation.qubitReference(i),
+                qubitOffsets
+            );
+            if (first < 0) {
+                return;
+            }
+            for (int j = i + 1; j < operation.qubitCount(); j++) {
+                final long second = physicalQubitIndex(
+                    operation.qubitReference(j),
+                    qubitOffsets
+                );
+                if (second < 0) {
+                    return;
+                }
+                if (!profile.connectivityGraph().supportsInteraction(
+                    first,
+                    second
+                )) {
+                    if (profile.supports(IntegrationCapability.GATE_DECOMPOSITION)) {
+                        loweringRequired[0] = true;
+                    } else {
+                        diagnostics.add(unsupportedCapability(
+                            "qubit connectivity between " + first + " and " + second
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    private static long physicalQubitIndex(
+        final QuantumReference reference,
+        final IdentityHashMap<QuantumRegister, Long> qubitOffsets
+    ) {
+        if (reference.kind() == QuantumReferenceKind.HARDWARE_QUBIT) {
+            return reference.hardwareIndex();
+        }
+        if (reference.kind() == QuantumReferenceKind.DYNAMIC_REGISTER_INDEX) {
+            return -1L;
+        }
+        final Long offset = qubitOffsets.get(reference.qubit().register());
+        if (offset == null) {
+            return -1L;
+        }
+        return offset + reference.qubit().index();
     }
 
     private static IntegrationDiagnostic unsupportedCapability(final String featureName) {
