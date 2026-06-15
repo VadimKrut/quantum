@@ -5,6 +5,7 @@
 
 ### Local verification helpers ###
 docs/
+/tools/
 /.venv-qasm/
 **/__pycache__/
 *.py[cod]

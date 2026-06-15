@@ -1130,7 +1130,7 @@ class OpenQasm2IntegrationTest {
         assertGateName(
             circuit,
             0,
-            "U"
+            "u"
         );
         assertGateName(
             circuit,

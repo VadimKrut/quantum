@@ -268,11 +268,14 @@ public final class OpenQasm2GateMapper {
         if (gateName == null) {
             throw new IllegalArgumentException("OpenQASM gate name must not be null.");
         }
+        final String normalizedGateName = gateName.toLowerCase();
+        if ("u".equals(normalizedGateName)) {
+            return StandardGate.U;
+        }
         final Gate qelibGate = OpenQasm2QelibGates.byName(gateName);
         if (qelibGate != null) {
             return qelibGate;
         }
-        final String normalizedGateName = gateName.toLowerCase();
         if ("u1".equals(normalizedGateName)) {
             return StandardGate.PHASE;
         }

@@ -21,5 +21,10 @@
             <artifactId>quantum-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-simulation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

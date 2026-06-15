@@ -28,6 +28,11 @@
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-simulation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
             <artifactId>quantum-json</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -1,0 +1,153 @@
+.root {
+    -fx-font-family: "Segoe UI", "Inter", "Arial";
+    -fx-font-size: 13px;
+    -fx-background-color: #f4f6fa;
+}
+
+.workbench-header {
+    -fx-background-color: #0f172a;
+    -fx-padding: 14 18 14 18;
+}
+
+.header-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+    -fx-text-fill: white;
+}
+
+.header-subtitle {
+    -fx-text-fill: #cbd5e1;
+}
+
+.status-chip {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #e2e8f0;
+    -fx-background-radius: 999;
+    -fx-border-color: #334155;
+    -fx-border-radius: 999;
+    -fx-padding: 5 9 5 9;
+    -fx-font-size: 12px;
+}
+
+.status-bar {
+    -fx-background-color: #e5e7eb;
+    -fx-padding: 8 12 8 12;
+}
+
+.section-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dbe3ee;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 12;
+}
+
+.section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0f172a;
+}
+
+.primary-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 44;
+}
+
+.secondary-button {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 54;
+}
+
+.canvas-panel {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 16;
+}
+
+.panel-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #111827;
+}
+
+.panel-hint {
+    -fx-text-fill: #64748b;
+}
+
+.text-area {
+    -fx-font-family: "Consolas", "JetBrains Mono", monospace;
+    -fx-font-size: 12px;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dbe3ee;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.list-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dbe3ee;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.list-cell {
+    -fx-padding: 6 8 6 8;
+}
+
+.list-cell:selected {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e3a8a;
+}
+
+.combo-box,
+.text-field {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-border-color: #cbd5e1;
+}
+
+.gate-basic-button {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e3a8a;
+    -fx-background-radius: 6;
+    -fx-font-weight: 700;
+}
+
+.gate-phase-button {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #14532d;
+    -fx-background-radius: 6;
+    -fx-font-weight: 700;
+}
+
+.gate-control-button {
+    -fx-background-color: #ede9fe;
+    -fx-text-fill: #4c1d95;
+    -fx-background-radius: 6;
+    -fx-font-weight: 700;
+}
+
+.gate-nonunitary-button {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #7f1d1d;
+    -fx-background-radius: 6;
+    -fx-font-weight: 700;
+}
+
+.wire-label {
+    -fx-font-weight: 700;
+    -fx-text-fill: #334155;
+}
+
+.step-index-cell {
+    -fx-background-color: #eef2f7;
+    -fx-text-fill: #64748b;
+    -fx-background-radius: 4;
+    -fx-font-size: 10px;
+}

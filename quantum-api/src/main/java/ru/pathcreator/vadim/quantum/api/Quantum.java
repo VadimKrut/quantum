@@ -10,8 +10,33 @@
 package ru.pathcreator.vadim.quantum.api;
 
 import java.nio.file.Path;
+import java.io.IOException;
 import java.util.List;
 
+import ru.pathcreator.vadim.quantum.application.backend.BackendDescriptor;
+import ru.pathcreator.vadim.quantum.application.backend.BackendJobOptions;
+import ru.pathcreator.vadim.quantum.application.backend.BackendPreflightChecker;
+import ru.pathcreator.vadim.quantum.application.backend.BackendPreflightResult;
+import ru.pathcreator.vadim.quantum.application.backend.BackendSubmissionResult;
+import ru.pathcreator.vadim.quantum.application.backend.DryRunQuantumBackend;
+import ru.pathcreator.vadim.quantum.application.backend.InMemoryBackendJobRegistry;
+import ru.pathcreator.vadim.quantum.application.backend.QuantumBackend;
+import ru.pathcreator.vadim.quantum.application.audit.ProductAuditReport;
+import ru.pathcreator.vadim.quantum.application.audit.ProductAuditRunner;
+import ru.pathcreator.vadim.quantum.application.benchmark.ProductBenchmarkOptions;
+import ru.pathcreator.vadim.quantum.application.benchmark.ProductBenchmarkReport;
+import ru.pathcreator.vadim.quantum.application.benchmark.ProductBenchmarkRunner;
+import ru.pathcreator.vadim.quantum.application.compatibility.ProductCompatibilityMatrix;
+import ru.pathcreator.vadim.quantum.application.compatibility.ProductCompatibilityMatrixRunner;
+import ru.pathcreator.vadim.quantum.application.compiler.CompilerOptions;
+import ru.pathcreator.vadim.quantum.application.compiler.CompilerResult;
+import ru.pathcreator.vadim.quantum.application.compiler.QuantumCompiler;
+import ru.pathcreator.vadim.quantum.application.doctor.ProductDoctorReport;
+import ru.pathcreator.vadim.quantum.application.doctor.ProductDoctorRunner;
+import ru.pathcreator.vadim.quantum.application.distribution.ProductDistributionBundleResult;
+import ru.pathcreator.vadim.quantum.application.distribution.ProductDistributionBundleWriter;
+import ru.pathcreator.vadim.quantum.application.distribution.ProductDistributionVerificationResult;
+import ru.pathcreator.vadim.quantum.application.distribution.ProductDistributionVerifier;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightChecker;
 import ru.pathcreator.vadim.quantum.application.integration.capability.CapabilityPreflightResult;
 import ru.pathcreator.vadim.quantum.application.integration.capability.IntegrationCapabilityProfile;
@@ -26,9 +51,28 @@ import ru.pathcreator.vadim.quantum.application.inspection.QuantumProgramInspect
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrFileWriteResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrReadResult;
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
+import ru.pathcreator.vadim.quantum.application.regression.CorpusRegressionCase;
+import ru.pathcreator.vadim.quantum.application.regression.CorpusRegressionReport;
+import ru.pathcreator.vadim.quantum.application.regression.CorpusRegressionRunner;
+import ru.pathcreator.vadim.quantum.application.report.ProductReportBundleResult;
+import ru.pathcreator.vadim.quantum.application.report.ProductReportBundleWriter;
+import ru.pathcreator.vadim.quantum.application.readiness.ReleaseReadinessReport;
+import ru.pathcreator.vadim.quantum.application.readiness.ReleaseReadinessRunner;
+import ru.pathcreator.vadim.quantum.application.resource.ResourceEstimate;
+import ru.pathcreator.vadim.quantum.application.resource.ResourceEstimator;
+import ru.pathcreator.vadim.quantum.application.simulation.engine.QuantumSimulator;
+import ru.pathcreator.vadim.quantum.application.simulation.options.SimulationOptions;
+import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
 import ru.pathcreator.vadim.quantum.application.transformation.QuantumProgramTransformer;
 import ru.pathcreator.vadim.quantum.application.transformation.TransformationOptions;
 import ru.pathcreator.vadim.quantum.application.transformation.TransformationResult;
+import ru.pathcreator.vadim.quantum.application.visualization.ProgramTimeline;
+import ru.pathcreator.vadim.quantum.application.visualization.QuantumProgramTimelineBuilder;
+import ru.pathcreator.vadim.quantum.application.verification.CrossFormatVerificationReport;
+import ru.pathcreator.vadim.quantum.application.verification.CrossFormatVerificationRunner;
+import ru.pathcreator.vadim.quantum.application.workflow.ProductWorkflowOptions;
+import ru.pathcreator.vadim.quantum.application.workflow.ProductWorkflowReport;
+import ru.pathcreator.vadim.quantum.application.workflow.ProductWorkflowRunner;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumExportWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumImportJsonWorkflowResult;
 import ru.pathcreator.vadim.quantum.api.workflow.QuantumJsonExportWorkflowResult;
@@ -137,6 +181,89 @@ public final class Quantum {
      */
     public static IntegrationCapabilityProfile quilTargetProfile() {
         return targetProfile(IntegrationFormat.QUIL);
+    }
+
+    /**
+     * Создает dry-run backend для указанного внешнего формата.
+     *
+     * @param format внешний формат backend target
+     * @return dry-run backend
+     */
+    public static QuantumBackend dryRunBackend(final IntegrationFormat format) {
+        return dryRunBackend(
+            format,
+            "dry-run-" + format.name().toLowerCase(),
+            "Dry Run " + format.name(),
+            "1"
+        );
+    }
+
+    /**
+     * Создает именованный dry-run backend для указанного внешнего формата.
+     *
+     * @param format внешний формат backend target
+     * @param backendId стабильный id backend
+     * @param displayName имя backend
+     * @param version версия backend
+     * @return dry-run backend
+     */
+    public static QuantumBackend dryRunBackend(
+        final IntegrationFormat format,
+        final String backendId,
+        final String displayName,
+        final String version
+    ) {
+        return new DryRunQuantumBackend(
+            backendId,
+            displayName,
+            version,
+            integration(format)
+        );
+    }
+
+    /**
+     * Выполняет backend preflight без отправки job.
+     *
+     * @param program Quantum IR программа
+     * @param descriptor описание backend
+     * @return результат backend preflight
+     */
+    public static BackendPreflightResult backendPreflight(
+        final QuantumProgram program,
+        final BackendDescriptor descriptor
+    ) {
+        return new BackendPreflightChecker().check(
+            program,
+            descriptor
+        );
+    }
+
+    /**
+     * Creates a local backend job registry for tracked submissions.
+     *
+     * @return empty backend job registry
+     */
+    public static InMemoryBackendJobRegistry backendJobRegistry() {
+        return new InMemoryBackendJobRegistry();
+    }
+
+    /**
+     * Отправляет программу в dry-run backend указанного формата.
+     *
+     * @param format внешний формат backend target
+     * @param program Quantum IR программа
+     * @param options настройки job
+     * @return результат отправки
+     */
+    public static BackendSubmissionResult submitDryRun(
+        final IntegrationFormat format,
+        final QuantumProgram program,
+        final BackendJobOptions options
+    ) {
+        return dryRunBackend(format).submit(
+            program,
+            options
+        );
     }
 
     /**
@@ -428,6 +555,233 @@ public final class Quantum {
         );
     }
 
+    public static ResourceEstimate estimateResources(final QuantumProgram program) {
+        return new ResourceEstimator().estimate(program);
+    }
+
+    public static ResourceEstimate estimateResources(
+        final QuantumProgram program,
+        final int localSimulationMaxQubits
+    ) {
+        return new ResourceEstimator().estimate(
+            program,
+            localSimulationMaxQubits
+        );
+    }
+
+    public static ProgramTimeline timeline(final QuantumProgram program) {
+        return new QuantumProgramTimelineBuilder().build(program);
+    }
+
+    public static ProductWorkflowReport runProductWorkflow(
+        final IntegrationFormat targetFormat,
+        final QuantumProgram program
+    ) {
+        return runProductWorkflow(
+            targetFormat,
+            program,
+            ProductWorkflowOptions.defaults()
+        );
+    }
+
+    public static ProductWorkflowReport runProductWorkflow(
+        final IntegrationFormat targetFormat,
+        final QuantumProgram program,
+        final ProductWorkflowOptions options
+    ) {
+        return new ProductWorkflowRunner().run(
+            program,
+            integration(targetFormat),
+            options
+        );
+    }
+
+    public static ProductBenchmarkReport benchmark(
+        final IntegrationFormat targetFormat,
+        final QuantumProgram program
+    ) {
+        return benchmark(
+            targetFormat,
+            program,
+            ProductBenchmarkOptions.defaults()
+        );
+    }
+
+    public static ProductBenchmarkReport benchmark(
+        final IntegrationFormat targetFormat,
+        final QuantumProgram program,
+        final ProductBenchmarkOptions options
+    ) {
+        return new ProductBenchmarkRunner().run(
+            program,
+            integration(targetFormat),
+            options
+        );
+    }
+
+    public static ProductBenchmarkReport benchmarkExternal(
+        final IntegrationFormat inputFormat,
+        final String source,
+        final IntegrationFormat targetFormat
+    ) {
+        return benchmarkExternal(
+            inputFormat,
+            source,
+            targetFormat,
+            ProductBenchmarkOptions.defaults()
+        );
+    }
+
+    public static ProductBenchmarkReport benchmarkExternal(
+        final IntegrationFormat inputFormat,
+        final String source,
+        final IntegrationFormat targetFormat,
+        final ProductBenchmarkOptions options
+    ) {
+        return new ProductBenchmarkRunner().runExternal(
+            source,
+            integration(inputFormat),
+            integration(targetFormat),
+            options
+        );
+    }
+
+    public static ProductCompatibilityMatrix compatibilityMatrix(final QuantumProgram program) {
+        return compatibilityMatrix(
+            program,
+            ProductWorkflowOptions.defaults()
+        );
+    }
+
+    public static ProductCompatibilityMatrix compatibilityMatrix(
+        final QuantumProgram program,
+        final ProductWorkflowOptions options
+    ) {
+        return new ProductCompatibilityMatrixRunner().run(
+            program,
+            List.of(
+                integration(IntegrationFormat.OPENQASM_2),
+                integration(IntegrationFormat.OPENQASM_3),
+                integration(IntegrationFormat.QUIL)
+            ),
+            options
+        );
+    }
+
+    public static CrossFormatVerificationReport verifyCrossFormat(
+        final IntegrationFormat inputFormat,
+        final String source,
+        final SimulationOptions simulationOptions
+    ) {
+        return new CrossFormatVerificationRunner().verify(
+            source,
+            integration(inputFormat),
+            new QuantumIntegration[] {
+                integration(IntegrationFormat.OPENQASM_2),
+                integration(IntegrationFormat.OPENQASM_3),
+                integration(IntegrationFormat.QUIL)
+            },
+            simulationOptions
+        );
+    }
+
+    public static CorpusRegressionReport runCorpusRegression(
+        final List<CorpusRegressionCase> cases,
+        final ProductWorkflowOptions options
+    ) {
+        return new CorpusRegressionRunner().run(
+            cases,
+            List.of(
+                integration(IntegrationFormat.OPENQASM_2),
+                integration(IntegrationFormat.OPENQASM_3),
+                integration(IntegrationFormat.QUIL)
+            ),
+            options
+        );
+    }
+
+    public static ReleaseReadinessReport releaseReadiness(
+        final List<CorpusRegressionCase> cases,
+        final IntegrationFormat benchmarkTargetFormat,
+        final ProductBenchmarkOptions benchmarkOptions
+    ) {
+        return new ReleaseReadinessRunner().run(
+            cases,
+            List.of(
+                integration(IntegrationFormat.OPENQASM_2),
+                integration(IntegrationFormat.OPENQASM_3),
+                integration(IntegrationFormat.QUIL)
+            ),
+            integration(benchmarkTargetFormat),
+            benchmarkOptions
+        );
+    }
+
+    public static ProductDoctorReport productDoctor(final Path projectRoot) {
+        return new ProductDoctorRunner().run(projectRoot);
+    }
+
+    public static ProductAuditReport productAudit(
+        final Path projectRoot,
+        final List<CorpusRegressionCase> cases,
+        final IntegrationFormat benchmarkTargetFormat,
+        final ProductBenchmarkOptions benchmarkOptions
+    ) {
+        return new ProductAuditRunner().run(
+            projectRoot,
+            cases,
+            List.of(
+                integration(IntegrationFormat.OPENQASM_2),
+                integration(IntegrationFormat.OPENQASM_3),
+                integration(IntegrationFormat.QUIL)
+            ),
+            integration(benchmarkTargetFormat),
+            benchmarkOptions
+        );
+    }
+
+    public static String productReportSummary(final ProductAuditReport audit) {
+        return new ProductReportBundleWriter().summaryMarkdown(audit);
+    }
+
+    public static ProductReportBundleResult writeProductReportBundle(
+        final Path outputDirectory,
+        final ProductAuditReport audit,
+        final String auditJson
+    ) throws IOException {
+        return new ProductReportBundleWriter().write(
+            outputDirectory,
+            audit,
+            auditJson
+        );
+    }
+
+    public static ProductDistributionBundleResult writeProductDistributionBundle(
+        final Path outputDirectory,
+        final Path projectRoot
+    ) throws IOException {
+        return new ProductDistributionBundleWriter().write(
+            outputDirectory,
+            projectRoot
+        );
+    }
+
+    public static ProductDistributionBundleResult writeProductDistributionBundle(
+        final Path outputDirectory,
+        final Path projectRoot,
+        final Path productReportDirectory
+    ) throws IOException {
+        return new ProductDistributionBundleWriter().write(
+            outputDirectory,
+            projectRoot,
+            productReportDirectory
+        );
+    }
+
+    public static ProductDistributionVerificationResult verifyProductDistributionBundle(final Path distributionDirectory) {
+        return new ProductDistributionVerifier().verify(distributionDirectory);
+    }
+
     /**
      * Собирает circuit в плотное представление для больших потоков gate-based операций.
      *
@@ -452,6 +806,110 @@ public final class Quantum {
         return new QuantumProgramTransformer().transform(
             program,
             options
+        );
+    }
+
+    /**
+     * Выполняет локальную state-vector симуляцию Quantum IR программы.
+     *
+     * @param program Quantum IR программа
+     * @return результат симуляции
+     */
+    public static SimulationResult simulate(final QuantumProgram program) {
+        return new QuantumSimulator().simulate(program);
+    }
+
+    /**
+     * Выполняет локальную state-vector симуляцию Quantum IR программы с явными настройками.
+     *
+     * @param program Quantum IR программа
+     * @param options настройки симуляции
+     * @return результат симуляции
+     */
+    public static SimulationResult simulate(
+        final QuantumProgram program,
+        final SimulationOptions options
+    ) {
+        return new QuantumSimulator().simulate(
+            program,
+            options
+        );
+    }
+
+    /**
+     * Выполняет полный compiler pipeline до target export.
+     *
+     * @param format целевой внешний формат
+     * @param program исходная Quantum IR программа
+     * @return результат compiler pipeline
+     */
+    public static CompilerResult compile(
+        final IntegrationFormat format,
+        final QuantumProgram program
+    ) {
+        return compile(
+            format,
+            program,
+            CompilerOptions.defaults()
+        );
+    }
+
+    /**
+     * Выполняет полный compiler pipeline до target export с явными настройками.
+     *
+     * @param format целевой внешний формат
+     * @param program исходная Quantum IR программа
+     * @param options настройки compiler pipeline
+     * @return результат compiler pipeline
+     */
+    public static CompilerResult compile(
+        final IntegrationFormat format,
+        final QuantumProgram program,
+        final CompilerOptions options
+    ) {
+        return new QuantumCompiler().compile(
+            program,
+            integration(format),
+            options
+        );
+    }
+
+    /**
+     * Выполняет полный compiler pipeline до OpenQASM 2.
+     *
+     * @param program исходная Quantum IR программа
+     * @return результат compiler pipeline
+     */
+    public static CompilerResult compileOpenQasm2(final QuantumProgram program) {
+        return compile(
+            IntegrationFormat.OPENQASM_2,
+            program
+        );
+    }
+
+    /**
+     * Выполняет полный compiler pipeline до OpenQASM 3.
+     *
+     * @param program исходная Quantum IR программа
+     * @return результат compiler pipeline
+     */
+    public static CompilerResult compileOpenQasm3(final QuantumProgram program) {
+        return compile(
+            IntegrationFormat.OPENQASM_3,
+            program
+        );
+    }
+
+    /**
+     * Выполняет полный compiler pipeline до Quil.
+     *
+     * @param program исходная Quantum IR программа
+     * @return результат compiler pipeline
+     */
+    public static CompilerResult compileQuil(final QuantumProgram program) {
+        return compile(
+            IntegrationFormat.QUIL,
+            program
         );
     }
 
