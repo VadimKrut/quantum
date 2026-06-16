@@ -9,6 +9,8 @@
 
 package ru.pathcreator.vadim.quantum.desktop.smoke;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
@@ -51,6 +53,23 @@ public final class DesktopSmokeRunner {
     ) {
         final ArrayList<DesktopSmokeStep> steps = new ArrayList<>();
         final Path outputRoot = projectRoot.resolve("target/desktop-smoke-output");
+        final Path effectiveCorpusRoot;
+        try {
+            effectiveCorpusRoot = effectiveCorpusRoot(
+                corpusRoot,
+                outputRoot.resolve("smoke-corpus")
+            );
+        } catch (final IOException exception) {
+            steps.add(new DesktopSmokeStep(
+                "prepare-smoke-corpus",
+                false,
+                "EXCEPTION",
+                exception.getMessage() == null
+                    ? exception.toString()
+                    : exception.getMessage()
+            ));
+            return new DesktopSmokeReport(steps);
+        }
         steps.add(step(
             "import-openqasm2",
             service.importProgram(
@@ -172,7 +191,7 @@ public final class DesktopSmokeRunner {
             steps.add(step(
                 "regression-corpus",
                 service.corpusRegression(
-                    corpusRoot,
+                    effectiveCorpusRoot,
                     64,
                     5L
                 )
@@ -180,7 +199,7 @@ public final class DesktopSmokeRunner {
             steps.add(step(
                 "release-readiness",
                 service.releaseReadiness(
-                    corpusRoot,
+                    effectiveCorpusRoot,
                     IntegrationFormat.OPENQASM_3,
                     64,
                     5L
@@ -194,7 +213,7 @@ public final class DesktopSmokeRunner {
                 "product-audit",
                 service.productAudit(
                     projectRoot,
-                    corpusRoot,
+                    effectiveCorpusRoot,
                     IntegrationFormat.OPENQASM_3,
                     64,
                     5L
@@ -204,20 +223,29 @@ public final class DesktopSmokeRunner {
                 "product-report",
                 service.productReport(
                     projectRoot,
-                    corpusRoot,
+                    effectiveCorpusRoot,
                     outputRoot,
                     IntegrationFormat.OPENQASM_3,
                     64,
                     5L
                 )
             ));
-            steps.add(step(
-                "product-distribution",
-                service.productDistribution(
-                    projectRoot,
-                    outputRoot
-                )
-            ));
+            if (hasPackagedDistributionInputs(projectRoot)) {
+                steps.add(step(
+                    "product-distribution",
+                    service.productDistribution(
+                        projectRoot,
+                        outputRoot
+                    )
+                ));
+            } else {
+                steps.add(new DesktopSmokeStep(
+                    "product-distribution",
+                    true,
+                    "SKIPPED",
+                    "Packaged CLI/desktop jars are not both present; run full mvn package for distribution bundle smoke."
+                ));
+            }
         } catch (final Exception exception) {
             steps.add(new DesktopSmokeStep(
                 "desktop-product-suite",
@@ -229,6 +257,60 @@ public final class DesktopSmokeRunner {
             ));
         }
         return new DesktopSmokeReport(steps);
+    }
+
+    private static boolean hasPackagedDistributionInputs(final Path projectRoot) {
+        return Files.isRegularFile(projectRoot.resolve("quantum-cli").resolve("target").resolve("quantum-cli-0.1.0.jar"))
+            && Files.isRegularFile(projectRoot.resolve("quantum-desktop").resolve("target").resolve("quantum-desktop-0.1.0.jar"));
+    }
+
+    private static Path effectiveCorpusRoot(
+        final Path requestedCorpusRoot,
+        final Path generatedCorpusRoot
+    ) throws IOException {
+        if (
+            requestedCorpusRoot != null
+            && Files.isDirectory(requestedCorpusRoot)
+        ) {
+            return requestedCorpusRoot;
+        }
+        writeGeneratedCorpus(generatedCorpusRoot);
+        return generatedCorpusRoot;
+    }
+
+    private static void writeGeneratedCorpus(final Path corpusRoot) throws IOException {
+        Files.createDirectories(corpusRoot.resolve("openqasm2"));
+        Files.createDirectories(corpusRoot.resolve("openqasm3"));
+        Files.createDirectories(corpusRoot.resolve("quil"));
+        Files.writeString(
+            corpusRoot.resolve("README.md"),
+            "Generated desktop smoke corpus."
+        );
+        Files.writeString(
+            corpusRoot.resolve("openqasm2").resolve("bell.qasm"),
+            BELL_OPENQASM_2
+        );
+        Files.writeString(
+            corpusRoot.resolve("openqasm3").resolve("ghz.qasm"),
+            "OPENQASM 3.0;" + System.lineSeparator()
+                + "include \"stdgates.inc\";" + System.lineSeparator()
+                + "qubit[3] q;" + System.lineSeparator()
+                + "bit[3] c;" + System.lineSeparator()
+                + "h q[0];" + System.lineSeparator()
+                + "cx q[0], q[1];" + System.lineSeparator()
+                + "cx q[1], q[2];" + System.lineSeparator()
+                + "c[0] = measure q[0];" + System.lineSeparator()
+                + "c[1] = measure q[1];" + System.lineSeparator()
+                + "c[2] = measure q[2];" + System.lineSeparator()
+        );
+        Files.writeString(
+            corpusRoot.resolve("quil").resolve("bell.quil"),
+            "DECLARE ro BIT[2]" + System.lineSeparator()
+                + "H 0" + System.lineSeparator()
+                + "CNOT 0 1" + System.lineSeparator()
+                + "MEASURE 0 ro[0]" + System.lineSeparator()
+                + "MEASURE 1 ro[1]" + System.lineSeparator()
+        );
     }
 
     private static DesktopSmokeStep step(

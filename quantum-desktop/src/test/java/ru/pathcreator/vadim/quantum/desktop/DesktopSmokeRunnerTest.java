@@ -96,7 +96,7 @@ class DesktopSmokeRunnerTest {
     }
 
     @Test
-    void desktopSmokeApplicationFailsWhenCorpusIsMissing() throws Exception {
+    void desktopSmokeApplicationGeneratesCorpusWhenCorpusIsMissing() throws Exception {
         final Path project = completeProductProject();
         final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         final ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -120,11 +120,12 @@ class DesktopSmokeRunnerTest {
         );
 
         assertEquals(
-            DesktopSmokeApplication.EXIT_FAILURE,
+            DesktopSmokeApplication.EXIT_SUCCESS,
             exitCode
         );
         assertFalse(stdout.toString(StandardCharsets.UTF_8).isBlank());
-        assertTrue(stdout.toString(StandardCharsets.UTF_8).contains("\"success\" : false"));
+        assertTrue(stdout.toString(StandardCharsets.UTF_8).contains("\"success\" : true"));
+        assertTrue(Files.isDirectory(project.resolve("target").resolve("desktop-smoke-output").resolve("smoke-corpus")));
     }
 
     private Path corpus() throws Exception {
@@ -162,9 +163,8 @@ class DesktopSmokeRunnerTest {
         final Path project = tempDir.resolve("product");
         Files.createDirectories(project);
         Files.writeString(project.resolve("pom.xml"), pomWithModules());
-        Files.writeString(project.resolve("README.md"), "# Quantum");
         Files.writeString(project.resolve("LICENSE"), "MPL-2.0");
-        Files.writeString(project.resolve(".gitignore"), "/target/\ndocs/\n.idea/\n");
+        Files.writeString(project.resolve(".gitignore"), "/target/\ndocs/\n/tools/\n.idea/\n");
         createDirectories(
             project,
             new String[] {
@@ -183,9 +183,6 @@ class DesktopSmokeRunnerTest {
         createFiles(
             project,
             new String[] {
-                "tools/quantum.ps1",
-                "tools/quantum-desktop.ps1",
-                "tools/product-smoke.ps1",
                 "smoke-corpus/README.md",
                 "smoke-corpus/openqasm2/bell.qasm",
                 "smoke-corpus/openqasm3/ghz.qasm",

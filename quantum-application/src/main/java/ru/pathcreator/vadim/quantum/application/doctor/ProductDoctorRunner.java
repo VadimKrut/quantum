@@ -32,12 +32,6 @@ public final class ProductDoctorRunner {
         "quantum-desktop"
     };
 
-    private static final String[] REQUIRED_SCRIPTS = new String[] {
-        "tools/quantum.ps1",
-        "tools/quantum-desktop.ps1",
-        "tools/product-smoke.ps1"
-    };
-
     private static final String[] PACKAGED_JARS = new String[] {
         "quantum-cli/target/quantum-cli-0.1.0.jar",
         "quantum-desktop/target/quantum-desktop-0.1.0.jar"
@@ -57,18 +51,14 @@ public final class ProductDoctorRunner {
         ));
         checks.add(checkFile(
             root,
-            "readme",
-            "README.md",
+            "license",
+            "LICENSE",
             true
         ));
         checks.add(checkPomModules(root));
         checks.add(checkModules(root));
-        checks.add(checkRequiredFiles(
-            root,
-            "scripts",
-            REQUIRED_SCRIPTS
-        ));
         checks.add(checkGitIgnore(root));
+        checks.add(checkLocalToolsPolicy(root));
         checks.add(checkPackagedJars(root));
         return ProductDoctorReport.of(
             root,
@@ -182,19 +172,20 @@ public final class ProductDoctorRunner {
         try {
             final String content = Files.readString(gitIgnore);
             final boolean ignoresDocs = content.contains("docs/");
+            final boolean ignoresTools = content.contains("/tools/");
             final boolean ignoresTarget = content.contains("/target/");
             final boolean ignoresIdea = content.contains(".idea/");
-            if (!ignoresDocs || !ignoresTarget || !ignoresIdea) {
+            if (!ignoresDocs || !ignoresTools || !ignoresTarget || !ignoresIdea) {
                 return ProductDoctorCheck.of(
                     "gitignore",
                     ProductDoctorCheckStatus.FAIL,
-                    ".gitignore must ignore docs/, /target/, and .idea/."
+                    ".gitignore must ignore docs/, /tools/, /target/, and .idea/."
                 );
             }
             return ProductDoctorCheck.of(
                 "gitignore",
                 ProductDoctorCheckStatus.PASS,
-                ".gitignore keeps local docs and build outputs out of git."
+                ".gitignore keeps local docs, local tools and build outputs out of git."
             );
         } catch (final IOException exception) {
             return ProductDoctorCheck.of(
@@ -203,6 +194,21 @@ public final class ProductDoctorRunner {
                 "Cannot read .gitignore: " + exception.getMessage()
             );
         }
+    }
+
+    private static ProductDoctorCheck checkLocalToolsPolicy(final Path root) {
+        if (Files.exists(root.resolve("tools"))) {
+            return ProductDoctorCheck.of(
+                "local-tools-policy",
+                ProductDoctorCheckStatus.WARN,
+                "tools/ exists locally but is ignored; distribution scripts are generated into release bundles."
+            );
+        }
+        return ProductDoctorCheck.of(
+            "local-tools-policy",
+            ProductDoctorCheckStatus.PASS,
+            "tools/ is not required in the source checkout; distribution scripts are generated."
+        );
     }
 
     private static ProductDoctorCheck checkPackagedJars(final Path root) {

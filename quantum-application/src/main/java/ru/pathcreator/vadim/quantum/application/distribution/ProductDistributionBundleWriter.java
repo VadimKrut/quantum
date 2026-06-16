@@ -78,7 +78,7 @@ public final class ProductDistributionBundleWriter {
             output.resolve("LICENSE"),
             files
         );
-        copyRequiredFile(
+        copyOptionalFile(
             root.resolve("README.md"),
             output.resolve("PROJECT-README.md"),
             files
@@ -153,9 +153,6 @@ public final class ProductDistributionBundleWriter {
         final Path tools,
         final List<Path> files
     ) throws IOException {
-        ensureRequiredFile(root.resolve("tools").resolve("quantum.ps1"));
-        ensureRequiredFile(root.resolve("tools").resolve("quantum-desktop.ps1"));
-        ensureRequiredFile(root.resolve("tools").resolve("product-smoke.ps1"));
         writeFile(
             tools.resolve("quantum.ps1"),
             cliLauncher(),
@@ -240,6 +237,24 @@ public final class ProductDistributionBundleWriter {
         final List<Path> files
     ) throws IOException {
         ensureRequiredFile(source);
+        Files.createDirectories(target.getParent());
+        Files.copy(
+            source,
+            target,
+            StandardCopyOption.REPLACE_EXISTING,
+            StandardCopyOption.COPY_ATTRIBUTES
+        );
+        files.add(target);
+    }
+
+    private static void copyOptionalFile(
+        final Path source,
+        final Path target,
+        final List<Path> files
+    ) throws IOException {
+        if (!Files.isRegularFile(source)) {
+            return;
+        }
         Files.createDirectories(target.getParent());
         Files.copy(
             source,
@@ -383,7 +398,7 @@ public final class ProductDistributionBundleWriter {
             + ".\\tools\\quantum-desktop.ps1" + System.lineSeparator()
             + "```" + System.lineSeparator()
             + System.lineSeparator()
-            + "The original project README is included as `PROJECT-README.md`."
+            + "If the source checkout has a README, it is included as `PROJECT-README.md`."
             + System.lineSeparator();
     }
 

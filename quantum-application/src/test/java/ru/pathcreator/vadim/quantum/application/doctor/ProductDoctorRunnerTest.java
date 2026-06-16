@@ -66,8 +66,8 @@ class ProductDoctorRunnerTest {
         final Path project = tempDir.resolve("quantum");
         Files.createDirectories(project);
         Files.writeString(project.resolve("pom.xml"), pomWithModules());
-        Files.writeString(project.resolve("README.md"), "# Quantum");
-        Files.writeString(project.resolve(".gitignore"), "/target/\ndocs/\n.idea/\n");
+        Files.writeString(project.resolve("LICENSE"), "MPL-2.0");
+        Files.writeString(project.resolve(".gitignore"), "/target/\ndocs/\n/tools/\n.idea/\n");
         createDirectories(
             project,
             new String[] {
@@ -86,9 +86,6 @@ class ProductDoctorRunnerTest {
         createFiles(
             project,
             new String[] {
-                "tools/quantum.ps1",
-                "tools/quantum-desktop.ps1",
-                "tools/product-smoke.ps1",
                 "smoke-corpus/README.md",
                 "smoke-corpus/openqasm2/bell.qasm",
                 "smoke-corpus/openqasm3/ghz.qasm",

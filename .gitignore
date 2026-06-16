@@ -1,5 +1,6 @@
 ### Project build output ###
 /target/
+**/target/
 /build/
 /out/
 

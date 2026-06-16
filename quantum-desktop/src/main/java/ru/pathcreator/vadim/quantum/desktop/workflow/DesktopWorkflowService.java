@@ -629,7 +629,7 @@ public final class DesktopWorkflowService {
         final ProductDoctorReport report = Quantum.productDoctor(projectRoot);
         return result(
             DesktopAction.DOCTOR,
-            report.isHealthy(),
+            report.isAcceptable(),
             report.status().name(),
             "Failed checks: " + report.failedCheckCount()
                 + ", warnings: " + report.warningCheckCount(),
