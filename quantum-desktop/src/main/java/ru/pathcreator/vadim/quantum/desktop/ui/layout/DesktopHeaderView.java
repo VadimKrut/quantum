@@ -27,6 +27,8 @@ public final class DesktopHeaderView {
     public Node build(
         final String titleText,
         final String subtitleText,
+        final String alphaText,
+        final String versionText,
         final String targetText,
         final String validateText,
         final String simulateText,
@@ -53,15 +55,26 @@ public final class DesktopHeaderView {
             title,
             subtitle
         );
+        final Label alpha = new Label(alphaText);
+        alpha.getStyleClass().add("header-alpha-notice");
+        final Label version = new Label(versionText);
+        version.getStyleClass().add("header-version");
         final Region spacer = new Region();
+        final Region rightSpacer = new Region();
         HBox.setHgrow(
             spacer,
+            Priority.ALWAYS
+        );
+        HBox.setHgrow(
+            rightSpacer,
             Priority.ALWAYS
         );
         final HBox actionRow = new HBox(
             14,
             titleBox,
             spacer,
+            alpha,
+            rightSpacer,
             DesktopUiNodes.primaryButton(
                 validateText,
                 validateAction
@@ -73,7 +86,8 @@ public final class DesktopHeaderView {
             DesktopUiNodes.primaryButton(
                 exportText,
                 exportAction
-            )
+            ),
+            version
         );
         actionRow.setAlignment(Pos.CENTER_LEFT);
         final HBox settingsRow = new HBox(

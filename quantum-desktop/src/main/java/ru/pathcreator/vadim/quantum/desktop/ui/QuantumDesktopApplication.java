@@ -633,6 +633,8 @@ public final class QuantumDesktopApplication extends Application {
         return headerView.build(
             uiText("title"),
             uiText("subtitle"),
+            uiText("alphaNotice"),
+            "v" + applicationVersion(),
             uiText("target"),
             uiText("validate"),
             uiText("simulate"),
@@ -650,6 +652,20 @@ public final class QuantumDesktopApplication extends Application {
             () -> runNative("Simulate", this::simulateNative),
             () -> runNative("Export", this::exportNative)
         );
+    }
+
+    private String applicationVersion() {
+        final Package applicationPackage = QuantumDesktopApplication.class.getPackage();
+        final String version = applicationPackage == null
+            ? null
+            : applicationPackage.getImplementationVersion();
+        if (
+            version == null
+            || version.isBlank()
+        ) {
+            return "dev";
+        }
+        return version;
     }
 
     private Node viewMenu() {
@@ -727,6 +743,7 @@ public final class QuantumDesktopApplication extends Application {
             return switch (key) {
                 case "title" -> "Quantum IR Studio";
                 case "subtitle" -> "Native model first: build IR, inspect flow, simulate, then export";
+                case "alphaNotice" -> "Alpha version: if you find errors, write to mne13.net@gmail.com";
                 case "target" -> "Export";
                 case "validate" -> "Validate IR";
                 case "simulate" -> "Simulate";
@@ -894,6 +911,7 @@ public final class QuantumDesktopApplication extends Application {
         return switch (key) {
             case "title" -> "Quantum IR Studio";
             case "subtitle" -> "Сначала родная модель: строим IR, проверяем поток, симулируем и экспортируем";
+            case "alphaNotice" -> "Альфа-версия: если нашли ошибки, пишите на mne13.net@gmail.com";
             case "target" -> "Экспорт";
             case "validate" -> "Проверить IR";
             case "simulate" -> "Симуляция";

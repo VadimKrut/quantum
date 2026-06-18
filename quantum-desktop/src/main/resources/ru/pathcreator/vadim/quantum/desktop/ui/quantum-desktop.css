@@ -120,6 +120,18 @@
     -fx-text-fill: -app-header-muted;
 }
 
+.header-alpha-notice {
+    -fx-text-fill: -app-header-muted;
+    -fx-font-size: 12px;
+    -fx-padding: 0 18 0 18;
+}
+
+.header-version {
+    -fx-text-fill: -app-header-muted;
+    -fx-font-size: 11px;
+    -fx-padding: 0 0 0 6;
+}
+
 .workbench-header-secondary {
     -fx-padding: 2 0 0 0;
 }
