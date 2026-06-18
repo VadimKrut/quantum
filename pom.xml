@@ -20,6 +20,7 @@
         <module>quantum-openqasm3</module>
         <module>quantum-quil</module>
         <module>quantum-api</module>
+        <module>quantum-library</module>
         <module>quantum-cli</module>
         <module>quantum-desktop</module>
     </modules>

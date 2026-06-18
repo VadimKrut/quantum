@@ -39,8 +39,10 @@ import static ru.pathcreator.vadim.quantum.desktop.ui.input.DesktopInputParsers.
 import static ru.pathcreator.vadim.quantum.desktop.ui.audit.DesktopUiAutomationRunner.scheduleSmoke;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.prefs.Preferences;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -94,6 +96,8 @@ import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrRead
 import ru.pathcreator.vadim.quantum.application.persistence.result.QuantumIrWriteResult;
 import ru.pathcreator.vadim.quantum.application.resource.ResourceEstimate;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
+import ru.pathcreator.vadim.quantum.desktop.library.application.DesktopLibraryFileService;
+import ru.pathcreator.vadim.quantum.desktop.library.domain.DesktopLibraryAlgorithmFile;
 import ru.pathcreator.vadim.quantum.desktop.ui.circuit.DesktopCircuitCanvasRenderer;
 import ru.pathcreator.vadim.quantum.desktop.ui.circuit.DesktopPhaseDiskView;
 import ru.pathcreator.vadim.quantum.desktop.ui.circuit.DesktopLargeProgramRenderPolicy;
@@ -116,6 +120,8 @@ import ru.pathcreator.vadim.quantum.desktop.ui.layout.DesktopNativeWorkspaceView
 import ru.pathcreator.vadim.quantum.desktop.ui.layout.DesktopResultTabsResult;
 import ru.pathcreator.vadim.quantum.desktop.ui.layout.DesktopResultTabsView;
 import ru.pathcreator.vadim.quantum.desktop.ui.layout.DesktopTextAreaConfigurator;
+import ru.pathcreator.vadim.quantum.desktop.ui.library.DesktopLibraryWorkspaceView;
+import ru.pathcreator.vadim.quantum.desktop.ui.library.DesktopLibraryWorkspaceText;
 import ru.pathcreator.vadim.quantum.desktop.ui.render.DesktopGateInfoRenderer;
 import ru.pathcreator.vadim.quantum.desktop.ui.render.DesktopOperationLabelRenderer;
 import ru.pathcreator.vadim.quantum.desktop.ui.render.DesktopProgramTextRenderer;
@@ -138,6 +144,15 @@ import ru.pathcreator.vadim.quantum.desktop.workspace.operation.DesktopCustomOpe
 import ru.pathcreator.vadim.quantum.desktop.workspace.operation.DesktopOperationReorderService;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
 import ru.pathcreator.vadim.quantum.domain.validation.ValidationResult;
+import ru.pathcreator.vadim.quantum.library.api.QuantumAlgorithmLibrary;
+import ru.pathcreator.vadim.quantum.library.catalog.QuantumAlgorithmRegistry;
+import ru.pathcreator.vadim.quantum.library.domain.AlgorithmCategory;
+import ru.pathcreator.vadim.quantum.library.domain.AlgorithmDifficulty;
+import ru.pathcreator.vadim.quantum.library.domain.AlgorithmParameterDefinition;
+import ru.pathcreator.vadim.quantum.library.domain.AlgorithmParameterSet;
+import ru.pathcreator.vadim.quantum.library.domain.AlgorithmParameterType;
+import ru.pathcreator.vadim.quantum.library.domain.QuantumAlgorithmDescriptor;
+import ru.pathcreator.vadim.quantum.library.domain.QuantumAlgorithmEntry;
 
 /**
  * Рабочая среда JavaFX для программирования Quantum IR как основной модели.
@@ -178,6 +193,7 @@ public final class QuantumDesktopApplication extends Application {
     private final DesktopNativeWorkspaceView nativeWorkspaceView = new DesktopNativeWorkspaceView();
     private final DesktopResultTabsView resultTabsView = new DesktopResultTabsView();
     private final DesktopTextAreaConfigurator textAreaConfigurator = new DesktopTextAreaConfigurator();
+    private final DesktopLibraryWorkspaceView libraryWorkspaceView = new DesktopLibraryWorkspaceView();
     private final DesktopOperationListCellFactory operationListCellFactory = new DesktopOperationListCellFactory();
     private final DesktopQSphereView qSphereView = new DesktopQSphereView();
     private final DesktopGateInfoRenderer gateInfoRenderer = new DesktopGateInfoRenderer();
@@ -188,6 +204,8 @@ public final class QuantumDesktopApplication extends Application {
     private final DesktopSimulationVisualizationsView simulationVisualizationsView = new DesktopSimulationVisualizationsView();
     private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final Preferences preferences = Preferences.userNodeForPackage(QuantumDesktopApplication.class);
+    private final DesktopLibraryFileService libraryFileService = new DesktopLibraryFileService();
+    private final QuantumAlgorithmRegistry algorithmLibrary = QuantumAlgorithmLibrary.builtIn();
     private final DesktopNativeWorkflowFacade nativeWorkflowFacade = new DesktopNativeWorkflowFacade(
         workspaceService,
         simulationTextRenderer,
@@ -287,6 +305,19 @@ public final class QuantumDesktopApplication extends Application {
     private final ComboBox<IntegrationFormat> externalTargetFormatBox = new ComboBox<>();
     private final TextArea externalResultArea = new TextArea();
     private final TextArea externalGeneratedArea = new TextArea();
+    private final TextField librarySearchField = new TextField();
+    private final ListView<String> builtInLibraryList = new ListView<>();
+    private final ListView<String> userLibraryList = new ListView<>();
+    private final TextArea libraryDetailsArea = new TextArea();
+    private final TextArea libraryParameterArea = new TextArea();
+    private final TextField libraryIdField = new TextField("user.algorithm");
+    private final TextField libraryNameField = new TextField("User algorithm");
+    private final TextArea librarySummaryArea = new TextArea("Quantum IR program created in Quantum IR Studio.");
+    private final ComboBox<AlgorithmCategory> libraryCategoryBox = new ComboBox<>();
+    private final ComboBox<AlgorithmDifficulty> libraryDifficultyBox = new ComboBox<>();
+    private final TextField libraryTagsField = new TextField("user, draft");
+    private final TextField libraryReferencesField = new TextField();
+    private final ArrayList<Path> userLibraryFiles = new ArrayList<>();
     private final Label builderHintLabel = new Label("Select a gate, then click a qubit lane to place it.");
     private final Label statusLabel = new Label("Native IR workspace ready");
     private final Label programBadgeLabel = new Label("Program");
@@ -564,6 +595,7 @@ public final class QuantumDesktopApplication extends Application {
                 refreshWorkspace();
             }
         });
+        initializeLibraryControls();
         refreshReferenceBoxes();
         refreshControlTexts();
         renderGateInfo();
@@ -572,6 +604,29 @@ public final class QuantumDesktopApplication extends Application {
         phaseDiskView.setRussian(russianLanguage());
         qSphereView.setRussian(russianLanguage());
         applyExperienceMode();
+    }
+
+    private void initializeLibraryControls() {
+        librarySearchField.setPromptText(uiText("librarySearchPrompt"));
+        librarySearchField.textProperty().addListener((observable, oldValue, newValue) -> refreshLibraryLists());
+        libraryCategoryBox.getItems().setAll(AlgorithmCategory.values());
+        libraryDifficultyBox.getItems().setAll(AlgorithmDifficulty.values());
+        libraryCategoryBox.setValue(AlgorithmCategory.EDUCATION);
+        libraryDifficultyBox.setValue(AlgorithmDifficulty.INTRODUCTORY);
+        librarySummaryArea.setPrefRowCount(4);
+        libraryDetailsArea.setEditable(false);
+        libraryParameterArea.setEditable(true);
+        builtInLibraryList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                renderSelectedBuiltInLibraryEntry();
+            }
+        });
+        userLibraryList.getSelectionModel().selectedIndexProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.intValue() >= 0) {
+                renderSelectedUserLibraryEntry(newValue.intValue());
+            }
+        });
+        refreshLibraryLists();
     }
 
     private Node header() {
@@ -718,7 +773,29 @@ public final class QuantumDesktopApplication extends Application {
                 case "tabGeneratedExport" -> "Generated Export";
                 case "nativeTab" -> "Native IR Studio";
                 case "externalTab" -> "External Formats";
+                case "libraryTab" -> "Algorithm Library";
                 case "settingsTab" -> "Execution Settings";
+                case "libraryBuiltInAlgorithms" -> "Built-in algorithms";
+                case "librarySearch" -> "Search";
+                case "librarySearchPrompt" -> "Search by id, name, category, difficulty, tags";
+                case "libraryUserLibrary" -> "User library";
+                case "libraryAlgorithmDetails" -> "Algorithm details";
+                case "libraryBuiltInParameters" -> "Built-in parameters";
+                case "librarySaveCurrentProgram" -> "Save current program";
+                case "libraryId" -> "Id";
+                case "libraryName" -> "Name";
+                case "libraryCategory" -> "Category";
+                case "libraryDifficulty" -> "Difficulty";
+                case "libraryTags" -> "Tags";
+                case "libraryReferences" -> "References";
+                case "libraryLoadBuiltIn" -> "Load built-in";
+                case "libraryLoadQdsl" -> "Load .qdsl";
+                case "libraryImportQdsl" -> "Import .qdsl";
+                case "libraryRefresh" -> "Refresh";
+                case "librarySaveToLibrary" -> "Save to library";
+                case "librarySaveAsQdsl" -> "Save as .qdsl";
+                case "libraryNoParameters" -> "# This algorithm has no parameters.";
+                case "libraryQdslChooserTitle" -> "Open Quantum IR library DSL";
                 case "circuitTitle" -> "Native IR Circuit Flow";
                 case "circuitHint" -> "Operations are built into ru.pathcreator.vadim.quantum domain objects through the Java DSL.";
                 case "program" -> "Program";
@@ -863,7 +940,29 @@ public final class QuantumDesktopApplication extends Application {
             case "tabGeneratedExport" -> "Сгенерированный экспорт";
             case "nativeTab" -> "Родная IR-студия";
             case "externalTab" -> "Внешние форматы";
+            case "libraryTab" -> "Библиотека алгоритмов";
             case "settingsTab" -> "Настройки запуска";
+            case "libraryBuiltInAlgorithms" -> "Встроенные алгоритмы";
+            case "librarySearch" -> "Поиск";
+            case "librarySearchPrompt" -> "Поиск по id, названию, категории, сложности, тегам";
+            case "libraryUserLibrary" -> "Пользовательская библиотека";
+            case "libraryAlgorithmDetails" -> "Описание алгоритма";
+            case "libraryBuiltInParameters" -> "Параметры генератора";
+            case "librarySaveCurrentProgram" -> "Сохранить текущую программу";
+            case "libraryId" -> "Id";
+            case "libraryName" -> "Название";
+            case "libraryCategory" -> "Категория";
+            case "libraryDifficulty" -> "Сложность";
+            case "libraryTags" -> "Теги";
+            case "libraryReferences" -> "Источники";
+            case "libraryLoadBuiltIn" -> "Загрузить встроенный";
+            case "libraryLoadQdsl" -> "Загрузить .qdsl";
+            case "libraryImportQdsl" -> "Импорт .qdsl";
+            case "libraryRefresh" -> "Обновить";
+            case "librarySaveToLibrary" -> "Сохранить в библиотеку";
+            case "librarySaveAsQdsl" -> "Сохранить как .qdsl";
+            case "libraryNoParameters" -> "# У этого алгоритма нет параметров.";
+            case "libraryQdslChooserTitle" -> "Открыть Quantum IR library DSL";
             case "circuitTitle" -> "Поток схемы Quantum IR";
             case "circuitHint" -> "Операции строятся как объекты ru.pathcreator.vadim.quantum через Java DSL.";
             case "program" -> "Программа";
@@ -1027,11 +1126,113 @@ public final class QuantumDesktopApplication extends Application {
         return mainTabsView.build(
             uiText("nativeTab"),
             uiText("externalTab"),
+            uiText("libraryTab"),
             uiText("settingsTab"),
             nativeWorkspace(stage),
             externalWorkspace(stage),
+            libraryWorkspace(stage),
             executionSettings()
         );
+    }
+
+    private Node libraryWorkspace(final Stage stage) {
+        refreshLibraryTextControls();
+        return libraryWorkspaceView.build(
+            builtInLibraryList,
+            userLibraryList,
+            librarySearchField,
+            libraryMetadataForm(),
+            libraryParameterArea,
+            libraryDetailsArea,
+            libraryActions(stage),
+            libraryWorkspaceText()
+        );
+    }
+
+    private Node libraryMetadataForm() {
+        return new VBox(
+            8.0,
+            fieldRow(
+                uiText("libraryId"),
+                libraryIdField
+            ),
+            fieldRow(
+                uiText("libraryName"),
+                libraryNameField
+            ),
+            fieldRow(
+                uiText("libraryCategory"),
+                libraryCategoryBox
+            ),
+            fieldRow(
+                uiText("libraryDifficulty"),
+                libraryDifficultyBox
+            ),
+            fieldRow(
+                uiText("libraryTags"),
+                libraryTagsField
+            ),
+            fieldRow(
+                uiText("libraryReferences"),
+                libraryReferencesField
+            ),
+            librarySummaryArea
+        );
+    }
+
+    private Node libraryActions(final Stage stage) {
+        return actionFlow(
+            primaryButton(
+                uiText("libraryLoadBuiltIn"),
+                this::loadSelectedBuiltInAlgorithm
+            ),
+            secondaryButton(
+                uiText("libraryLoadQdsl"),
+                this::loadSelectedUserLibraryFile
+            ),
+            secondaryButton(
+                uiText("libraryImportQdsl"),
+                () -> importQdslToUserLibrary(stage)
+            ),
+            secondaryButton(
+                uiText("libraryRefresh"),
+                this::refreshLibraryLists
+            ),
+            primaryButton(
+                uiText("librarySaveToLibrary"),
+                this::saveCurrentToUserLibrary
+            ),
+            secondaryButton(
+                uiText("librarySaveAsQdsl"),
+                () -> saveCurrentAsLibraryFile(stage)
+            )
+        );
+    }
+
+    private DesktopLibraryWorkspaceText libraryWorkspaceText() {
+        return new DesktopLibraryWorkspaceText(
+            uiText("libraryBuiltInAlgorithms"),
+            uiText("librarySearch"),
+            uiText("libraryUserLibrary"),
+            uiText("libraryAlgorithmDetails"),
+            uiText("libraryBuiltInParameters"),
+            uiText("librarySaveCurrentProgram")
+        );
+    }
+
+    private void refreshLibraryTextControls() {
+        librarySearchField.setPromptText(uiText("librarySearchPrompt"));
+        refreshLibraryLists();
+        final int userIndex = userLibraryList.getSelectionModel().getSelectedIndex();
+        if (userIndex >= 0) {
+            renderSelectedUserLibraryEntry(userIndex);
+        } else {
+            final QuantumAlgorithmEntry entry = selectedBuiltInEntry();
+            if (entry != null) {
+                libraryDetailsArea.setText(renderLibraryDescriptor(entry.descriptor()));
+                libraryParameterArea.setText(renderLibraryParameters(entry));
+            }
+        }
     }
 
     private Node nativeWorkspace(final Stage stage) {
@@ -3109,6 +3310,528 @@ public final class QuantumDesktopApplication extends Application {
         return nativeWorkflowFacade.json(buildNativeProgram());
     }
 
+    private void refreshLibraryLists() {
+        refreshBuiltInLibraryList();
+        refreshUserLibraryList();
+    }
+
+    private void refreshBuiltInLibraryList() {
+        final String query = librarySearchQuery();
+        builtInLibraryList.getItems().clear();
+        for (int i = 0; i < algorithmLibrary.entries().size(); i++) {
+            final QuantumAlgorithmEntry entry = algorithmLibrary.entries().get(i);
+            if (matchesLibraryQuery(
+                entry.descriptor(),
+                query
+            )) {
+                builtInLibraryList.getItems().add(libraryEntryLabel(entry.descriptor()));
+            }
+        }
+        if (
+            !builtInLibraryList.getItems().isEmpty()
+            && builtInLibraryList.getSelectionModel().getSelectedIndex() < 0
+        ) {
+            builtInLibraryList.getSelectionModel().select(0);
+        }
+    }
+
+    private void refreshUserLibraryList() {
+        final String query = librarySearchQuery();
+        userLibraryFiles.clear();
+        userLibraryList.getItems().clear();
+        try {
+            final List<Path> files = libraryFileService.listFiles(libraryFileService.defaultLibraryDirectory());
+            for (int i = 0; i < files.size(); i++) {
+                appendUserLibraryFileIfMatches(
+                    files.get(i),
+                    query
+                );
+            }
+            if (
+                !userLibraryList.getItems().isEmpty()
+                && userLibraryList.getSelectionModel().getSelectedIndex() < 0
+            ) {
+                userLibraryList.getSelectionModel().select(0);
+            }
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("User library refresh failed");
+        }
+    }
+
+    private void appendUserLibraryFileIfMatches(
+        final Path path,
+        final String query
+    ) throws Exception {
+        final DesktopLibraryAlgorithmFile file = libraryFileService.read(path);
+        if (
+            !matchesLibraryQuery(
+                file.descriptor(),
+                query
+            )
+            && !lower(path.getFileName().toString()).contains(query)
+        ) {
+            return;
+        }
+        userLibraryFiles.add(path);
+        userLibraryList.getItems().add(libraryEntryLabel(file.descriptor()));
+    }
+
+    private String librarySearchQuery() {
+        return librarySearchField.getText() == null
+            ? ""
+            : lower(librarySearchField.getText().trim());
+    }
+
+    private boolean matchesLibraryQuery(
+        final QuantumAlgorithmDescriptor descriptor,
+        final String query
+    ) {
+        if (query.isBlank()) {
+            return true;
+        }
+        if (
+            lower(descriptor.id()).contains(query)
+            || lower(descriptor.displayName()).contains(query)
+            || lower(descriptor.summary()).contains(query)
+            || lower(descriptor.category().name()).contains(query)
+            || lower(descriptor.difficulty().name()).contains(query)
+            || lower(localizedCategory(descriptor.category())).contains(query)
+            || lower(localizedDifficulty(descriptor.difficulty())).contains(query)
+        ) {
+            return true;
+        }
+        for (int i = 0; i < descriptor.tags().size(); i++) {
+            if (lower(descriptor.tags().get(i)).contains(query)) {
+                return true;
+            }
+        }
+        for (int i = 0; i < descriptor.referenceUris().size(); i++) {
+            if (lower(descriptor.referenceUris().get(i)).contains(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void renderSelectedBuiltInLibraryEntry() {
+        final QuantumAlgorithmEntry entry = selectedBuiltInEntry();
+        if (entry == null) {
+            return;
+        }
+        libraryDetailsArea.setText(renderLibraryDescriptor(entry.descriptor()));
+        libraryParameterArea.setText(renderLibraryParameters(entry));
+        libraryIdField.setText("user." + entry.descriptor().id());
+        libraryNameField.setText(entry.descriptor().displayName());
+        librarySummaryArea.setText(entry.descriptor().summary());
+        libraryCategoryBox.setValue(entry.descriptor().category());
+        libraryDifficultyBox.setValue(entry.descriptor().difficulty());
+        libraryTagsField.setText(String.join(
+            ", ",
+            entry.descriptor().tags()
+        ));
+        libraryReferencesField.setText(String.join(
+            ", ",
+            entry.descriptor().referenceUris()
+        ));
+    }
+
+    private void renderSelectedUserLibraryEntry(final int index) {
+        if (
+            index < 0
+            || index >= userLibraryFiles.size()
+        ) {
+            return;
+        }
+        try {
+            final DesktopLibraryAlgorithmFile file = libraryFileService.read(userLibraryFiles.get(index));
+            libraryDetailsArea.setText(renderLibraryDescriptor(file.descriptor()));
+            libraryParameterArea.setText(file.javaDslSource());
+            libraryIdField.setText(file.descriptor().id());
+            libraryNameField.setText(file.descriptor().displayName());
+            librarySummaryArea.setText(file.descriptor().summary());
+            libraryCategoryBox.setValue(file.descriptor().category());
+            libraryDifficultyBox.setValue(file.descriptor().difficulty());
+            libraryTagsField.setText(String.join(
+                ", ",
+                file.descriptor().tags()
+            ));
+            libraryReferencesField.setText(String.join(
+                ", ",
+                file.descriptor().referenceUris()
+            ));
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("User library entry cannot be read");
+        }
+    }
+
+    private void loadSelectedBuiltInAlgorithm() {
+        final QuantumAlgorithmEntry entry = selectedBuiltInEntry();
+        if (entry == null) {
+            statusLabel.setText("Select a built-in algorithm first");
+            return;
+        }
+        try {
+            final AlgorithmParameterSet parameters = parseLibraryParameters(entry);
+            final QuantumProgram program = entry.generate(parameters);
+            loadProgramIntoWorkspace(
+                program,
+                "Loaded library algorithm: " + entry.descriptor().id()
+            );
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Built-in algorithm load failed");
+        }
+    }
+
+    private void loadSelectedUserLibraryFile() {
+        final int index = userLibraryList.getSelectionModel().getSelectedIndex();
+        if (
+            index < 0
+            || index >= userLibraryFiles.size()
+        ) {
+            statusLabel.setText("Select a user library file first");
+            return;
+        }
+        try {
+            final DesktopLibraryAlgorithmFile file = libraryFileService.read(userLibraryFiles.get(index));
+            final DesktopJavaDslImportResult result = javaDslImporter.importDsl(file.javaDslSource());
+            applyJavaDslImportResult(
+                file.javaDslSource(),
+                result,
+                "Loaded user library algorithm: " + file.descriptor().id()
+            );
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("User library load failed");
+        }
+    }
+
+    private void saveCurrentToUserLibrary() {
+        try {
+            final DesktopLibraryAlgorithmFile file = currentLibraryFile();
+            final Path path = libraryFileService.defaultLibraryDirectory().resolve(
+                libraryFileService.fileNameForId(file.descriptor().id())
+            );
+            libraryFileService.write(
+                path,
+                file
+            );
+            refreshLibraryLists();
+            selectUserLibraryFile(path);
+            statusLabel.setText("Saved to user library: " + path);
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Save to user library failed");
+        }
+    }
+
+    private void importQdslToUserLibrary(final Stage stage) {
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle(uiText("libraryQdslChooserTitle"));
+        configureFileChooserDirectory(chooser);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+            "Quantum IR library DSL",
+            "*.qdsl"
+        ));
+        final java.io.File file = chooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            final DesktopLibraryAlgorithmFile libraryFile = libraryFileService.read(file.toPath());
+            final DesktopJavaDslImportResult importResult = javaDslImporter.importDsl(libraryFile.javaDslSource());
+            if (!importResult.isSuccess()) {
+                diagnosticsArea.setText(String.join(
+                    System.lineSeparator(),
+                    importResult.diagnostics()
+                ));
+                statusLabel.setText("Import .qdsl rejected by Java DSL importer");
+                return;
+            }
+            final Path target = libraryFileService.defaultLibraryDirectory().resolve(
+                libraryFileService.fileNameForId(libraryFile.descriptor().id())
+            );
+            libraryFileService.write(
+                target,
+                libraryFile
+            );
+            rememberFileChooserDirectory(file);
+            refreshLibraryLists();
+            selectUserLibraryFile(target);
+            statusLabel.setText("Imported .qdsl to user library: " + target);
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Import .qdsl failed");
+        }
+    }
+
+    private void saveCurrentAsLibraryFile(final Stage stage) {
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Quantum IR Library DSL");
+        chooser.setInitialFileName(libraryFileService.fileNameForId(libraryIdField.getText()));
+        configureFileChooserDirectory(chooser);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+            "Quantum IR library DSL",
+            "*.qdsl"
+        ));
+        final java.io.File file = chooser.showSaveDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            libraryFileService.write(
+                file.toPath(),
+                currentLibraryFile()
+            );
+            rememberFileChooserDirectory(file);
+            refreshLibraryLists();
+            selectUserLibraryFile(file.toPath());
+            statusLabel.setText("Saved library DSL: " + file.getAbsolutePath());
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Save library DSL failed");
+        }
+    }
+
+    private void selectUserLibraryFile(final Path path) {
+        for (int i = 0; i < userLibraryFiles.size(); i++) {
+            if (userLibraryFiles.get(i).equals(path)) {
+                userLibraryList.getSelectionModel().select(i);
+                userLibraryList.scrollTo(i);
+                return;
+            }
+        }
+    }
+
+    private DesktopLibraryAlgorithmFile currentLibraryFile() {
+        return new DesktopLibraryAlgorithmFile(
+            new QuantumAlgorithmDescriptor(
+                libraryIdField.getText().trim(),
+                libraryNameField.getText().trim(),
+                librarySummaryArea.getText().trim(),
+                libraryCategoryBox.getValue(),
+                libraryDifficultyBox.getValue(),
+                splitCommaList(libraryTagsField.getText()),
+                splitCommaList(libraryReferencesField.getText()),
+                List.of()
+            ),
+            generateCurrentJavaDsl()
+        );
+    }
+
+    private QuantumAlgorithmEntry selectedBuiltInEntry() {
+        final String selected = builtInLibraryList.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            return null;
+        }
+        final String id = selectedId(selected);
+        if (!algorithmLibrary.contains(id)) {
+            return null;
+        }
+        return algorithmLibrary.get(id);
+    }
+
+    private AlgorithmParameterSet parseLibraryParameters(final QuantumAlgorithmEntry entry) {
+        final AlgorithmParameterSet.Builder builder = AlgorithmParameterSet.builder();
+        final List<AlgorithmParameterDefinition> definitions = entry.descriptor().parameters();
+        for (int i = 0; i < definitions.size(); i++) {
+            final AlgorithmParameterDefinition definition = definitions.get(i);
+            final String value = parameterTextValue(
+                definition.name(),
+                String.valueOf(definition.defaultValue())
+            );
+            putLibraryParameter(
+                builder,
+                definition,
+                value
+            );
+        }
+        return builder.build();
+    }
+
+    private String parameterTextValue(
+        final String name,
+        final String fallback
+    ) {
+        final String[] lines = libraryParameterArea.getText().split("\\R");
+        for (int i = 0; i < lines.length; i++) {
+            final String line = lines[i].trim();
+            if (
+                line.isBlank()
+                || line.startsWith("#")
+            ) {
+                continue;
+            }
+            final int comment = line.indexOf('#');
+            final String valueLine = comment >= 0
+                ? line.substring(0, comment).trim()
+                : line;
+            final int separator = valueLine.indexOf('=');
+            if (separator <= 0) {
+                continue;
+            }
+            final String key = valueLine.substring(0, separator).trim();
+            if (key.equals(name)) {
+                return valueLine.substring(separator + 1).trim();
+            }
+        }
+        return fallback;
+    }
+
+    private void putLibraryParameter(
+        final AlgorithmParameterSet.Builder builder,
+        final AlgorithmParameterDefinition definition,
+        final String value
+    ) {
+        final AlgorithmParameterType type = definition.type();
+        if (type == AlgorithmParameterType.INTEGER) {
+            builder.integer(
+                definition.name(),
+                Integer.parseInt(value)
+            );
+        } else if (type == AlgorithmParameterType.LONG) {
+            builder.longInteger(
+                definition.name(),
+                Long.parseLong(value)
+            );
+        } else if (type == AlgorithmParameterType.DOUBLE) {
+            builder.decimal(
+                definition.name(),
+                Double.parseDouble(value)
+            );
+        } else if (type == AlgorithmParameterType.BOOLEAN) {
+            builder.bool(
+                definition.name(),
+                Boolean.parseBoolean(value)
+            );
+        } else {
+            builder.text(
+                definition.name(),
+                value
+            );
+        }
+    }
+
+    private String renderLibraryParameters(final QuantumAlgorithmEntry entry) {
+        if (entry.descriptor().parameters().isEmpty()) {
+            return uiText("libraryNoParameters");
+        }
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < entry.descriptor().parameters().size(); i++) {
+            final AlgorithmParameterDefinition parameter = entry.descriptor().parameters().get(i);
+            builder.append(parameter.name())
+                .append('=')
+                .append(parameter.defaultValue())
+                .append(" # ")
+                .append(localizedParameterType(parameter.type()))
+                .append(", ")
+                .append(parameter.description())
+                .append(System.lineSeparator());
+        }
+        return builder.toString();
+    }
+
+    private String renderLibraryDescriptor(final QuantumAlgorithmDescriptor descriptor) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("id: ").append(descriptor.id()).append(System.lineSeparator());
+        builder.append(uiText("libraryName")).append(": ").append(descriptor.displayName()).append(System.lineSeparator());
+        builder.append(uiText("libraryCategory")).append(": ").append(localizedCategory(descriptor.category())).append(System.lineSeparator());
+        builder.append(uiText("libraryDifficulty")).append(": ").append(localizedDifficulty(descriptor.difficulty())).append(System.lineSeparator());
+        builder.append("summary: ").append(descriptor.summary()).append(System.lineSeparator());
+        builder.append(uiText("libraryTags")).append(": ").append(String.join(
+            ", ",
+            descriptor.tags()
+        )).append(System.lineSeparator());
+        builder.append(uiText("libraryReferences")).append(": ").append(String.join(
+            ", ",
+            descriptor.referenceUris()
+        )).append(System.lineSeparator());
+        builder.append("parameters: ").append(descriptor.parameters().size()).append(System.lineSeparator());
+        return builder.toString();
+    }
+
+    private String localizedCategory(final AlgorithmCategory category) {
+        if (!russianLanguage()) {
+            return category.name();
+        }
+        return switch (category) {
+            case EDUCATION -> "обучение";
+            case ENTANGLEMENT -> "запутанность";
+            case ORACLE -> "оракулы";
+            case SEARCH -> "поиск";
+            case TRANSFORM -> "преобразования";
+            case PROTOCOL -> "протоколы";
+            case ARITHMETIC -> "арифметика";
+            case CRYPTOGRAPHY -> "криптография";
+            case ERROR_CORRECTION -> "коррекция ошибок";
+            case CHEMISTRY -> "химия";
+            case DIAGNOSTIC -> "диагностика";
+        };
+    }
+
+    private String localizedDifficulty(final AlgorithmDifficulty difficulty) {
+        if (!russianLanguage()) {
+            return difficulty.name();
+        }
+        return switch (difficulty) {
+            case INTRODUCTORY -> "начальный";
+            case INTERMEDIATE -> "средний";
+            case ADVANCED -> "продвинутый";
+            case RESEARCH -> "исследовательский";
+        };
+    }
+
+    private String localizedParameterType(final AlgorithmParameterType type) {
+        if (!russianLanguage()) {
+            return type.name();
+        }
+        return switch (type) {
+            case INTEGER -> "целое";
+            case LONG -> "длинное целое";
+            case DOUBLE -> "вещественное";
+            case BOOLEAN -> "логическое";
+            case STRING -> "строка";
+        };
+    }
+
+    private String lower(final String value) {
+        return value == null
+            ? ""
+            : value.toLowerCase(Locale.ROOT);
+    }
+
+    private String libraryEntryLabel(final QuantumAlgorithmDescriptor descriptor) {
+        return descriptor.id() + " - " + descriptor.displayName();
+    }
+
+    private String selectedId(final String item) {
+        final int separator = item.indexOf(" - ");
+        if (separator < 0) {
+            return item;
+        }
+        return item.substring(0, separator);
+    }
+
+    private List<String> splitCommaList(final String source) {
+        if (
+            source == null
+            || source.isBlank()
+        ) {
+            return List.of();
+        }
+        final ArrayList<String> result = new ArrayList<>();
+        final String[] values = source.split(",");
+        for (int i = 0; i < values.length; i++) {
+            final String value = values[i].trim();
+            if (!value.isBlank()) {
+                result.add(value);
+            }
+        }
+        return List.copyOf(result);
+    }
+
     private void saveJavaDsl(final Stage stage) {
         final FileChooser chooser = new FileChooser();
         chooser.setTitle("Save Quantum IR Java DSL");
@@ -3158,37 +3881,49 @@ public final class QuantumDesktopApplication extends Application {
             final String content = Files.readString(file.toPath());
             final DesktopJavaDslImportResult result = javaDslImporter.importDsl(content);
             rememberFileChooserDirectory(file);
-            javaDslArea.setText(content);
-            if (!result.isSuccess()) {
-                diagnosticsArea.setText(String.join(
-                    System.lineSeparator(),
-                    result.diagnostics()
-                ));
-                statusLabel.setText("Open Java DSL has diagnostics");
-                selectResultTab(uiText("tabDiagnostics"));
-                return;
-            }
-            clearActiveJsonProgram();
-            rememberOperations();
-            circuitNameField.setText(result.circuitName());
-            qregNameField.setText(result.quantumRegisterName());
-            qregSizeField.setText(Integer.toString(result.quantumRegisterSize()));
-            cregNameField.setText(result.classicalRegisterName());
-            cregSizeField.setText(Integer.toString(result.classicalRegisterSize()));
-            operations.clear();
-            operations.addAll(result.operations());
-            selectedOperationIndices.clear();
-            inspectionStepIndex = operations.isEmpty()
-                ? -1
-                : operations.size() - 1;
-            refreshReferenceBoxes();
-            refreshWorkspace();
-            selectResultTab("Java DSL");
-            statusLabel.setText("Opened Java DSL: " + file.getAbsolutePath());
+            applyJavaDslImportResult(
+                content,
+                result,
+                "Opened Java DSL: " + file.getAbsolutePath()
+            );
         } catch (final Exception exception) {
             diagnosticsArea.setText(exceptionMessage(exception));
             statusLabel.setText("Open Java DSL failed");
         }
+    }
+
+    private void applyJavaDslImportResult(
+        final String content,
+        final DesktopJavaDslImportResult result,
+        final String successStatus
+    ) {
+        javaDslArea.setText(content);
+        if (!result.isSuccess()) {
+            diagnosticsArea.setText(String.join(
+                System.lineSeparator(),
+                result.diagnostics()
+            ));
+            statusLabel.setText("Open Java DSL has diagnostics");
+            selectResultTab(uiText("tabDiagnostics"));
+            return;
+        }
+        clearActiveJsonProgram();
+        rememberOperations();
+        circuitNameField.setText(result.circuitName());
+        qregNameField.setText(result.quantumRegisterName());
+        qregSizeField.setText(Integer.toString(result.quantumRegisterSize()));
+        cregNameField.setText(result.classicalRegisterName());
+        cregSizeField.setText(Integer.toString(result.classicalRegisterSize()));
+        operations.clear();
+        operations.addAll(result.operations());
+        selectedOperationIndices.clear();
+        inspectionStepIndex = operations.isEmpty()
+            ? -1
+            : operations.size() - 1;
+        refreshReferenceBoxes();
+        refreshWorkspace();
+        selectResultTab("Java DSL");
+        statusLabel.setText(successStatus);
     }
 
     private void saveNativeJson(final Stage stage) {
@@ -3423,7 +4158,28 @@ public final class QuantumDesktopApplication extends Application {
         if (activeJsonProgram == null) {
             return;
         }
-        final DesktopIrProgramSnapshot snapshot = workspaceService.projectToGraphicalWorkspace(activeJsonProgram);
+        synchronizeWorkspaceWithProgram(activeJsonProgram);
+    }
+
+    private void loadProgramIntoWorkspace(
+        final QuantumProgram program,
+        final String status
+    ) {
+        if (program == null) {
+            throw new IllegalArgumentException("Desktop program must not be null.");
+        }
+        clearActiveJsonProgram();
+        rememberOperations();
+        synchronizeWorkspaceWithProgram(program);
+        final ValidationResult validation = workspaceService.validate(program);
+        statusLabel.setText(validation.isValid()
+            ? status
+            : status + " with validation errors: " + validation.errorCount());
+        refreshWorkspace();
+    }
+
+    private void synchronizeWorkspaceWithProgram(final QuantumProgram program) {
+        final DesktopIrProgramSnapshot snapshot = workspaceService.projectToGraphicalWorkspace(program);
         circuitNameField.setText(snapshot.circuitName());
         qregNameField.setText(snapshot.quantumRegisterName());
         qregSizeField.setText(Integer.toString(snapshot.quantumRegisterSize()));

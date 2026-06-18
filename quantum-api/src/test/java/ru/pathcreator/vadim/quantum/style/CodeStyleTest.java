@@ -57,7 +57,8 @@ class CodeStyleTest {
         "quantum-openqasm2",
         "quantum-openqasm3",
         "quantum-quil",
-        "quantum-api"
+        "quantum-api",
+        "quantum-library"
     };
 
     @Test

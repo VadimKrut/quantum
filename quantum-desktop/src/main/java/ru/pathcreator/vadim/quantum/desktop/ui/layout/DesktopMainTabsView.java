@@ -20,9 +20,11 @@ public final class DesktopMainTabsView {
     public TabPane build(
         final String nativeTabText,
         final String externalTabText,
+        final String libraryTabText,
         final String settingsTabText,
         final Node nativeWorkspace,
         final Node externalWorkspace,
+        final Node libraryWorkspace,
         final Node executionSettings
     ) {
         final TabPane tabs = new TabPane(
@@ -33,6 +35,10 @@ public final class DesktopMainTabsView {
             DesktopUiNodes.tab(
                 externalTabText,
                 externalWorkspace
+            ),
+            DesktopUiNodes.tab(
+                libraryTabText,
+                libraryWorkspace
             ),
             DesktopUiNodes.tab(
                 settingsTabText,
