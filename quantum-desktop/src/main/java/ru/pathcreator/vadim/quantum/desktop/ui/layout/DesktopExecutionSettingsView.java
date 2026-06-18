@@ -38,6 +38,7 @@ public final class DesktopExecutionSettingsView {
         final CheckBox skipBackendBox,
         final CheckBox autoSimulationBox,
         final CheckBox hideZeroProbabilityBox,
+        final CheckBox registerBitOrderBox,
         final CheckBox canonicalizeParametersBox,
         final CheckBox removeIdentityBox,
         final CheckBox inlineCompositeBox,
@@ -84,7 +85,8 @@ public final class DesktopExecutionSettingsView {
             3,
             text.apply("settingsLiveUi"),
             autoSimulationBox,
-            hideZeroProbabilityBox
+            hideZeroProbabilityBox,
+            registerBitOrderBox
         );
         addOptionRow(
             grid,

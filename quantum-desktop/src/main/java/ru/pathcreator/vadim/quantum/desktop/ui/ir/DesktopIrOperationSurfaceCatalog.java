@@ -19,97 +19,129 @@ import ru.pathcreator.vadim.quantum.domain.operation.OperationKind;
  */
 public final class DesktopIrOperationSurfaceCatalog {
 
-    private final EnumMap<OperationKind, String> descriptions = new EnumMap<>(OperationKind.class);
+    private final EnumMap<OperationKind, String> russianDescriptions = new EnumMap<>(OperationKind.class);
+    private final EnumMap<OperationKind, String> englishDescriptions = new EnumMap<>(OperationKind.class);
 
     public DesktopIrOperationSurfaceCatalog() {
-        descriptions.put(
+        put(
             OperationKind.GATE,
-            "Квантовый gate: стандартный, custom, parameterized или modified."
+            "Квантовый gate: стандартный, custom, parameterized или modified.",
+            "Quantum gate: standard, custom, parameterized or modified."
         );
-        descriptions.put(
+        put(
             OperationKind.MEASURE,
-            "Измерение qubit в classical bit."
+            "Измерение qubit в classical bit.",
+            "Measures a qubit into a classical bit."
         );
-        descriptions.put(
+        put(
             OperationKind.RESET,
-            "Сброс qubit в состояние |0>."
+            "Сброс qubit в состояние |0>.",
+            "Resets a qubit to |0>."
         );
-        descriptions.put(
+        put(
             OperationKind.BARRIER,
-            "Барьер для группы quantum references."
+            "Барьер для группы quantum references.",
+            "Barrier for a group of quantum references."
         );
-        descriptions.put(
+        put(
             OperationKind.CONTROLLED,
-            "Quantum-controlled операция поверх вложенной операции."
+            "Quantum-controlled операция поверх вложенной операции.",
+            "Quantum-controlled wrapper over a nested operation."
         );
-        descriptions.put(
+        put(
             OperationKind.CLASSICAL_ASSIGNMENT,
-            "Присваивание в classical expression target."
+            "Присваивание в classical expression target.",
+            "Assignment into a classical expression target."
         );
-        descriptions.put(
+        put(
             OperationKind.CLASSICAL_DECLARATION,
-            "Локальное classical declaration внутри operation stream."
+            "Локальное classical declaration внутри operation stream.",
+            "Local classical declaration inside an operation stream."
         );
-        descriptions.put(
+        put(
             OperationKind.CLASSICAL_ARRAY_DECLARATION,
-            "Локальное declaration classical array."
+            "Локальное declaration classical array.",
+            "Local classical array declaration."
         );
-        descriptions.put(
+        put(
             OperationKind.CALLABLE_INVOCATION,
-            "Вызов callable, subroutine или extern declaration."
+            "Вызов callable, subroutine или extern declaration.",
+            "Invocation of a callable, subroutine or extern declaration."
         );
-        descriptions.put(
+        put(
             OperationKind.CLASSICALLY_CONTROLLED,
-            "Операция под classical predicate."
+            "Операция под classical predicate.",
+            "Operation guarded by a classical predicate."
         );
-        descriptions.put(
+        put(
             OperationKind.BLOCK,
-            "Лексический block с вложенным operation block."
+            "Лексический block с вложенным operation block.",
+            "Lexical block with nested operations."
         );
-        descriptions.put(
+        put(
             OperationKind.CONDITIONAL_BLOCK,
-            "If/else block по classical predicate."
+            "If/else block по classical predicate.",
+            "If/else block guarded by a classical predicate."
         );
-        descriptions.put(
+        put(
             OperationKind.FOR_LOOP,
-            "Цикл по дискретному числовому диапазону."
+            "Цикл по дискретному числовому диапазону.",
+            "Loop over a discrete numeric range."
         );
-        descriptions.put(
+        put(
             OperationKind.SYMBOLIC_FOR_LOOP,
-            "Цикл с symbolic/runtime границами."
+            "Цикл с symbolic/runtime границами.",
+            "Loop with symbolic or runtime bounds."
         );
-        descriptions.put(
+        put(
             OperationKind.WHILE_LOOP,
-            "Цикл с classical predicate продолжения."
+            "Цикл с classical predicate продолжения.",
+            "Loop with a classical continuation predicate."
         );
-        descriptions.put(
+        put(
             OperationKind.DELAY,
-            "Timing delay на quantum references."
+            "Timing delay на quantum references.",
+            "Timing delay on quantum references."
         );
-        descriptions.put(
+        put(
             OperationKind.TIMING_BOX,
-            "Timing box с вложенными операциями и опциональной duration."
+            "Timing box с вложенными операциями и опциональной duration.",
+            "Timing box with nested operations and optional duration."
         );
-        descriptions.put(
+        put(
             OperationKind.LABEL,
-            "Label для branch/control-flow навигации."
+            "Label для branch/control-flow навигации.",
+            "Label for branch and control-flow navigation."
         );
-        descriptions.put(
+        put(
             OperationKind.BRANCH,
-            "Branch к label, включая conditional branch."
+            "Branch к label, включая conditional branch.",
+            "Branch to a label, including conditional branch."
         );
-        descriptions.put(
+        put(
             OperationKind.HALT,
-            "Остановка выполнения программы."
+            "Остановка выполнения программы.",
+            "Stops program execution."
         );
-        descriptions.put(
+        put(
             OperationKind.WAIT,
-            "Ожидание runtime/backend события."
+            "Ожидание runtime/backend события.",
+            "Waits for a runtime or backend event."
         );
     }
 
     public String description(final OperationKind kind) {
-        final String description = descriptions.get(kind);
+        return description(
+            kind,
+            true
+        );
+    }
+
+    public String description(
+        final OperationKind kind,
+        final boolean russian
+    ) {
+        final String description = descriptions(russian).get(kind);
         if (description == null) {
             throw new IllegalStateException("Desktop IR operation surface is missing description for " + kind + ".");
         }
@@ -117,23 +149,59 @@ public final class DesktopIrOperationSurfaceCatalog {
     }
 
     public Map<OperationKind, String> descriptions() {
-        return Map.copyOf(descriptions);
+        return descriptions(true);
+    }
+
+    public Map<OperationKind, String> descriptions(final boolean russian) {
+        return Map.copyOf(russian
+            ? russianDescriptions
+            : englishDescriptions);
     }
 
     public String render() {
+        return render(true);
+    }
+
+    public String render(final boolean russian) {
         final StringBuilder text = new StringBuilder();
-        text.append("Полная поверхность Quantum IR").append(System.lineSeparator());
-        text.append("  Все операции ниже поддерживаются desktop через Native JSON/API workflow.").append(System.lineSeparator());
-        text.append("  Gate-flow canvas остается интерактивной проекцией, а не ограничением IR.").append(System.lineSeparator());
+        text.append(russian
+            ? "Полная поверхность Quantum IR"
+            : "Full Quantum IR Surface").append(System.lineSeparator());
+        text.append(russian
+            ? "  Все операции ниже поддерживаются desktop через Native JSON/API workflow."
+            : "  Every operation below is supported by the desktop through the Native JSON/API workflow.")
+            .append(System.lineSeparator());
+        text.append(russian
+            ? "  Gate-flow canvas остается интерактивной проекцией, а не ограничением IR."
+            : "  The gate-flow canvas is an interactive projection, not a limit of the IR.")
+            .append(System.lineSeparator());
         text.append(System.lineSeparator());
         final OperationKind[] kinds = OperationKind.values();
         for (int i = 0; i < kinds.length; i++) {
             text.append(kinds[i].name())
                 .append(System.lineSeparator())
                 .append("  ")
-                .append(description(kinds[i]))
+                .append(description(
+                    kinds[i],
+                    russian
+                ))
                 .append(System.lineSeparator());
         }
         return text.toString();
+    }
+
+    private void put(
+        final OperationKind kind,
+        final String russianDescription,
+        final String englishDescription
+    ) {
+        russianDescriptions.put(
+            kind,
+            russianDescription
+        );
+        englishDescriptions.put(
+            kind,
+            englishDescription
+        );
     }
 }

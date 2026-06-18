@@ -10,7 +10,8 @@
 package ru.pathcreator.vadim.quantum.desktop.ui.audit;
 
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
-import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmplitude;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.SimulationChartProjection;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.StateVectorDisplayRow;
 import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrWorkspaceService;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
@@ -20,6 +21,8 @@ import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
  * Проверяет квантовую семантику UI-smoke сценариев без зависимости от JavaFX-узлов.
  */
 public final class DesktopUiSmokeSemanticAssertions {
+
+    private static final SimulationChartProjection CHART_PROJECTION = new SimulationChartProjection();
 
     private DesktopUiSmokeSemanticAssertions() {
     }
@@ -103,10 +106,13 @@ public final class DesktopUiSmokeSemanticAssertions {
         final String basisState,
         final double expected
     ) {
-        for (final StateVectorAmplitude amplitude : simulation.stateVector()) {
-            if (basisState.equals(amplitude.basisState())) {
-                final double actual = amplitude.real() * amplitude.real()
-                    + amplitude.imaginary() * amplitude.imaginary();
+        final java.util.List<StateVectorDisplayRow> rows = CHART_PROJECTION.stateVectorRows(
+            simulation,
+            false
+        );
+        for (final StateVectorDisplayRow row : rows) {
+            if (basisState.equals(row.basisState())) {
+                final double actual = row.probability();
                 if (Math.abs(actual - expected) > 1.0e-10) {
                     throw new IllegalStateException("Unexpected probability for " + basisState + ": " + actual + ".");
                 }

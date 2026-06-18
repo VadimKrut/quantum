@@ -40,19 +40,23 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.QSpherePoint;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.QSphereProjection;
 
 /**
  * Показывает JavaFX 3D q-sphere для state-vector результата локальной симуляции.
  */
 public final class DesktopQSphereView {
 
-    private static final double SCENE_SIZE = 340.0;
-    private static final double SPHERE_RADIUS = 92.0;
+    private static final double COMPACT_SCENE_SIZE = 340.0;
+    private static final double EXPANDED_SCENE_SIZE = 700.0;
+    private static final double COMPACT_SPHERE_RADIUS = 92.0;
+    private static final double EXPANDED_SPHERE_RADIUS = 220.0;
     private static final double EPSILON = 1.0e-12;
     private static final int MAX_RENDERED_MARKERS = 256;
     private static final int MAX_LEGEND_STATES = 20;
 
-    private final DesktopQSphereProjection projection = new DesktopQSphereProjection();
+    private final QSphereProjection projection = new QSphereProjection();
     private final BorderPane root = new BorderPane();
     private final Group rotatingGroup = new Group();
     private final Rotate manualPitch = new Rotate(
@@ -114,8 +118,8 @@ public final class DesktopQSphereView {
         addSphereShell();
         addLatitudeRings(simulation.qubitCount());
         addAxes();
-        final List<DesktopQSpherePoint> points = projection.project(simulation);
-        final List<DesktopQSpherePoint> visiblePoints = visiblePoints(points);
+        final List<QSpherePoint> points = projection.project(simulation);
+        final List<QSpherePoint> visiblePoints = visiblePoints(points);
         addStateMarkers(visiblePoints);
         final Group sceneRoot = new Group();
         sceneRoot.getChildren().addAll(
@@ -123,10 +127,11 @@ public final class DesktopQSphereView {
             ambientLight(),
             keyLight()
         );
+        final double sceneSize = sceneSize();
         final SubScene subScene = new SubScene(
             sceneRoot,
-            SCENE_SIZE,
-            SCENE_SIZE,
+            sceneSize,
+            sceneSize,
             true,
             javafx.scene.SceneAntialiasing.BALANCED
         );
@@ -136,7 +141,7 @@ public final class DesktopQSphereView {
             31
         ));
         final PerspectiveCamera camera = new PerspectiveCamera(true);
-        camera.setTranslateZ(-470.0);
+        camera.setTranslateZ(expandedView ? -930.0 : -470.0);
         camera.setNearClip(0.1);
         camera.setFarClip(2000.0);
         subScene.setCamera(camera);
@@ -162,8 +167,22 @@ public final class DesktopQSphereView {
         root.setBottom(null);
     }
 
+    private double sceneSize() {
+        return expandedView ? EXPANDED_SCENE_SIZE : COMPACT_SCENE_SIZE;
+    }
+
+    private double sphereRadius() {
+        return expandedView ? EXPANDED_SPHERE_RADIUS : COMPACT_SPHERE_RADIUS;
+    }
+
+    private double markerRadius(final double probability) {
+        final double baseRadius = expandedView ? 4.0 : 2.4;
+        final double probabilityRadius = expandedView ? 42.0 : 22.0;
+        return baseRadius + probabilityRadius * Math.sqrt(probability);
+    }
+
     private void addSphereShell() {
-        final Sphere shell = new Sphere(SPHERE_RADIUS);
+        final Sphere shell = new Sphere(sphereRadius());
         final PhongMaterial material = new PhongMaterial(Color.rgb(
             96,
             165,
@@ -176,6 +195,7 @@ public final class DesktopQSphereView {
     }
 
     private void addLatitudeRings(final int qubitCount) {
+        final double radiusScale = sphereRadius();
         final int safeQubitCount = Math.max(
             1,
             qubitCount
@@ -187,7 +207,7 @@ public final class DesktopQSphereView {
             final double radius = Math.sqrt(Math.max(
                 0.0,
                 1.0 - z * z
-            )) * SPHERE_RADIUS;
+            )) * radiusScale;
             if (radius < 1.0) {
                 continue;
             }
@@ -200,7 +220,7 @@ public final class DesktopQSphereView {
                 0.45
             ));
             ring.setStrokeWidth(1.2);
-            ring.setTranslateY(-z * SPHERE_RADIUS);
+            ring.setTranslateY(-z * radiusScale);
             ring.getTransforms().add(new Rotate(
                 90.0,
                 Rotate.X_AXIS
@@ -210,8 +230,9 @@ public final class DesktopQSphereView {
     }
 
     private void addAxes() {
+        final double radiusScale = sphereRadius();
         rotatingGroup.getChildren().add(axis(
-            SPHERE_RADIUS * 2.25,
+            radiusScale * 2.25,
             Color.rgb(
                 96,
                 165,
@@ -220,7 +241,7 @@ public final class DesktopQSphereView {
             Axis.X
         ));
         rotatingGroup.getChildren().add(axis(
-            SPHERE_RADIUS * 2.25,
+            radiusScale * 2.25,
             Color.rgb(
                 52,
                 211,
@@ -229,7 +250,7 @@ public final class DesktopQSphereView {
             Axis.Y
         ));
         rotatingGroup.getChildren().add(axis(
-            SPHERE_RADIUS * 2.25,
+            radiusScale * 2.25,
             Color.rgb(
                 244,
                 114,
@@ -263,16 +284,17 @@ public final class DesktopQSphereView {
         return cylinder;
     }
 
-    private void addStateMarkers(final List<DesktopQSpherePoint> points) {
+    private void addStateMarkers(final List<QSpherePoint> points) {
+        final double radiusScale = sphereRadius();
         for (int i = 0; i < points.size(); i++) {
-            final DesktopQSpherePoint point = points.get(i);
+            final QSpherePoint point = points.get(i);
             if (point.probability() < EPSILON) {
                 continue;
             }
-            final double x = point.x() * SPHERE_RADIUS;
-            final double y = -point.z() * SPHERE_RADIUS;
-            final double z = point.y() * SPHERE_RADIUS;
-            final double markerRadius = 2.4 + 22.0 * Math.sqrt(point.probability());
+            final double x = point.x() * radiusScale;
+            final double y = -point.z() * radiusScale;
+            final double z = point.y() * radiusScale;
+            final double markerRadius = markerRadius(point.probability());
             final Sphere marker = new Sphere(markerRadius);
             marker.setTranslateX(x);
             marker.setTranslateY(y);
@@ -321,8 +343,8 @@ public final class DesktopQSphereView {
         subScene.setOnScroll(event -> {
             camera.setTranslateZ(clamp(
                 camera.getTranslateZ() + event.getDeltaY() * 0.45,
-                -780.0,
-                -260.0
+                expandedView ? -1400.0 : -780.0,
+                expandedView ? -560.0 : -260.0
             ));
             event.consume();
         });
@@ -385,8 +407,8 @@ public final class DesktopQSphereView {
         );
         final Scene scene = new Scene(
             expandedRoot,
-            940.0,
-            820.0
+            1180.0,
+            920.0
         );
         final String stylesheet = DesktopQSphereView.class
             .getResource("/ru/pathcreator/vadim/quantum/desktop/ui/quantum-desktop.css")
@@ -395,11 +417,13 @@ public final class DesktopQSphereView {
         final Stage stage = new Stage();
         stage.setTitle("Q-sphere expanded");
         stage.setScene(scene);
+        stage.setMinWidth(960.0);
+        stage.setMinHeight(760.0);
         stage.show();
     }
 
     private static VBox legend(
-        final List<DesktopQSpherePoint> points,
+        final List<QSpherePoint> points,
         final int significantPointCount
     ) {
         final HBox firstRow = new HBox(
@@ -425,7 +449,7 @@ public final class DesktopQSphereView {
             MAX_LEGEND_STATES
         );
         for (int i = 0; i < legendLimit; i++) {
-            final DesktopQSpherePoint point = points.get(i);
+            final QSpherePoint point = points.get(i);
             if (point.probability() >= EPSILON) {
                 stateRow.getChildren().add(stateBadge(point));
             }
@@ -445,8 +469,8 @@ public final class DesktopQSphereView {
         return box;
     }
 
-    private static List<DesktopQSpherePoint> visiblePoints(final List<DesktopQSpherePoint> points) {
-        final ArrayList<DesktopQSpherePoint> significant = new ArrayList<>();
+    private static List<QSpherePoint> visiblePoints(final List<QSpherePoint> points) {
+        final ArrayList<QSpherePoint> significant = new ArrayList<>();
         for (int i = 0; i < points.size(); i++) {
             if (points.get(i).probability() >= EPSILON) {
                 significant.add(points.get(i));
@@ -465,7 +489,7 @@ public final class DesktopQSphereView {
         ));
     }
 
-    private static int significantPointCount(final List<DesktopQSpherePoint> points) {
+    private static int significantPointCount(final List<QSpherePoint> points) {
         int count = 0;
         for (int i = 0; i < points.size(); i++) {
             if (points.get(i).probability() >= EPSILON) {
@@ -475,7 +499,7 @@ public final class DesktopQSphereView {
         return count;
     }
 
-    private static Label stateBadge(final DesktopQSpherePoint point) {
+    private static Label stateBadge(final QSpherePoint point) {
         final Label label = new Label(point.basisState() + " " + percent(point.probability()));
         label.getStyleClass().add("state-badge");
         label.setMinWidth(Region.USE_PREF_SIZE);

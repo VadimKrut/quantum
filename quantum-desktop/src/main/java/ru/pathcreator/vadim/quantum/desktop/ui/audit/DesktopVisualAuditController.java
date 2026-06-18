@@ -135,6 +135,7 @@ public final class DesktopVisualAuditController {
             (System.nanoTime() - startedNano.longValue()) / 1_000_000L
         );
     }
+
     @FunctionalInterface
     public interface DesktopScreenshotStatePreparer {
 

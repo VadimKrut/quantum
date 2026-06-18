@@ -14,6 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrOperationSpec;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
 
 class DesktopOperationLabelRendererTest {
 
@@ -45,6 +48,88 @@ class DesktopOperationLabelRendererTest {
                 "q[0]",
                 "c[2]",
                 0.5
+            ))
+        );
+    }
+
+    @Test
+    void rendersStructuredShortcutSummaries() {
+        assertEquals(
+            "IF c[2] == 7 THEN body 0 ELSE body 0",
+            renderer.renderSummary(new DesktopIrOperationSpec(
+                "IF_BLOCK",
+                "q[0]",
+                "q[0]",
+                "q[0]",
+                "c[2]",
+                7.0
+            ))
+        );
+        assertEquals(
+            "SYM_FOR k 0..expr(5) body 0",
+            renderer.renderSummary(new DesktopIrOperationSpec(
+                "SYM_FOR",
+                "q[0]",
+                "q[0]",
+                "q[0]",
+                "c[0]",
+                5.0,
+                0.0,
+                0.0,
+                20.0,
+                "NS",
+                "k"
+            ))
+        );
+    }
+
+    @Test
+    void rendersComplexClassicalPredicateSummary() {
+        final ClassicalPredicate predicate = ClassicalPredicate.not(ClassicalPredicate.or(
+            ClassicalPredicate.compare(
+                ClassicalExpression.symbolicReference("flag[0]"),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            ClassicalPredicate.compare(
+                ClassicalExpression.variable("counter"),
+                ClassicalComparisonOperator.GREATER_THAN_OR_EQUAL,
+                ClassicalExpression.integer(3L)
+            )
+        ));
+
+        assertEquals(
+            "WHILE not ((flag[0] == 1) or (counter >= 3)) body 0",
+            renderer.renderSummary(new DesktopIrOperationSpec(
+                "WHILE",
+                "q[0]",
+                "q[0]",
+                "q[0]",
+                "c[0]",
+                1.0,
+                0.0,
+                0.0,
+                20.0,
+                "NS",
+                "while",
+                predicate,
+                java.util.List.of(),
+                java.util.List.of()
+            ))
+        );
+    }
+
+    @Test
+    void rendersEditableWhileShortcutPredicateSummary() {
+        assertEquals(
+            "WHILE c[1] == 3 body 0",
+            renderer.renderSummary(new DesktopIrOperationSpec(
+                "WHILE",
+                "q[0]",
+                "q[0]",
+                "q[0]",
+                "c[1]",
+                3.0
             ))
         );
     }

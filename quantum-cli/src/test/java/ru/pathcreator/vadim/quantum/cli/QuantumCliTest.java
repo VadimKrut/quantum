@@ -18,6 +18,22 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ru.pathcreator.vadim.quantum.api.Quantum;
+import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
+import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
+import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
+import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
+import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
+import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
+import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -216,6 +232,32 @@ class QuantumCliTest {
         assertTrue(result.stdout().contains("\"shots\" : 128"));
         assertTrue(result.stdout().contains("\"counts\""));
         assertTrue(result.stdout().contains("\"stateVectorSize\""));
+    }
+
+    @Test
+    void simulatesNativeJsonWithClassicalControlSurface() throws Exception {
+        final Path source = writeClassicalControlNativeJson();
+
+        final CliRunResult result = run(
+            "simulate",
+            "--input",
+            source.toString(),
+            "--input-format",
+            "json",
+            "--format",
+            "json",
+            "--shots",
+            "64",
+            "--seed",
+            "7"
+        );
+
+        assertEquals(
+            QuantumCli.EXIT_SUCCESS,
+            result.exitCode()
+        );
+        assertTrue(result.stdout().contains("\"success\" : true"));
+        assertTrue(result.stdout().contains("\"1\" : 64"));
     }
 
     @Test
@@ -669,6 +711,84 @@ class QuantumCliTest {
             }
         );
         return project;
+    }
+
+    private Path writeClassicalControlNativeJson() throws Exception {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("classical_control");
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        final ClassicalRegister c = circuit.createClassicalRegister(
+            "c",
+            1
+        );
+        final ClassicalBit bit = c.get(0);
+        circuit.assign(new ClassicalAssignment(
+            ClassicalExpression.bit(bit),
+            ClassicalExpression.integer(1L)
+        ));
+        circuit.classicallyControlled(
+            ClassicalPredicate.compare(
+                ClassicalExpression.bit(bit),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )
+        );
+        circuit.controlled(
+            ClassicalCondition.equalTo(
+                c,
+                1L
+            ),
+            GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )
+        );
+        circuit.conditionalBlock(
+            ClassicalPredicate.compare(
+                ClassicalExpression.bit(bit),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            OperationBlock.of(GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )),
+            null
+        );
+        circuit.symbolicForLoop(new SymbolicForLoopOperation(
+            "j",
+            "int",
+            ClassicalExpression.integer(0L),
+            ClassicalExpression.integer(1L),
+            ClassicalExpression.integer(1L),
+            OperationBlock.of(
+                GateOperation.of(
+                    StandardGate.X,
+                    q.get(0)
+                ),
+                GateOperation.of(
+                    StandardGate.X,
+                    q.get(0)
+                )
+            )
+        ));
+        circuit.measure(
+            q.get(0),
+            bit
+        );
+        final Path source = tempDir.resolve("classical-control.quantum.json");
+        Files.writeString(
+            source,
+            Quantum.writeJson(program).content()
+        );
+        return source;
     }
 
     private static void createDirectories(

@@ -21,15 +21,23 @@ import ru.pathcreator.vadim.quantum.domain.bit.ClassicalBit;
 import ru.pathcreator.vadim.quantum.domain.bit.Qubit;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalAssignment;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalComparisonOperator;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalDeclaration;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalExpression;
 import ru.pathcreator.vadim.quantum.domain.classical.ClassicalPredicate;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalType;
+import ru.pathcreator.vadim.quantum.domain.classical.ClassicalTypeKind;
 import ru.pathcreator.vadim.quantum.domain.gate.ParameterExpression;
 import ru.pathcreator.vadim.quantum.domain.gate.StandardGate;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumCircuit;
 import ru.pathcreator.vadim.quantum.domain.model.QuantumProgram;
+import ru.pathcreator.vadim.quantum.domain.operation.CallableInvocationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalArrayDeclarationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalDeclarationOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.ClassicalCondition;
 import ru.pathcreator.vadim.quantum.domain.operation.GateOperation;
 import ru.pathcreator.vadim.quantum.domain.operation.OperationBlock;
 import ru.pathcreator.vadim.quantum.domain.operation.BranchOperation;
+import ru.pathcreator.vadim.quantum.domain.operation.SymbolicForLoopOperation;
 import ru.pathcreator.vadim.quantum.domain.parameter.ParameterBindings;
 import ru.pathcreator.vadim.quantum.domain.register.ClassicalRegister;
 import ru.pathcreator.vadim.quantum.domain.register.QuantumRegister;
@@ -410,6 +418,128 @@ class QuantumSimulatorTest {
         assertEquals(
             SimulationDiagnosticSeverity.WARNING,
             result.diagnostics().get(0).severity()
+        );
+    }
+
+    @Test
+    void simulatesClassicalAndStructuralShortcutOperations() {
+        final QuantumProgram program = QuantumProgram.gateBased();
+        final QuantumCircuit circuit = program.createCircuit("classical_surface");
+        final QuantumRegister q = circuit.createQuantumRegister(
+            "q",
+            1
+        );
+        final ClassicalRegister c = circuit.createClassicalRegister(
+            "c",
+            1
+        );
+        final ClassicalBit bit = c.get(0);
+        circuit.classicalDeclaration(new ClassicalDeclarationOperation(
+            new ClassicalDeclaration(
+                "flag",
+                ClassicalType.of(ClassicalTypeKind.BIT)
+            ),
+            ClassicalExpression.integer(1L)
+        ));
+        circuit.classicalArrayDeclaration(new ClassicalArrayDeclarationOperation(
+            "scratch",
+            ClassicalType.of(ClassicalTypeKind.BIT),
+            java.util.List.of(ClassicalExpression.integer(2L)),
+            "{1, 0}"
+        ));
+        circuit.assign(new ClassicalAssignment(
+            ClassicalExpression.bit(bit),
+            ClassicalExpression.integer(1L)
+        ));
+        circuit.classicallyControlled(
+            ClassicalPredicate.compare(
+                ClassicalExpression.bit(bit),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )
+        );
+        circuit.controlled(
+            ClassicalCondition.equalTo(
+                c,
+                1L
+            ),
+            GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )
+        );
+        circuit.block(OperationBlock.of());
+        circuit.conditionalBlock(
+            ClassicalPredicate.compare(
+                ClassicalExpression.bit(bit),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            OperationBlock.of(GateOperation.of(
+                StandardGate.X,
+                q.get(0)
+            )),
+            null
+        );
+        circuit.forLoop(
+            "i",
+            0L,
+            1L,
+            2L,
+            OperationBlock.of()
+        );
+        circuit.symbolicForLoop(new SymbolicForLoopOperation(
+            "j",
+            "int",
+            ClassicalExpression.integer(0L),
+            ClassicalExpression.integer(1L),
+            ClassicalExpression.integer(1L),
+            OperationBlock.of(
+                GateOperation.of(
+                    StandardGate.X,
+                    q.get(0)
+                ),
+                GateOperation.of(
+                    StandardGate.X,
+                    q.get(0)
+                )
+            )
+        ));
+        circuit.whileLoop(
+            ClassicalPredicate.compare(
+                ClassicalExpression.integer(0L),
+                ClassicalComparisonOperator.EQUAL,
+                ClassicalExpression.integer(1L)
+            ),
+            OperationBlock.of()
+        );
+        circuit.callableInvocation(new CallableInvocationOperation(
+            "externalMarker",
+            null,
+            java.util.List.of(),
+            java.util.List.of()
+        ));
+        circuit.measure(
+            q.get(0),
+            bit
+        );
+
+        final SimulationResult result = new QuantumSimulator().simulate(
+            program,
+            SimulationOptions.builder()
+                .shots(64)
+                .seed(7L)
+                .build()
+        );
+
+        assertTrue(result.isSuccess());
+        assertEquals(
+            64L,
+            result.counts().get("1")
         );
     }
 

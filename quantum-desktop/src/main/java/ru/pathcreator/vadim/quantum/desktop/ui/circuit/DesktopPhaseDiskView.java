@@ -10,8 +10,6 @@
 package ru.pathcreator.vadim.quantum.desktop.ui.circuit;
 
 import java.util.ArrayList;
-import java.util.List;
-
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
@@ -21,7 +19,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
-import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmplitude;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.PhaseDiskProjection;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.SingleQubitPhaseDiskState;
 
 /**
  * Показывает локальные phase-disk индикаторы для каждого qubit по reduced state из state-vector.
@@ -29,8 +28,9 @@ import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmp
 public final class DesktopPhaseDiskView {
 
     private static final double DISK_SIZE = 52.0;
-    private static final double EPSILON = 1.0E-12;
+    private static final int MAX_RENDERED_QUBITS = 18;
 
+    private final PhaseDiskProjection projection = new PhaseDiskProjection();
     private final VBox root = new VBox(8.0);
     private boolean russian;
 
@@ -70,26 +70,22 @@ public final class DesktopPhaseDiskView {
         nodes.add(hint(russian
             ? "Локальное состояние qubit на текущем шаге инспекции."
             : "Local qubit state at the current inspect step."));
-        final int qubitLimit = Math.min(
-            simulation.qubitCount(),
-            18
+        final java.util.List<SingleQubitPhaseDiskState> states = projection.project(
+            simulation,
+            MAX_RENDERED_QUBITS
         );
-        for (int qubitIndex = 0; qubitIndex < qubitLimit; qubitIndex++) {
-            final SingleQubitState state = reducedState(
-                simulation.stateVector(),
-                simulation.qubitCount(),
-                qubitIndex
-            );
+        for (int i = 0; i < states.size(); i++) {
+            final SingleQubitPhaseDiskState state = states.get(i);
             nodes.add(row(
-                qubitIndex,
+                state.qubitIndex(),
                 state
             ));
         }
-        if (simulation.qubitCount() > qubitLimit) {
+        if (simulation.qubitCount() > states.size()) {
             nodes.add(hint(russian
-                ? "Показаны первые " + qubitLimit + " из " + simulation.qubitCount()
+                ? "Показаны первые " + states.size() + " из " + simulation.qubitCount()
                     + " qubits, чтобы интерфейс оставался отзывчивым."
-                : "Showing first " + qubitLimit + " of " + simulation.qubitCount()
+                : "Showing first " + states.size() + " of " + simulation.qubitCount()
                     + " qubits to keep the workspace responsive."));
         }
         root.getChildren().setAll(nodes);
@@ -110,7 +106,7 @@ public final class DesktopPhaseDiskView {
 
     private static Node row(
         final int qubitIndex,
-        final SingleQubitState state
+        final SingleQubitPhaseDiskState state
     ) {
         final Canvas canvas = new Canvas(
             DISK_SIZE,
@@ -141,7 +137,7 @@ public final class DesktopPhaseDiskView {
 
     private static void drawDisk(
         final GraphicsContext graphics,
-        final SingleQubitState state
+        final SingleQubitPhaseDiskState state
     ) {
         final double radius = DISK_SIZE / 2.0 - 4.0;
         final double center = DISK_SIZE / 2.0;
@@ -200,58 +196,6 @@ public final class DesktopPhaseDiskView {
         );
     }
 
-    private static SingleQubitState reducedState(
-        final List<StateVectorAmplitude> amplitudes,
-        final int qubitCount,
-        final int qubitIndex
-    ) {
-        double p0 = 0.0;
-        double p1 = 0.0;
-        double coherenceReal = 0.0;
-        double coherenceImaginary = 0.0;
-        for (int i = 0; i < amplitudes.size(); i++) {
-            final StateVectorAmplitude amplitude = amplitudes.get(i);
-            final int bitPosition = qubitIndex;
-            if (amplitude.basisState().charAt(bitPosition) == '0') {
-                p0 += probability(amplitude);
-                final int pairIndex = i ^ (1 << (qubitCount - bitPosition - 1));
-                if (
-                    pairIndex >= 0
-                    && pairIndex < amplitudes.size()
-                ) {
-                    final StateVectorAmplitude other = amplitudes.get(pairIndex);
-                    coherenceReal += amplitude.real() * other.real()
-                        + amplitude.imaginary() * other.imaginary();
-                    coherenceImaginary += amplitude.imaginary() * other.real()
-                        - amplitude.real() * other.imaginary();
-                }
-            } else {
-                p1 += probability(amplitude);
-            }
-        }
-        final double x = 2.0 * coherenceReal;
-        final double y = 2.0 * coherenceImaginary;
-        final double z = p0 - p1;
-        final double purity = Math.min(
-            1.0,
-            Math.sqrt(x * x + y * y + z * z)
-        );
-        final double phase = Math.atan2(
-            y,
-            Math.abs(x) < EPSILON && Math.abs(y) < EPSILON ? EPSILON : x
-        );
-        return new SingleQubitState(
-            clamp(p1),
-            phase,
-            purity
-        );
-    }
-
-    private static double probability(final StateVectorAmplitude amplitude) {
-        return amplitude.real() * amplitude.real()
-            + amplitude.imaginary() * amplitude.imaginary();
-    }
-
     private static Color phaseColor(final double phase) {
         final double hue = (Math.toDegrees(phase) + 360.0) % 360.0;
         return Color.hsb(
@@ -261,28 +205,11 @@ public final class DesktopPhaseDiskView {
         );
     }
 
-    private static double clamp(final double value) {
-        return Math.max(
-            0.0,
-            Math.min(
-                1.0,
-                value
-            )
-        );
-    }
-
     private static String percent(final double value) {
         return String.format(
             java.util.Locale.ROOT,
             "%.1f%%",
             value * 100.0
         );
-    }
-
-    private record SingleQubitState(
-        double oneProbability,
-        double phase,
-        double purity
-    ) {
     }
 }

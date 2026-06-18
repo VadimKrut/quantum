@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-package ru.pathcreator.vadim.quantum.desktop.ui.qsphere;
+package ru.pathcreator.vadim.quantum.application.simulation.visualization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
 import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmplitude;
 
-final class DesktopQSphereProjectionTest {
+final class QSphereProjectionTest {
 
     @Test
     void projectsBellStateOntoOppositePoles() {
-        final List<DesktopQSpherePoint> points = new DesktopQSphereProjection().project(SimulationResult.of(
+        final List<QSpherePoint> points = new QSphereProjection().project(SimulationResult.of(
             2,
             2,
             0,
@@ -59,13 +59,17 @@ final class DesktopQSphereProjectionTest {
             1.0e-12
         );
         for (int i = 0; i < points.size(); i++) {
-            assertTrue(Math.abs(points.get(i).probability() - 0.5) < 1.0e-12);
+            assertEquals(
+                0.5,
+                points.get(i).probability(),
+                1.0e-12
+            );
         }
     }
 
     @Test
     void projectsEqualWeightStatesOntoSharedLatitudeWithDistinctAzimuth() {
-        final List<DesktopQSpherePoint> points = new DesktopQSphereProjection().project(SimulationResult.of(
+        final List<QSpherePoint> points = new QSphereProjection().project(SimulationResult.of(
             2,
             0,
             0,
@@ -110,7 +114,7 @@ final class DesktopQSphereProjectionTest {
     @Test
     void projectsCompleteThreeQubitStateWithNormalizedProbabilitiesAndFiniteCoordinates() {
         final double amplitude = 1.0 / Math.sqrt(8.0);
-        final List<DesktopQSpherePoint> points = new DesktopQSphereProjection().project(SimulationResult.of(
+        final List<QSpherePoint> points = new QSphereProjection().project(SimulationResult.of(
             3,
             0,
             0,
@@ -175,8 +179,8 @@ final class DesktopQSphereProjectionTest {
         );
     }
 
-    private static DesktopQSpherePoint findPoint(
-        final List<DesktopQSpherePoint> points,
+    private static QSpherePoint findPoint(
+        final List<QSpherePoint> points,
         final String basisState
     ) {
         for (int i = 0; i < points.size(); i++) {

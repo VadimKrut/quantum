@@ -41,6 +41,7 @@ import static ru.pathcreator.vadim.quantum.desktop.ui.audit.DesktopUiAutomationR
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,7 +128,10 @@ import ru.pathcreator.vadim.quantum.desktop.workflow.DesktopWorkflowResult;
 import ru.pathcreator.vadim.quantum.desktop.workflow.DesktopWorkflowService;
 import ru.pathcreator.vadim.quantum.desktop.workflow.nativeflow.DesktopNativeWorkflowFacade;
 import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrOperationSpec;
+import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrProgramSnapshot;
 import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrWorkspaceService;
+import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopJavaDslImportResult;
+import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopJavaDslImporter;
 import ru.pathcreator.vadim.quantum.desktop.workspace.builder.DesktopGridPlacementResult;
 import ru.pathcreator.vadim.quantum.desktop.workspace.builder.DesktopGridPlacementService;
 import ru.pathcreator.vadim.quantum.desktop.workspace.operation.DesktopCustomOperationRegistry;
@@ -139,6 +143,8 @@ import ru.pathcreator.vadim.quantum.domain.validation.ValidationResult;
  * Рабочая среда JavaFX для программирования Quantum IR как основной модели.
  */
 public final class QuantumDesktopApplication extends Application {
+
+    private static final String PREFERENCES_LAST_FILE_DIRECTORY = "last-file-directory";
 
     private static final String DEFAULT_EXTERNAL_PROGRAM = """
         OPENQASM 2.0;
@@ -181,12 +187,14 @@ public final class QuantumDesktopApplication extends Application {
     private final DesktopTimelineRenderer timelineRenderer = new DesktopTimelineRenderer();
     private final DesktopSimulationVisualizationsView simulationVisualizationsView = new DesktopSimulationVisualizationsView();
     private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private final Preferences preferences = Preferences.userNodeForPackage(QuantumDesktopApplication.class);
     private final DesktopNativeWorkflowFacade nativeWorkflowFacade = new DesktopNativeWorkflowFacade(
         workspaceService,
         simulationTextRenderer,
         timelineRenderer,
         this::render
     );
+    private final DesktopJavaDslImporter javaDslImporter = new DesktopJavaDslImporter();
     private final DesktopVisualAuditController visualAuditController = new DesktopVisualAuditController();
     private final DesktopCompatibilityScreenshotPreview compatibilityScreenshotPreview = new DesktopCompatibilityScreenshotPreview(workspaceService);
     private final ArrayList<DesktopIrOperationSpec> operations = new ArrayList<>();
@@ -220,6 +228,11 @@ public final class QuantumDesktopApplication extends Application {
     private final ComboBox<String> commandPaletteBox = new ComboBox<>();
     private final TextField wikiSearchField = new TextField();
     private final TextField angleField = new TextField("1.5707963267948966");
+    private final TextField secondAngleField = new TextField("0.0");
+    private final TextField thirdAngleField = new TextField("0.0");
+    private final TextField durationField = new TextField("20.0");
+    private final ComboBox<String> durationUnitBox = new ComboBox<>();
+    private final TextField labelNameField = new TextField("entry");
     private final ComboBox<IntegrationFormat> targetFormatBox = new ComboBox<>();
     private final TextField shotsField = new TextField("1024");
     private final TextField seedField = new TextField("7");
@@ -237,6 +250,7 @@ public final class QuantumDesktopApplication extends Application {
     private final CheckBox targetLoweringBox = new CheckBox("Target-aware lowering");
     private final CheckBox autoSimulationBox = new CheckBox("Auto simulate preview");
     private final CheckBox hideZeroProbabilityBox = new CheckBox("Hide zero probabilities");
+    private final CheckBox registerBitOrderBox = new CheckBox("Register-order bitstrings");
     private final CheckBox renderHugeCircuitBox = new CheckBox("Render full huge circuit preview");
     private final CheckBox showSimulationTextBox = new CheckBox("Simulation text");
     private final CheckBox showProbabilitiesBox = new CheckBox("Probability chart");
@@ -343,6 +357,14 @@ public final class QuantumDesktopApplication extends Application {
         gateSearchField.setPromptText("Search gates");
         gateSearchField.textProperty().addListener((observable, oldValue, newValue) -> refreshGateCatalog());
         refreshGateCatalog();
+        durationUnitBox.getItems().setAll(
+            "DT",
+            "NS",
+            "US",
+            "MS",
+            "S"
+        );
+        durationUnitBox.setValue("NS");
         wireOrderBox.getItems().setAll(
             "MSB top-to-bottom",
             "LSB top-to-bottom"
@@ -477,6 +499,7 @@ public final class QuantumDesktopApplication extends Application {
         installHelp(renderHugeCircuitBox, "helpHugeRender");
         installHelp(autoSimulationBox, "helpAutoSimulation");
         installHelp(hideZeroProbabilityBox, "helpHideZero");
+        installHelp(registerBitOrderBox, "helpRegisterBitOrder");
         canonicalizeParametersBox.setSelected(true);
         removeIdentityBox.setSelected(true);
         targetLoweringBox.setSelected(true);
@@ -500,6 +523,10 @@ public final class QuantumDesktopApplication extends Application {
             refreshWorkspace();
         });
         hideZeroProbabilityBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            invalidateAutoSimulationPreview();
+            refreshWorkspace();
+        });
+        registerBitOrderBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
             invalidateAutoSimulationPreview();
             refreshWorkspace();
         });
@@ -713,13 +740,17 @@ public final class QuantumDesktopApplication extends Application {
                 case "qubitC" -> "Qubit C";
                 case "classical" -> "Classical";
                 case "angle" -> "Angle";
+                case "anglePhi" -> "Phi";
+                case "angleLambda" -> "Lambda";
+                case "duration" -> "Duration";
+                case "labelName" -> "Label";
                 case "nativeActions" -> "Native Actions";
                 case "command" -> "Command";
                 case "wikiSearch" -> "Wiki search";
-            case "operationStream" -> "Operation Stream";
-            case "addOperation" -> "Add";
-            case "updateOperation" -> "Update";
-            case "insertBefore" -> "Before";
+                case "operationStream" -> "Operation Stream";
+                case "addOperation" -> "Add";
+                case "updateOperation" -> "Update";
+                case "insertBefore" -> "Before";
                 case "insertAfter" -> "After";
                 case "duplicateOperation" -> "Duplicate";
                 case "groupOperation" -> "Group";
@@ -733,6 +764,8 @@ public final class QuantumDesktopApplication extends Application {
                 case "compatibility" -> "Compatibility";
                 case "transform" -> "Transform";
                 case "runCommand" -> "▶";
+                case "saveDsl" -> "Save DSL";
+                case "openDsl" -> "Open DSL";
                 case "saveJson" -> "Save JSON";
                 case "openJson" -> "Open JSON";
                 case "applyJson" -> "Apply JSON";
@@ -753,6 +786,7 @@ public final class QuantumDesktopApplication extends Application {
                 case "targetLowering" -> "Target-aware lowering";
                 case "autoSimulation" -> "Auto simulate preview";
                 case "hideZeroProbability" -> "Hide zero probabilities";
+                case "registerBitOrder" -> "Register-order bitstrings";
                 case "inspectFull" -> "Inspect: full circuit";
                 case "inspectStep" -> "Inspect: step";
                 case "operationFull" -> "Operation: full circuit";
@@ -776,6 +810,7 @@ public final class QuantumDesktopApplication extends Application {
                 case "helpHugeRender" -> "Keeps very large programs responsive by showing a summary unless full rendering is explicitly enabled.";
                 case "helpAutoSimulation" -> "Runs a preview simulation after workspace changes when the program is small enough.";
                 case "helpHideZero" -> "Hides zero-probability rows in probability and statevector visualizations.";
+                case "helpRegisterBitOrder" -> "Displays bitstrings as c[0]...c[n-1]. Default stays standard MSB-first c[n-1]...c[0], matching Qiskit/Aer.";
                 default -> key;
             };
         }
@@ -848,13 +883,17 @@ public final class QuantumDesktopApplication extends Application {
             case "qubitC" -> "Qubit C";
             case "classical" -> "Classical";
             case "angle" -> "Угол";
+            case "anglePhi" -> "Phi";
+            case "angleLambda" -> "Lambda";
+            case "duration" -> "Длительность";
+            case "labelName" -> "Label";
             case "nativeActions" -> "Действия IR";
             case "command" -> "Команда";
             case "wikiSearch" -> "Поиск вики";
-case "operationStream" -> "Поток операций";
-case "addOperation" -> "Добавить";
+            case "operationStream" -> "Поток операций";
+            case "addOperation" -> "Добавить";
             case "updateOperation" -> "Обновить";
-case "insertBefore" -> "До";
+            case "insertBefore" -> "До";
             case "insertAfter" -> "После";
             case "duplicateOperation" -> "Дубль";
             case "groupOperation" -> "Группа";
@@ -868,6 +907,8 @@ case "insertBefore" -> "До";
             case "compatibility" -> "Совместимость";
             case "transform" -> "Трансформации";
             case "runCommand" -> "▶";
+            case "saveDsl" -> "Сохранить DSL";
+            case "openDsl" -> "Открыть DSL";
             case "saveJson" -> "Сохранить JSON";
             case "openJson" -> "Открыть JSON";
             case "applyJson" -> "Применить JSON";
@@ -888,6 +929,7 @@ case "insertBefore" -> "До";
             case "targetLowering" -> "Lowering под экспорт";
             case "autoSimulation" -> "Автосимуляция preview";
             case "hideZeroProbability" -> "Скрывать нулевые вероятности";
+            case "registerBitOrder" -> "Bitstring в порядке регистров";
             case "inspectFull" -> "Инспекция: вся схема";
             case "inspectStep" -> "Инспекция: шаг";
             case "operationFull" -> "Операция: вся схема";
@@ -911,6 +953,7 @@ case "insertBefore" -> "До";
             case "helpHugeRender" -> "Для очень больших схем показывает сводку, а полный рендер включается явно.";
             case "helpAutoSimulation" -> "Запускает preview-симуляцию после изменений, если схема достаточно мала.";
             case "helpHideZero" -> "Скрывает строки с нулевой вероятностью в probability/statevector.";
+            case "helpRegisterBitOrder" -> "Показывает bitstring как c[0]...c[n-1]. По умолчанию используется стандартный MSB-first порядок c[n-1]...c[0], как в Qiskit/Aer.";
             default -> key;
         };
     }
@@ -952,6 +995,7 @@ case "insertBefore" -> "До";
         targetLoweringBox.setText(uiText("targetLowering"));
         autoSimulationBox.setText(uiText("autoSimulation"));
         hideZeroProbabilityBox.setText(uiText("hideZeroProbability"));
+        registerBitOrderBox.setText(uiText("registerBitOrder"));
         showSimulationTextBox.setText(uiText("panelSimulation"));
         showProbabilitiesBox.setText(uiText("panelProbabilities"));
         showStateVectorBox.setText(uiText("panelStateVector"));
@@ -1151,6 +1195,23 @@ case "insertBefore" -> "До";
                 uiText("angle"),
                 angleField
             ),
+            fieldRow(
+                uiText("anglePhi"),
+                secondAngleField
+            ),
+            fieldRow(
+                uiText("angleLambda"),
+                thirdAngleField
+            ),
+            fieldRow(
+                uiText("duration"),
+                durationField,
+                durationUnitBox
+            ),
+            fieldRow(
+                uiText("labelName"),
+                labelNameField
+            ),
             actionFlow(
                 addButton,
                 updateButton,
@@ -1201,6 +1262,14 @@ case "insertBefore" -> "До";
             this::runCommandPalette
         );
         runCommandButton.setMinWidth(48.0);
+        final Button saveDslButton = secondaryButton(
+            uiText("saveDsl"),
+            () -> saveJavaDsl(stage)
+        );
+        final Button openDslButton = secondaryButton(
+            uiText("openDsl"),
+            () -> openJavaDsl(stage)
+        );
         final Button saveJsonButton = secondaryButton(
             uiText("saveJson"),
             () -> saveNativeJson(stage)
@@ -1247,6 +1316,8 @@ case "insertBefore" -> "До";
             actionFlow(
                 inspectButton,
                 javaDslButton,
+                saveDslButton,
+                openDslButton,
                 saveJsonButton,
                 openJsonButton,
                 applyJsonButton,
@@ -1435,6 +1506,7 @@ case "insertBefore" -> "До";
             skipBackendBox,
             autoSimulationBox,
             hideZeroProbabilityBox,
+            registerBitOrderBox,
             canonicalizeParametersBox,
             removeIdentityBox,
             inlineCompositeBox,
@@ -1587,7 +1659,23 @@ case "insertBefore" -> "До";
             operations.add(operationSpec("Y", "q[2]"));
             operations.add(operationSpec("Z", "q[3]"));
             operations.add(operationSpec("S", "q[4]"));
+            operations.add(operationSpec("SDG", "q[4]"));
             operations.add(operationSpec("T", "q[0]"));
+            operations.add(operationSpec("TDG", "q[0]"));
+            operations.add(operationSpec("ID", "q[1]"));
+            operations.add(new DesktopIrOperationSpec(
+                "U",
+                "q[2]",
+                "q[0]",
+                "q[0]",
+                "c[0]",
+                Math.PI / (round + 2.0),
+                Math.PI / (round + 3.0),
+                Math.PI / (round + 4.0),
+                20.0,
+                "NS",
+                "entry"
+            ));
             operations.add(rotationSpec("RX", "q[1]", Math.PI / (round + 2.0)));
             operations.add(rotationSpec("RY", "q[2]", Math.PI / (round + 3.0)));
             operations.add(rotationSpec("RZ", "q[3]", Math.PI / (round + 4.0)));
@@ -1595,11 +1683,197 @@ case "insertBefore" -> "До";
             operations.add(operationSpec("CX", "q[0]", "q[1]"));
             operations.add(operationSpec("CY", "q[1]", "q[2]"));
             operations.add(operationSpec("CZ", "q[2]", "q[3]"));
+            operations.add(new DesktopIrOperationSpec(
+                "CPHASE",
+                "q[3]",
+                "q[4]",
+                "q[0]",
+                "c[0]",
+                Math.PI / (round + 6.0),
+                0.0,
+                0.0,
+                20.0,
+                "NS",
+                "entry"
+            ));
             operations.add(operationSpec("CH", "q[3]", "q[4]"));
             operations.add(operationSpec("SWAP", "q[0]", "q[4]"));
             operations.add(new DesktopIrOperationSpec("CCX", "q[0]", "q[2]", "q[4]", "c[0]", Math.PI / 2.0));
             operations.add(operationSpec("BARRIER", "q[1]", "q[3]"));
+            operations.add(new DesktopIrOperationSpec(
+                "DELAY",
+                "q[1]",
+                "q[3]",
+                "q[0]",
+                "c[0]",
+                Math.PI / 2.0,
+                0.0,
+                0.0,
+                10.0 + round,
+                "NS",
+                "entry"
+            ));
         }
+        operations.add(new DesktopIrOperationSpec(
+            "LABEL",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            Math.PI / 2.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "dense_entry"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "BRANCH",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            Math.PI / 2.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "dense_entry"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "TIMING_BOX",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            Math.PI / 2.0,
+            0.0,
+            0.0,
+            4.0,
+            "US",
+            "entry"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "ASSIGN",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            1.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "assign"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "DECLARE",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            1.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "dense_flag"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "ARRAY",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            2.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "dense_array"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "CALL",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            0.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "dense_external"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "IF_X",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            1.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "if_x"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "CTRL_X",
+            "q[1]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            1.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "ctrl_x"
+        ));
+        operations.add(operationSpec("BLOCK", "q[0]"));
+        operations.add(new DesktopIrOperationSpec(
+            "IF_BLOCK",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            1.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "if_block"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "FOR",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            2.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "i"
+        ));
+        operations.add(new DesktopIrOperationSpec(
+            "SYM_FOR",
+            "q[0]",
+            "q[0]",
+            "q[0]",
+            "c[0]",
+            3.0,
+            0.0,
+            0.0,
+            20.0,
+            "NS",
+            "j"
+        ));
+        operations.add(operationSpec("WHILE", "q[0]"));
+        operations.add(operationSpec("WAIT", "q[0]"));
+        operations.add(operationSpec("HALT", "q[0]"));
         operations.add(operationSpec("RESET", "q[4]"));
         addMeasureAllFixture(5);
     }
@@ -1744,6 +2018,11 @@ case "insertBefore" -> "До";
         tertiaryQubitBox.setValue("q[2]");
         classicalBitBox.setValue("c[0]");
         angleField.setText(Double.toString(Math.PI / 2.0));
+        secondAngleField.setText("0.0");
+        thirdAngleField.setText("0.0");
+        durationField.setText("20.0");
+        durationUnitBox.setValue("NS");
+        labelNameField.setText("entry");
     }
 
     private void synchronizeEditorWithFirstOperation() {
@@ -1760,10 +2039,21 @@ case "insertBefore" -> "До";
         tertiaryQubitBox.setDisable(!usesTertiaryQubit(gate));
         classicalBitBox.setDisable(!usesClassicalBit(gate));
         angleField.setDisable(!usesAngle(gate));
+        secondAngleField.setDisable(!usesSecondAngle(gate));
+        thirdAngleField.setDisable(!usesThirdAngle(gate));
+        durationField.setDisable(!usesDuration(gate));
+        durationUnitBox.setDisable(!usesDuration(gate));
+        labelNameField.setDisable(!usesLabelName(gate));
     }
 
     private static boolean usesPrimaryQubit(final String gate) {
-        return gate != null;
+        if (gate == null) {
+            return false;
+        }
+        return switch (gate) {
+            case "LABEL", "BRANCH", "TIMING_BOX", "ASSIGN", "DECLARE", "ARRAY", "CALL", "BLOCK", "IF_BLOCK", "FOR", "SYM_FOR", "WHILE", "HALT", "WAIT" -> false;
+            default -> true;
+        };
     }
 
     private static boolean usesSecondaryQubit(final String gate) {
@@ -1771,7 +2061,7 @@ case "insertBefore" -> "До";
             return false;
         }
         return switch (gate) {
-            case "CX", "CY", "CZ", "CH", "SWAP", "CCX", "BARRIER" -> true;
+            case "CX", "CY", "CZ", "CPHASE", "CH", "SWAP", "CCX", "BARRIER", "DELAY" -> true;
             default -> false;
         };
     }
@@ -1781,7 +2071,12 @@ case "insertBefore" -> "До";
     }
 
     private static boolean usesClassicalBit(final String gate) {
-        return "MEASURE".equals(gate);
+        return "MEASURE".equals(gate)
+            || "ASSIGN".equals(gate)
+            || "IF_X".equals(gate)
+            || "CTRL_X".equals(gate)
+            || "IF_BLOCK".equals(gate)
+            || "WHILE".equals(gate);
     }
 
     private static boolean usesAngle(final String gate) {
@@ -1789,9 +2084,32 @@ case "insertBefore" -> "До";
             return false;
         }
         return switch (gate) {
-            case "RX", "RY", "RZ", "PHASE" -> true;
+            case "RX", "RY", "RZ", "PHASE", "CPHASE", "U", "ASSIGN", "DECLARE", "ARRAY", "IF_X", "CTRL_X", "IF_BLOCK", "FOR", "SYM_FOR", "WHILE" -> true;
             default -> false;
         };
+    }
+
+    private static boolean usesSecondAngle(final String gate) {
+        return "U".equals(gate);
+    }
+
+    private static boolean usesThirdAngle(final String gate) {
+        return "U".equals(gate);
+    }
+
+    private static boolean usesDuration(final String gate) {
+        return "DELAY".equals(gate)
+            || "TIMING_BOX".equals(gate);
+    }
+
+    private static boolean usesLabelName(final String gate) {
+        return "LABEL".equals(gate)
+            || "BRANCH".equals(gate)
+            || "DECLARE".equals(gate)
+            || "ARRAY".equals(gate)
+            || "CALL".equals(gate)
+            || "FOR".equals(gate)
+            || "SYM_FOR".equals(gate);
     }
 
     private void addOperation() {
@@ -1836,7 +2154,12 @@ case "insertBefore" -> "До";
             secondaryQubitBox.getValue(),
             tertiaryQubitBox.getValue(),
             classicalBitBox.getValue(),
-            angle()
+            angle(),
+            secondAngle(),
+            thirdAngle(),
+            durationValue(),
+            durationUnitBox.getValue(),
+            labelNameField.getText()
         );
     }
 
@@ -2033,7 +2356,7 @@ case "insertBefore" -> "До";
         renderCircuit();
         renderInspector();
         renderGateInfo();
-        fullIrSurfaceArea.setText(irOperationSurfaceCatalog.render());
+        fullIrSurfaceArea.setText(irOperationSurfaceCatalog.render(russianLanguage()));
         if (useLargeProgramPreview()) {
             renderLargeProgramPreview();
             return;
@@ -2128,6 +2451,7 @@ case "insertBefore" -> "До";
         hash = 31 * hash + shots();
         hash = 31 * hash + Long.hashCode(seed());
         hash = 31 * hash + Boolean.hashCode(hideZeroProbabilityBox.isSelected());
+        hash = 31 * hash + Boolean.hashCode(registerBitOrderBox.isSelected());
         return hash;
     }
 
@@ -2190,11 +2514,13 @@ case "insertBefore" -> "До";
         phaseDiskView.render(simulation);
         simulationVisualizationsView.render(
             simulation,
-            hideZeroProbabilityBox.isSelected()
+            hideZeroProbabilityBox.isSelected(),
+            registerBitOrderBox.isSelected()
         );
         simulationArea.setText(simulationTextRenderer.render(
             simulation,
-            hideZeroProbabilityBox.isSelected()
+            hideZeroProbabilityBox.isSelected(),
+            registerBitOrderBox.isSelected()
         ));
     }
 
@@ -2453,6 +2779,11 @@ case "insertBefore" -> "До";
         tertiaryQubitBox.setValue(operation.tertiaryQubit());
         classicalBitBox.setValue(operation.classicalBit());
         angleField.setText(Double.toString(operation.angle()));
+        secondAngleField.setText(Double.toString(operation.secondAngle()));
+        thirdAngleField.setText(Double.toString(operation.thirdAngle()));
+        durationField.setText(Double.toString(operation.durationValue()));
+        durationUnitBox.setValue(operation.durationUnit());
+        labelNameField.setText(operation.labelName());
         updateOperationEditorAvailability();
         diagnosticsArea.setText(
             "Selected operation #" + index + System.lineSeparator()
@@ -2461,7 +2792,11 @@ case "insertBefore" -> "До";
                 + "secondary: " + operation.secondaryQubit() + System.lineSeparator()
                 + "tertiary: " + operation.tertiaryQubit() + System.lineSeparator()
                 + "classical: " + operation.classicalBit() + System.lineSeparator()
-                + "angle: " + operation.angle()
+                + "angle: " + operation.angle() + System.lineSeparator()
+                + "phi: " + operation.secondAngle() + System.lineSeparator()
+                + "lambda: " + operation.thirdAngle() + System.lineSeparator()
+                + "duration: " + operation.durationValue() + operation.durationUnit().toLowerCase() + System.lineSeparator()
+                + "label: " + operation.labelName()
         );
     }
 
@@ -2774,10 +3109,93 @@ case "insertBefore" -> "До";
         return nativeWorkflowFacade.json(buildNativeProgram());
     }
 
+    private void saveJavaDsl(final Stage stage) {
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Quantum IR Java DSL");
+        chooser.setInitialFileName(circuitNameField.getText() + ".java");
+        configureFileChooserDirectory(chooser);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+            "Java source",
+            "*.java"
+        ));
+        final java.io.File file = chooser.showSaveDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            final DesktopWorkflowResult result = javaDslNative();
+            if (!result.isSuccess()) {
+                diagnosticsArea.setText(result.content());
+                statusLabel.setText("Java DSL was not saved");
+                return;
+            }
+            Files.writeString(
+                file.toPath(),
+                result.content()
+            );
+            rememberFileChooserDirectory(file);
+            javaDslArea.setText(result.content());
+            statusLabel.setText("Saved Java DSL: " + file.getAbsolutePath());
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Save Java DSL failed");
+        }
+    }
+
+    private void openJavaDsl(final Stage stage) {
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle("Open Quantum IR Java DSL");
+        configureFileChooserDirectory(chooser);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+            "Java source",
+            "*.java"
+        ));
+        final java.io.File file = chooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            final String content = Files.readString(file.toPath());
+            final DesktopJavaDslImportResult result = javaDslImporter.importDsl(content);
+            rememberFileChooserDirectory(file);
+            javaDslArea.setText(content);
+            if (!result.isSuccess()) {
+                diagnosticsArea.setText(String.join(
+                    System.lineSeparator(),
+                    result.diagnostics()
+                ));
+                statusLabel.setText("Open Java DSL has diagnostics");
+                selectResultTab(uiText("tabDiagnostics"));
+                return;
+            }
+            clearActiveJsonProgram();
+            rememberOperations();
+            circuitNameField.setText(result.circuitName());
+            qregNameField.setText(result.quantumRegisterName());
+            qregSizeField.setText(Integer.toString(result.quantumRegisterSize()));
+            cregNameField.setText(result.classicalRegisterName());
+            cregSizeField.setText(Integer.toString(result.classicalRegisterSize()));
+            operations.clear();
+            operations.addAll(result.operations());
+            selectedOperationIndices.clear();
+            inspectionStepIndex = operations.isEmpty()
+                ? -1
+                : operations.size() - 1;
+            refreshReferenceBoxes();
+            refreshWorkspace();
+            selectResultTab("Java DSL");
+            statusLabel.setText("Opened Java DSL: " + file.getAbsolutePath());
+        } catch (final Exception exception) {
+            diagnosticsArea.setText(exceptionMessage(exception));
+            statusLabel.setText("Open Java DSL failed");
+        }
+    }
+
     private void saveNativeJson(final Stage stage) {
         final FileChooser chooser = new FileChooser();
         chooser.setTitle("Save native Quantum IR JSON");
         chooser.setInitialFileName(circuitNameField.getText() + ".quantum.json");
+        configureFileChooserDirectory(chooser);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
             "Quantum IR JSON",
             "*.json"
@@ -2797,6 +3215,7 @@ case "insertBefore" -> "До";
                 file.toPath(),
                 write.content()
             );
+            rememberFileChooserDirectory(file);
             statusLabel.setText("Saved native JSON: " + file.getAbsolutePath());
         } catch (final Exception exception) {
             diagnosticsArea.setText(exceptionMessage(exception));
@@ -2807,6 +3226,7 @@ case "insertBefore" -> "До";
     private void openNativeJson(final Stage stage) {
         final FileChooser chooser = new FileChooser();
         chooser.setTitle("Open native Quantum IR JSON");
+        configureFileChooserDirectory(chooser);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
             "Quantum IR JSON",
             "*.json"
@@ -2818,10 +3238,12 @@ case "insertBefore" -> "До";
         try {
             final String content = Files.readString(file.toPath());
             final QuantumIrReadResult read = workspaceService.readJson(content);
+            rememberFileChooserDirectory(file);
             nativeJsonArea.setText(content);
             diagnosticsArea.setText(render(read));
             if (read.isSuccess()) {
                 activeJsonProgram = read.program();
+                synchronizeWorkspaceWithActiveJsonProgram();
                 inspectorArea.setText(render(workspaceService.inspect(
                     read.program(),
                     targetFormatBox.getValue()
@@ -2838,6 +3260,40 @@ case "insertBefore" -> "До";
         } catch (final Exception exception) {
             diagnosticsArea.setText(exceptionMessage(exception));
             statusLabel.setText("Open native JSON failed");
+        }
+    }
+
+    private void configureFileChooserDirectory(final FileChooser chooser) {
+        final String directory = preferences.get(
+            PREFERENCES_LAST_FILE_DIRECTORY,
+            null
+        );
+        if (
+            directory == null
+            || directory.isBlank()
+        ) {
+            return;
+        }
+        final java.io.File file = new java.io.File(directory);
+        if (
+            file.exists()
+            && file.isDirectory()
+        ) {
+            chooser.setInitialDirectory(file);
+        }
+    }
+
+    private void rememberFileChooserDirectory(final java.io.File file) {
+        final java.io.File directory = file.getParentFile();
+        if (
+            directory != null
+            && directory.exists()
+            && directory.isDirectory()
+        ) {
+            preferences.put(
+                PREFERENCES_LAST_FILE_DIRECTORY,
+                directory.getAbsolutePath()
+            );
         }
     }
 
@@ -2858,7 +3314,8 @@ case "insertBefore" -> "До";
                 + simulationScopeSuffix(),
             simulationTextRenderer.render(
                 simulation,
-                hideZeroProbabilityBox.isSelected()
+                hideZeroProbabilityBox.isSelected(),
+                registerBitOrderBox.isSelected()
             )
         );
     }
@@ -2939,6 +3396,7 @@ case "insertBefore" -> "До";
             diagnosticsArea.setText(render(read));
             if (read.isSuccess()) {
                 activeJsonProgram = read.program();
+                synchronizeWorkspaceWithActiveJsonProgram();
                 final ValidationResult validation = workspaceService.validate(read.program());
                 statusLabel.setText(validation.isValid()
                     ? "Native JSON applied"
@@ -2959,6 +3417,33 @@ case "insertBefore" -> "До";
         );
         thread.setDaemon(true);
         thread.start();
+    }
+
+    private void synchronizeWorkspaceWithActiveJsonProgram() {
+        if (activeJsonProgram == null) {
+            return;
+        }
+        final DesktopIrProgramSnapshot snapshot = workspaceService.projectToGraphicalWorkspace(activeJsonProgram);
+        circuitNameField.setText(snapshot.circuitName());
+        qregNameField.setText(snapshot.quantumRegisterName());
+        qregSizeField.setText(Integer.toString(snapshot.quantumRegisterSize()));
+        cregNameField.setText(snapshot.classicalRegisterName());
+        cregSizeField.setText(Integer.toString(snapshot.classicalRegisterSize()));
+        operations.clear();
+        operations.addAll(snapshot.operations());
+        selectedOperationIndices.clear();
+        inspectionStepIndex = operations.isEmpty()
+            ? -1
+            : operations.size() - 1;
+        refreshReferenceBoxes();
+        synchronizeEditorDefaults();
+        updateOperationEditorAvailability();
+        if (!snapshot.diagnostics().isEmpty()) {
+            diagnosticsArea.setText(String.join(
+                System.lineSeparator(),
+                snapshot.diagnostics()
+            ));
+        }
     }
 
     private void runCommandPalette() {
@@ -3014,7 +3499,11 @@ case "insertBefore" -> "До";
             index >= 0
             && index < operations.size()
         ) {
-            operationList.getSelectionModel().select(index);
+            operationList.getSelectionModel().clearAndSelect(index);
+            setInspectionStep(index);
+            renderSelectedOperation(index);
+            statusLabel.setText("Diagnostic selected operation #" + index
+                + "; inspecting prefix through this step.");
         }
     }
 
@@ -3166,6 +3655,10 @@ case "insertBefore" -> "До";
     ) {
         loadAuditFixtureWithoutRefresh(fixtureName);
         refreshWorkspace();
+        if (requiresExpertScreenshotMode(tabName)) {
+            experienceModeBox.setValue("Expert");
+            applyExperienceMode();
+        }
         if (inspectStep != null) {
             setInspectionStep(inspectStep.intValue());
         }
@@ -3178,6 +3671,13 @@ case "insertBefore" -> "До";
             primaryStage,
             tabName
         );
+    }
+
+    private static boolean requiresExpertScreenshotMode(final String tabName) {
+        return switch (tabName) {
+            case "Target Profile", "Resources", "Preflight", "Compatibility", "Transform" -> true;
+            default -> false;
+        };
     }
 
     private void refreshScreenshotOverview() {
@@ -3407,6 +3907,7 @@ case "insertBefore" -> "До";
         verifyFullIrSurface(fullIrSurfaceArea);
         loadAuditFixtureWithoutRefresh("bell");
         refreshWorkspace();
+        verifyDiagnosticSelectionNavigation();
         verifyMeasuredBellSimulationSemantics(workspaceService.simulate(
             buildNativeProgram(),
             shots(),
@@ -3464,64 +3965,56 @@ case "insertBefore" -> "До";
         );
     }
 
+    private void verifyDiagnosticSelectionNavigation() {
+        final int expectedOperationIndex = Math.min(
+            2,
+            operations.size() - 1
+        );
+        if (expectedOperationIndex < 0) {
+            throw new IllegalStateException("Diagnostic navigation smoke has no operations.");
+        }
+        int diagnosticItemIndex = -1;
+        for (int i = 0; i < diagnosticList.getItems().size(); i++) {
+            if (diagnosticList.getItems().get(i).startsWith("OP #" + expectedOperationIndex + " ")) {
+                diagnosticItemIndex = i;
+                break;
+            }
+        }
+        if (diagnosticItemIndex < 0) {
+            throw new IllegalStateException("Diagnostic navigation smoke did not find OP #"
+                + expectedOperationIndex + ".");
+        }
+        diagnosticList.getSelectionModel().select(diagnosticItemIndex);
+        if (inspectionStepIndex != expectedOperationIndex) {
+            throw new IllegalStateException("Diagnostic navigation selected OP #"
+                + expectedOperationIndex + " but inspection step is " + inspectionStepIndex + ".");
+        }
+    }
+
     private void verifyOperationEditorFieldAvailability() {
-        verifyEditorAvailability(
-            "H",
-            true,
-            false,
-            false,
-            false,
-            false
-        );
-        verifyEditorAvailability(
-            "RX",
-            true,
-            false,
-            false,
-            false,
-            true
-        );
-        verifyEditorAvailability(
-            "CX",
-            true,
-            true,
-            false,
-            false,
-            false
-        );
-        verifyEditorAvailability(
-            "CCX",
-            true,
-            true,
-            true,
-            false,
-            false
-        );
-        verifyEditorAvailability(
-            "MEASURE",
-            true,
-            false,
-            false,
-            true,
-            false
-        );
-        verifyEditorAvailability(
-            "BARRIER",
-            true,
-            true,
-            false,
-            false,
-            false
-        );
+        final List<String> gates = gateCatalogView.gates();
+        for (int i = 0; i < gates.size(); i++) {
+            final String gate = gates.get(i);
+            verifyEditorAvailability(
+                gate,
+                new EditorFieldExpectation(
+                    usesPrimaryQubit(gate),
+                    usesSecondaryQubit(gate),
+                    usesTertiaryQubit(gate),
+                    usesClassicalBit(gate),
+                    usesAngle(gate),
+                    usesSecondAngle(gate),
+                    usesThirdAngle(gate),
+                    usesDuration(gate),
+                    usesLabelName(gate)
+                )
+            );
+        }
     }
 
     private void verifyEditorAvailability(
         final String gate,
-        final boolean primaryEnabled,
-        final boolean secondaryEnabled,
-        final boolean tertiaryEnabled,
-        final boolean classicalEnabled,
-        final boolean angleEnabled
+        final EditorFieldExpectation expectation
     ) {
         gateBox.setValue(gate);
         updateOperationEditorAvailability();
@@ -3529,32 +4022,75 @@ case "insertBefore" -> "До";
             gate,
             "Qubit A",
             primaryQubitBox.isDisabled(),
-            primaryEnabled
+            expectation.primaryEnabled()
         );
         verifyEnabled(
             gate,
             "Qubit B",
             secondaryQubitBox.isDisabled(),
-            secondaryEnabled
+            expectation.secondaryEnabled()
         );
         verifyEnabled(
             gate,
             "Qubit C",
             tertiaryQubitBox.isDisabled(),
-            tertiaryEnabled
+            expectation.tertiaryEnabled()
         );
         verifyEnabled(
             gate,
             "Classical",
             classicalBitBox.isDisabled(),
-            classicalEnabled
+            expectation.classicalEnabled()
         );
         verifyEnabled(
             gate,
             "Angle",
             angleField.isDisabled(),
-            angleEnabled
+            expectation.angleEnabled()
         );
+        verifyEnabled(
+            gate,
+            "Phi",
+            secondAngleField.isDisabled(),
+            expectation.secondAngleEnabled()
+        );
+        verifyEnabled(
+            gate,
+            "Lambda",
+            thirdAngleField.isDisabled(),
+            expectation.thirdAngleEnabled()
+        );
+        verifyEnabled(
+            gate,
+            "Duration",
+            durationField.isDisabled(),
+            expectation.durationEnabled()
+        );
+        verifyEnabled(
+            gate,
+            "Duration unit",
+            durationUnitBox.isDisabled(),
+            expectation.durationEnabled()
+        );
+        verifyEnabled(
+            gate,
+            "Label",
+            labelNameField.isDisabled(),
+            expectation.labelEnabled()
+        );
+    }
+
+    private record EditorFieldExpectation(
+        boolean primaryEnabled,
+        boolean secondaryEnabled,
+        boolean tertiaryEnabled,
+        boolean classicalEnabled,
+        boolean angleEnabled,
+        boolean secondAngleEnabled,
+        boolean thirdAngleEnabled,
+        boolean durationEnabled,
+        boolean labelEnabled
+    ) {
     }
 
     private static void verifyEnabled(
@@ -3738,6 +4274,27 @@ case "insertBefore" -> "До";
         return doubleOrDefault(
             angleField.getText(),
             Math.PI / 2.0
+        );
+    }
+
+    private double secondAngle() {
+        return doubleOrDefault(
+            secondAngleField.getText(),
+            0.0
+        );
+    }
+
+    private double thirdAngle() {
+        return doubleOrDefault(
+            thirdAngleField.getText(),
+            0.0
+        );
+    }
+
+    private double durationValue() {
+        return doubleOrDefault(
+            durationField.getText(),
+            20.0
         );
     }
 

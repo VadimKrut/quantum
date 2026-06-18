@@ -28,20 +28,42 @@ public final class DesktopGateCatalogView {
         "Y",
         "Z",
         "S",
+        "SDG",
         "T",
+        "TDG",
+        "ID",
         "RX",
         "RY",
         "RZ",
         "PHASE",
+        "U",
         "CX",
         "CY",
         "CZ",
+        "CPHASE",
         "CH",
         "SWAP",
         "CCX",
         "MEASURE",
         "RESET",
-        "BARRIER"
+        "BARRIER",
+        "DELAY",
+        "LABEL",
+        "BRANCH",
+        "TIMING_BOX",
+        "ASSIGN",
+        "DECLARE",
+        "ARRAY",
+        "CALL",
+        "IF_X",
+        "CTRL_X",
+        "BLOCK",
+        "IF_BLOCK",
+        "FOR",
+        "SYM_FOR",
+        "WHILE",
+        "WAIT",
+        "HALT"
     );
 
     public List<String> gates() {
@@ -70,7 +92,8 @@ public final class DesktopGateCatalogView {
             "H",
             "X",
             "Y",
-            "Z"
+            "Z",
+            "ID"
         );
         addGroup(
             catalogPane,
@@ -80,11 +103,14 @@ public final class DesktopGateCatalogView {
             gateConsumer,
             gateHelpConsumer,
             "S",
+            "SDG",
             "T",
+            "TDG",
             "RX",
             "RY",
             "RZ",
-            "PHASE"
+            "PHASE",
+            "U"
         );
         addGroup(
             catalogPane,
@@ -96,6 +122,7 @@ public final class DesktopGateCatalogView {
             "CX",
             "CY",
             "CZ",
+            "CPHASE",
             "CH",
             "SWAP",
             "CCX"
@@ -109,7 +136,24 @@ public final class DesktopGateCatalogView {
             gateHelpConsumer,
             "MEASURE",
             "RESET",
-            "BARRIER"
+            "BARRIER",
+            "DELAY",
+            "LABEL",
+            "BRANCH",
+            "TIMING_BOX",
+            "ASSIGN",
+            "DECLARE",
+            "ARRAY",
+            "CALL",
+            "IF_X",
+            "CTRL_X",
+            "BLOCK",
+            "IF_BLOCK",
+            "FOR",
+            "SYM_FOR",
+            "WHILE",
+            "WAIT",
+            "HALT"
         );
         if (catalogPane.getChildren().isEmpty()) {
             final Label emptyLabel = new Label(text.apply("gateSearchEmpty"));
@@ -169,9 +213,9 @@ public final class DesktopGateCatalogView {
 
     private static String styleClass(final String gate) {
         return switch (gate) {
-            case "RX", "RY", "RZ", "PHASE", "S", "T" -> "gate-phase-button";
-            case "CX", "CY", "CZ", "CH", "SWAP", "CCX" -> "gate-control-button";
-            case "MEASURE", "RESET", "BARRIER" -> "gate-nonunitary-button";
+            case "RX", "RY", "RZ", "PHASE", "U", "S", "SDG", "T", "TDG" -> "gate-phase-button";
+            case "CX", "CY", "CZ", "CPHASE", "CH", "SWAP", "CCX" -> "gate-control-button";
+            case "MEASURE", "RESET", "BARRIER", "DELAY", "LABEL", "BRANCH", "TIMING_BOX", "ASSIGN", "DECLARE", "ARRAY", "CALL", "IF_X", "CTRL_X", "BLOCK", "IF_BLOCK", "FOR", "SYM_FOR", "WHILE", "WAIT", "HALT" -> "gate-nonunitary-button";
             default -> "gate-general-button";
         };
     }

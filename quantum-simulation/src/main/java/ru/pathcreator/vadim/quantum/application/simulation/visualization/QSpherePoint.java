@@ -7,12 +7,12 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-package ru.pathcreator.vadim.quantum.desktop.ui.qsphere;
+package ru.pathcreator.vadim.quantum.application.simulation.visualization;
 
 /**
- * Одна спроецированная точка basis-state на q-sphere.
+ * Одна точка basis-state, спроецированная из state-vector на q-sphere.
  */
-public record DesktopQSpherePoint(
+public record QSpherePoint(
     String basisState,
     double x,
     double y,
@@ -21,7 +21,7 @@ public record DesktopQSpherePoint(
     double phase
 ) {
 
-    public DesktopQSpherePoint {
+    public QSpherePoint {
         if (
             basisState == null
             || basisState.isBlank()

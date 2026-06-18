@@ -52,7 +52,22 @@ class DesktopCircuitCanvasRendererTest {
             List.of(
                 new DesktopIrOperationSpec("CX", "q[0]", "q[1]", "q[0]", "c[0]", 0.0),
                 new DesktopIrOperationSpec("SWAP", "q[0]", "q[1]", "q[0]", "c[0]", 0.0),
-                new DesktopIrOperationSpec("BARRIER", "q[0]", "q[1]", "q[0]", "c[0]", 0.0)
+                new DesktopIrOperationSpec("BARRIER", "q[0]", "q[1]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("DELAY", "q[0]", "q[1]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("LABEL", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("BRANCH", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("TIMING_BOX", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("ASSIGN", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("DECLARE", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("ARRAY", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("CALL", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("IF_X", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("CTRL_X", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("BLOCK", "q[0]", "q[0]", "q[0]", "c[0]", 0.0),
+                new DesktopIrOperationSpec("IF_BLOCK", "q[0]", "q[0]", "q[0]", "c[0]", 1.0),
+                new DesktopIrOperationSpec("FOR", "q[0]", "q[0]", "q[0]", "c[0]", 3.0),
+                new DesktopIrOperationSpec("SYM_FOR", "q[0]", "q[0]", "q[0]", "c[0]", 3.0),
+                new DesktopIrOperationSpec("WHILE", "q[0]", "q[0]", "q[0]", "c[0]", 3.0)
             ),
             2,
             "q",
@@ -69,6 +84,21 @@ class DesktopCircuitCanvasRendererTest {
         assertTrue(symbols.contains(Character.toString((char) 0x25cf)));
         assertTrue(symbols.contains(Character.toString((char) 0x00d7)));
         assertTrue(symbols.contains(Character.toString((char) 0x258a)));
+        assertTrue(symbols.contains("D"));
+        assertTrue(symbols.contains("LBL"));
+        assertTrue(symbols.contains("BR"));
+        assertTrue(symbols.contains("TB"));
+        assertTrue(symbols.contains("AS"));
+        assertTrue(symbols.contains("DEC"));
+        assertTrue(symbols.contains("ARR"));
+        assertTrue(symbols.contains("CALL"));
+        assertTrue(symbols.contains("IF"));
+        assertTrue(symbols.contains("CIF"));
+        assertTrue(symbols.contains("BLK"));
+        assertTrue(symbols.contains("IFB"));
+        assertTrue(symbols.contains("FOR"));
+        assertTrue(symbols.contains("SFOR"));
+        assertTrue(symbols.contains("WH"));
     }
 
     private static List<String> operationSymbols(final Node node) {

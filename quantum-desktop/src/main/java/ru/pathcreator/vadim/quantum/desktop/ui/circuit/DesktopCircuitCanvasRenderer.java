@@ -518,13 +518,31 @@ public final class DesktopCircuitCanvasRenderer {
         if (operation.gate().startsWith("CUSTOM:")) {
             return qubit.equals(operation.primaryQubit()) ? "GROUP" : "";
         }
+        if (operation.gate().startsWith("IR:")) {
+            return qubit.equals(operation.primaryQubit()) ? "IR" : "";
+        }
         if (qubit.equals(operation.primaryQubit())) {
             return switch (operation.gate()) {
-                case "CX", "CY", "CZ", "CH", "CCX" -> CONTROL_SYMBOL;
+                case "CX", "CY", "CZ", "CPHASE", "CH", "CCX" -> CONTROL_SYMBOL;
                 case "MEASURE" -> "M";
                 case "RESET" -> "R";
                 case "BARRIER" -> BARRIER_SYMBOL;
                 case "SWAP" -> SWAP_SYMBOL;
+                case "DELAY" -> "D";
+                case "LABEL" -> "LBL";
+                case "BRANCH" -> "BR";
+                case "TIMING_BOX" -> "TB";
+                case "ASSIGN" -> "AS";
+                case "DECLARE" -> "DEC";
+                case "ARRAY" -> "ARR";
+                case "CALL" -> "CALL";
+                case "IF_X" -> "IF";
+                case "CTRL_X" -> "CIF";
+                case "BLOCK" -> "BLK";
+                case "IF_BLOCK" -> "IFB";
+                case "FOR" -> "FOR";
+                case "SYM_FOR" -> "SFOR";
+                case "WHILE" -> "WH";
                 default -> operation.gate();
             };
         }
@@ -533,10 +551,12 @@ public final class DesktopCircuitCanvasRenderer {
                 case "CX" -> "X";
                 case "CY" -> "Y";
                 case "CZ" -> "Z";
+                case "CPHASE" -> "P";
                 case "CH" -> "H";
                 case "SWAP" -> SWAP_SYMBOL;
                 case "BARRIER" -> BARRIER_SYMBOL;
                 case "CCX" -> CONTROL_SYMBOL;
+                case "DELAY" -> "D";
                 default -> "";
             };
         }
@@ -576,6 +596,8 @@ public final class DesktopCircuitCanvasRenderer {
         } else if (BARRIER_SYMBOL.equals(symbol)) {
             classes.add("circuit-barrier-cell");
         } else if (operation.gate().startsWith("CUSTOM:")) {
+            classes.add("circuit-custom-cell");
+        } else if (operation.gate().startsWith("IR:")) {
             classes.add("circuit-custom-cell");
         } else {
             classes.add("circuit-gate-cell");
@@ -625,7 +647,7 @@ public final class DesktopCircuitCanvasRenderer {
 
     private static boolean isConnectedGate(final String gate) {
         return switch (gate) {
-            case "CX", "CY", "CZ", "CH", "SWAP", "CCX", "BARRIER" -> true;
+            case "CX", "CY", "CZ", "CPHASE", "CH", "SWAP", "CCX", "BARRIER", "DELAY" -> true;
             default -> false;
         };
     }

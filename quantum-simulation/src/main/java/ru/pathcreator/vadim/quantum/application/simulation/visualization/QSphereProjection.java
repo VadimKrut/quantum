@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-package ru.pathcreator.vadim.quantum.desktop.ui.qsphere;
+package ru.pathcreator.vadim.quantum.application.simulation.visualization;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +17,11 @@ import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResu
 import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmplitude;
 
 /**
- * Проецирует амплитуды state-vector на координаты q-sphere.
+ * Строит математическую модель q-sphere по результату state-vector симуляции.
  */
-public final class DesktopQSphereProjection {
+public final class QSphereProjection {
 
-    public List<DesktopQSpherePoint> project(final SimulationResult simulation) {
+    public List<QSpherePoint> project(final SimulationResult simulation) {
         if (simulation == null) {
             throw new IllegalArgumentException("Q-sphere simulation result must not be null.");
         }
@@ -41,7 +41,7 @@ public final class DesktopQSphereProjection {
                 ) + 1
             );
         }
-        final ArrayList<DesktopQSpherePoint> points = new ArrayList<>();
+        final ArrayList<QSpherePoint> points = new ArrayList<>();
         for (int i = 0; i < simulation.stateVector().size(); i++) {
             final StateVectorAmplitude amplitude = simulation.stateVector().get(i);
             final int weight = hammingWeight(amplitude.basisState());
@@ -70,7 +70,7 @@ public final class DesktopQSphereProjection {
             final double azimuth = 2.0 * Math.PI * ringIndex / ringSize;
             final double real = amplitude.real();
             final double imaginary = amplitude.imaginary();
-            points.add(new DesktopQSpherePoint(
+            points.add(new QSpherePoint(
                 amplitude.basisState(),
                 radius * Math.cos(azimuth),
                 radius * Math.sin(azimuth),

@@ -12,7 +12,6 @@ package ru.pathcreator.vadim.quantum.desktop.ui.visualization;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,6 +22,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -32,7 +32,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
-import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmplitude;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.MeasurementProbabilityRow;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.SimulationChartProjection;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.StateVectorDisplayRow;
 
 /**
  * Рисует пользовательские графики результата симуляции: probability histogram и state-vector amplitudes.
@@ -40,13 +42,16 @@ import ru.pathcreator.vadim.quantum.application.simulation.result.StateVectorAmp
 public final class DesktopSimulationVisualizationsView {
 
     private static final int MAX_BARS = 96;
+    private static final int MAX_EXPANDED_BARS = 2048;
     private static final double ROW_HEIGHT = 26.0;
     private static final double MIN_BAR_WIDTH = 2.0;
 
+    private final SimulationChartProjection chartProjection = new SimulationChartProjection();
     private final VBox probabilityRoot = new VBox(10.0);
     private final VBox stateVectorRoot = new VBox(10.0);
     private SimulationResult lastSimulation;
     private boolean lastHideZeroProbability;
+    private boolean lastRegisterBitOrder;
     private boolean russian;
 
     public DesktopSimulationVisualizationsView() {
@@ -83,8 +88,21 @@ public final class DesktopSimulationVisualizationsView {
         final SimulationResult simulation,
         final boolean hideZeroProbability
     ) {
+        render(
+            simulation,
+            hideZeroProbability,
+            false
+        );
+    }
+
+    public void render(
+        final SimulationResult simulation,
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
+    ) {
         lastSimulation = simulation;
         lastHideZeroProbability = hideZeroProbability;
+        lastRegisterBitOrder = registerBitOrder;
         if (
             simulation == null
             || !simulation.isSuccess()
@@ -95,11 +113,13 @@ public final class DesktopSimulationVisualizationsView {
         probabilityRoot.getChildren().setAll(probabilityPanel(
             simulation,
             hideZeroProbability,
+            registerBitOrder,
             false
         ));
         stateVectorRoot.getChildren().setAll(stateVectorPanel(
             simulation,
             hideZeroProbability,
+            registerBitOrder,
             false
         ));
     }
@@ -107,22 +127,60 @@ public final class DesktopSimulationVisualizationsView {
     private Node probabilityPanel(
         final SimulationResult simulation,
         final boolean hideZeroProbability,
+        final boolean registerBitOrder,
         final boolean expanded
     ) {
         final List<ProbabilityRow> rows = probabilityRows(
             simulation,
-            hideZeroProbability
+            hideZeroProbability,
+            registerBitOrder
         );
         return chartCard(
             title("probabilities"),
-            text("probabilitySubtitle"),
+            text("probabilitySubtitle") + System.lineSeparator()
+                + bitOrderText(
+                    simulation.classicalBitCount(),
+                    registerBitOrder
+                ),
             text("expandProbabilities"),
             () -> openExpanded(ChartKind.PROBABILITY),
-            probabilityChart(rows),
+            probabilityChart(
+                rows,
+                expanded
+            ),
             limitNotice(
                 rows.size(),
                 simulation.counts().size(),
                 expanded
+                )
+        );
+    }
+
+    private Node expandedProbabilityPanel(
+        final SimulationResult simulation,
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
+    ) {
+        final List<ProbabilityRow> rows = probabilityRows(
+            simulation,
+            hideZeroProbability,
+            registerBitOrder
+        );
+        return expandedChartCard(
+            title("probabilities"),
+            text("probabilitySubtitle") + System.lineSeparator()
+                + bitOrderText(
+                    simulation.classicalBitCount(),
+                    registerBitOrder
+                ),
+            probabilityChart(
+                rows,
+                true
+            ),
+            limitNotice(
+                rows.size(),
+                simulation.counts().size(),
+                true
             )
         );
     }
@@ -130,22 +188,60 @@ public final class DesktopSimulationVisualizationsView {
     private Node stateVectorPanel(
         final SimulationResult simulation,
         final boolean hideZeroProbability,
+        final boolean registerBitOrder,
         final boolean expanded
     ) {
         final List<StateVectorRow> rows = stateVectorRows(
             simulation,
-            hideZeroProbability
+            hideZeroProbability,
+            registerBitOrder
         );
         return chartCard(
             title("statevector"),
-            text("statevectorSubtitle"),
+            text("statevectorSubtitle") + System.lineSeparator()
+                + bitOrderText(
+                    simulation.qubitCount(),
+                    registerBitOrder
+                ),
             text("expandStatevector"),
             () -> openExpanded(ChartKind.STATE_VECTOR),
-            stateVectorChart(rows),
+            stateVectorChart(
+                rows,
+                expanded
+            ),
             limitNotice(
                 rows.size(),
                 simulation.stateVector().size(),
                 expanded
+                )
+        );
+    }
+
+    private Node expandedStateVectorPanel(
+        final SimulationResult simulation,
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
+    ) {
+        final List<StateVectorRow> rows = stateVectorRows(
+            simulation,
+            hideZeroProbability,
+            registerBitOrder
+        );
+        return expandedChartCard(
+            title("statevector"),
+            text("statevectorSubtitle") + System.lineSeparator()
+                + bitOrderText(
+                    simulation.qubitCount(),
+                    registerBitOrder
+                ),
+            stateVectorChart(
+                rows,
+                true
+            ),
+            limitNotice(
+                rows.size(),
+                simulation.stateVector().size(),
+                true
             )
         );
     }
@@ -158,17 +254,32 @@ public final class DesktopSimulationVisualizationsView {
         stage.setTitle(kind == ChartKind.PROBABILITY
             ? title("probabilities")
             : title("statevector"));
-        final Node content = kind == ChartKind.PROBABILITY
-            ? probabilityPanel(
+        final Node chart = kind == ChartKind.PROBABILITY
+            ? expandedProbabilityPanel(
                 lastSimulation,
                 lastHideZeroProbability,
-                true
+                lastRegisterBitOrder
             )
-            : stateVectorPanel(
+            : expandedStateVectorPanel(
                 lastSimulation,
                 lastHideZeroProbability,
-                true
+                lastRegisterBitOrder
             );
+        final TextArea details = expandedDetails(kind);
+        VBox.setVgrow(
+            chart,
+            Priority.ALWAYS
+        );
+        VBox.setVgrow(
+            details,
+            Priority.ALWAYS
+        );
+        final VBox content = new VBox(
+            12.0,
+            chart,
+            details
+        );
+        content.setPadding(new Insets(12.0));
         final BorderPane root = new BorderPane(content);
         root.getStyleClass().addAll(
             "quantum-root",
@@ -184,7 +295,82 @@ public final class DesktopSimulationVisualizationsView {
             .toExternalForm();
         scene.getStylesheets().add(stylesheet);
         stage.setScene(scene);
+        stage.setMinWidth(860.0);
+        stage.setMinHeight(620.0);
         stage.show();
+    }
+
+    private TextArea expandedDetails(final ChartKind kind) {
+        final TextArea details = new TextArea(kind == ChartKind.PROBABILITY
+            ? probabilityDetails()
+            : stateVectorDetails());
+        details.setEditable(false);
+        details.setWrapText(false);
+        details.setPrefRowCount(14);
+        details.getStyleClass().add("copyable-result-area");
+        return details;
+    }
+
+    private String probabilityDetails() {
+        final List<ProbabilityRow> rows = probabilityRows(
+            lastSimulation,
+            lastHideZeroProbability,
+            lastRegisterBitOrder
+        );
+        final StringBuilder builder = new StringBuilder(256 + rows.size() * 56);
+        builder.append(title("probabilities")).append(System.lineSeparator());
+        builder.append(bitOrderText(
+            lastSimulation.classicalBitCount(),
+            lastRegisterBitOrder
+        )).append(System.lineSeparator());
+        builder.append("bitstring\tcount\tprobability\tpercent").append(System.lineSeparator());
+        for (int i = 0; i < rows.size(); i++) {
+            final ProbabilityRow row = rows.get(i);
+            builder.append(row.label())
+                .append('\t')
+                .append(row.count())
+                .append('\t')
+                .append(row.probability())
+                .append('\t')
+                .append(String.format(
+                    java.util.Locale.ROOT,
+                    "%.6f%%",
+                    row.probability() * 100.0
+                ))
+                .append(System.lineSeparator());
+        }
+        return builder.toString();
+    }
+
+    private String stateVectorDetails() {
+        final List<StateVectorRow> rows = stateVectorRows(
+            lastSimulation,
+            lastHideZeroProbability,
+            lastRegisterBitOrder
+        );
+        final StringBuilder builder = new StringBuilder(256 + rows.size() * 96);
+        builder.append(title("statevector")).append(System.lineSeparator());
+        builder.append(bitOrderText(
+            lastSimulation.qubitCount(),
+            lastRegisterBitOrder
+        )).append(System.lineSeparator());
+        builder.append("basis\treal\timaginary\tmagnitude\tprobability\tphase(rad)").append(System.lineSeparator());
+        for (int i = 0; i < rows.size(); i++) {
+            final StateVectorRow row = rows.get(i);
+            builder.append(row.label())
+                .append('\t')
+                .append(row.real())
+                .append('\t')
+                .append(row.imaginary())
+                .append('\t')
+                .append(row.magnitude())
+                .append('\t')
+                .append(row.magnitude() * row.magnitude())
+                .append('\t')
+                .append(row.phase())
+                .append(System.lineSeparator());
+        }
+        return builder.toString();
     }
 
     private static Node chartCard(
@@ -219,6 +405,36 @@ public final class DesktopSimulationVisualizationsView {
         return card;
     }
 
+    private static Node expandedChartCard(
+        final String title,
+        final String subtitle,
+        final Node chart,
+        final Node notice
+    ) {
+        final Label titleLabel = new Label(title);
+        titleLabel.getStyleClass().add("chart-title");
+        final Label subtitleLabel = new Label(subtitle);
+        subtitleLabel.getStyleClass().add("panel-hint");
+        final VBox header = new VBox(
+            8.0,
+            titleLabel,
+            subtitleLabel
+        );
+        header.setAlignment(Pos.CENTER_LEFT);
+        final VBox body = new VBox(
+            12.0,
+            header,
+            chart,
+            notice
+        );
+        body.getStyleClass().add("chart-card");
+        final ScrollPane scrollPane = new ScrollPane(body);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.getStyleClass().add("expanded-chart-scroll");
+        return scrollPane;
+    }
+
     private static Node emptyCard(
         final String title,
         final String body
@@ -243,7 +459,10 @@ public final class DesktopSimulationVisualizationsView {
         return scrollPane;
     }
 
-    private static Node probabilityChart(final List<ProbabilityRow> rows) {
+    private static Node probabilityChart(
+        final List<ProbabilityRow> rows,
+        final boolean expanded
+    ) {
         final VBox chart = new VBox(7.0);
         chart.setPadding(new Insets(2.0));
         double max = 1.0;
@@ -253,7 +472,8 @@ public final class DesktopSimulationVisualizationsView {
                 rows.get(i).probability()
             );
         }
-        for (int i = 0; i < Math.min(rows.size(), MAX_BARS); i++) {
+        final int limit = expanded ? MAX_EXPANDED_BARS : MAX_BARS;
+        for (int i = 0; i < Math.min(rows.size(), limit); i++) {
             final ProbabilityRow row = rows.get(i);
             chart.getChildren().add(barRow(
                 row.label(),
@@ -275,7 +495,10 @@ public final class DesktopSimulationVisualizationsView {
         return chart;
     }
 
-    private static Node stateVectorChart(final List<StateVectorRow> rows) {
+    private static Node stateVectorChart(
+        final List<StateVectorRow> rows,
+        final boolean expanded
+    ) {
         final VBox chart = new VBox(7.0);
         chart.setPadding(new Insets(2.0));
         double max = 1.0;
@@ -285,7 +508,8 @@ public final class DesktopSimulationVisualizationsView {
                 rows.get(i).magnitude()
             );
         }
-        for (int i = 0; i < Math.min(rows.size(), MAX_BARS); i++) {
+        final int limit = expanded ? MAX_EXPANDED_BARS : MAX_BARS;
+        for (int i = 0; i < Math.min(rows.size(), limit); i++) {
             final StateVectorRow row = rows.get(i);
             chart.getChildren().add(barRow(
                 row.label(),
@@ -396,69 +620,60 @@ public final class DesktopSimulationVisualizationsView {
         final int total,
         final boolean expanded
     ) {
+        final int limit = expanded ? MAX_EXPANDED_BARS : MAX_BARS;
         final Label label = new Label(shown < total
-            ? "Showing " + Math.min(shown, MAX_BARS) + " of " + total
+            ? "Showing " + Math.min(shown, limit) + " of " + total
                 + " rows to keep the desktop responsive."
             : (expanded ? "Expanded view. Rows: " + total + "." : "Rows: " + total + "."));
         label.getStyleClass().add("visualization-limit-label");
         return label;
     }
 
-    private static List<ProbabilityRow> probabilityRows(
+    private List<ProbabilityRow> probabilityRows(
         final SimulationResult simulation,
-        final boolean hideZeroProbability
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
     ) {
-        final ArrayList<ProbabilityRow> rows = new ArrayList<>(simulation.counts().size());
-        final double shots = Math.max(
-            1.0,
-            simulation.shots()
+        final List<MeasurementProbabilityRow> projectedRows = chartProjection.measurementRows(
+            simulation,
+            hideZeroProbability
         );
-        for (final Map.Entry<String, Long> entry : simulation.counts().entrySet()) {
-            final double probability = entry.getValue().longValue() / shots;
-            if (
-                hideZeroProbability
-                && probability == 0.0
-            ) {
-                continue;
-            }
+        final ArrayList<ProbabilityRow> rows = new ArrayList<>(projectedRows.size());
+        for (int i = 0; i < projectedRows.size(); i++) {
+            final MeasurementProbabilityRow projectedRow = projectedRows.get(i);
             rows.add(new ProbabilityRow(
-                entry.getKey(),
-                entry.getValue().longValue(),
-                probability
+                displayState(
+                    projectedRow.basisState(),
+                    registerBitOrder
+                ),
+                projectedRow.count(),
+                projectedRow.probability()
             ));
         }
-        rows.sort(Comparator
-            .comparingDouble(ProbabilityRow::probability)
-            .reversed()
-            .thenComparing(ProbabilityRow::label));
         return rows;
     }
 
-    private static List<StateVectorRow> stateVectorRows(
+    private List<StateVectorRow> stateVectorRows(
         final SimulationResult simulation,
-        final boolean hideZeroProbability
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
     ) {
-        final ArrayList<StateVectorRow> rows = new ArrayList<>(simulation.stateVector().size());
-        for (final StateVectorAmplitude amplitude : simulation.stateVector()) {
-            final double magnitude = Math.hypot(
-                amplitude.real(),
-                amplitude.imaginary()
-            );
-            if (
-                hideZeroProbability
-                && magnitude == 0.0
-            ) {
-                continue;
-            }
+        final List<StateVectorDisplayRow> projectedRows = chartProjection.stateVectorRows(
+            simulation,
+            hideZeroProbability
+        );
+        final ArrayList<StateVectorRow> rows = new ArrayList<>(projectedRows.size());
+        for (int i = 0; i < projectedRows.size(); i++) {
+            final StateVectorDisplayRow projectedRow = projectedRows.get(i);
             rows.add(new StateVectorRow(
-                amplitude.basisState(),
-                amplitude.real(),
-                amplitude.imaginary(),
-                magnitude,
-                Math.atan2(
-                    amplitude.imaginary(),
-                    amplitude.real()
-                )
+                displayState(
+                    projectedRow.basisState(),
+                    registerBitOrder
+                ),
+                projectedRow.real(),
+                projectedRow.imaginary(),
+                projectedRow.magnitude(),
+                projectedRow.phase()
             ));
         }
         rows.sort(Comparator
@@ -504,6 +719,36 @@ public final class DesktopSimulationVisualizationsView {
             case "expandStatevector" -> "Развернуть вектор состояния";
             default -> key;
         };
+    }
+
+    private String bitOrderText(
+        final int bitCount,
+        final boolean registerBitOrder
+    ) {
+        if (!russian) {
+            return registerBitOrder
+                ? "Bitstring order: register order [0.." + Math.max(0, bitCount - 1) + "]."
+                : "Bitstring order: standard MSB-first [" + Math.max(0, bitCount - 1) + "..0], matching Qiskit/Aer.";
+        }
+        return registerBitOrder
+            ? "Порядок bitstring: порядок регистров [0.." + Math.max(0, bitCount - 1) + "]."
+            : "Порядок bitstring: стандартный MSB-first [" + Math.max(0, bitCount - 1) + "..0], как в Qiskit/Aer.";
+    }
+
+    private static String displayState(
+        final String state,
+        final boolean registerBitOrder
+    ) {
+        if (!registerBitOrder) {
+            return state;
+        }
+        final char[] characters = state.toCharArray();
+        for (int left = 0, right = characters.length - 1; left < right; left++, right--) {
+            final char temporary = characters[left];
+            characters[left] = characters[right];
+            characters[right] = temporary;
+        }
+        return new String(characters);
     }
 
     private enum ChartKind {

@@ -13,15 +13,31 @@ import java.util.Map;
 
 import ru.pathcreator.vadim.quantum.application.simulation.diagnostic.SimulationDiagnosticCode;
 import ru.pathcreator.vadim.quantum.application.simulation.result.SimulationResult;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.SimulationChartProjection;
+import ru.pathcreator.vadim.quantum.application.simulation.visualization.StateVectorDisplayRow;
 
 /**
  * Рендерит результаты локальной симуляции для desktop UI.
  */
 public final class DesktopSimulationTextRenderer {
 
+    private final SimulationChartProjection chartProjection = new SimulationChartProjection();
+
     public String render(
         final SimulationResult simulation,
         final boolean hideZeroProbability
+    ) {
+        return render(
+            simulation,
+            hideZeroProbability,
+            false
+        );
+    }
+
+    public String render(
+        final SimulationResult simulation,
+        final boolean hideZeroProbability,
+        final boolean registerBitOrder
     ) {
         final StringBuilder text = new StringBuilder();
         text.append("Simulation").append(System.lineSeparator());
@@ -29,10 +45,17 @@ public final class DesktopSimulationTextRenderer {
         text.append("  qubits: ").append(simulation.qubitCount()).append(System.lineSeparator());
         text.append("  classical bits: ").append(simulation.classicalBitCount()).append(System.lineSeparator());
         text.append("  shots: ").append(simulation.shots()).append(System.lineSeparator());
+        text.append("  bitstring order: ").append(bitOrderText(
+            simulation.classicalBitCount(),
+            registerBitOrder
+        )).append(System.lineSeparator());
         text.append(System.lineSeparator());
         text.append("Counts").append(System.lineSeparator());
         simulation.counts().forEach((state, count) -> text.append("  ")
-            .append(state)
+            .append(displayState(
+                state,
+                registerBitOrder
+            ))
             .append(": ")
             .append(count)
             .append(System.lineSeparator()));
@@ -40,7 +63,8 @@ public final class DesktopSimulationTextRenderer {
         text.append("Measurement frequencies").append(System.lineSeparator());
         appendMeasurementFrequencies(
             text,
-            simulation
+            simulation,
+            registerBitOrder
         );
         text.append(System.lineSeparator());
         if (stateVectorWasCapturedAfterMeasurement(simulation)) {
@@ -50,40 +74,34 @@ public final class DesktopSimulationTextRenderer {
         } else {
             text.append("Exact state-vector probabilities").append(System.lineSeparator());
         }
-        for (int i = 0; i < simulation.stateVector().size(); i++) {
-            final double real = simulation.stateVector().get(i).real();
-            final double imaginary = simulation.stateVector().get(i).imaginary();
-            final double probability = real * real + imaginary * imaginary;
-            if (
-                hideZeroProbability
-                && probability == 0.0
-            ) {
-                continue;
-            }
+        final java.util.List<StateVectorDisplayRow> stateVectorRows = chartProjection.stateVectorRows(
+            simulation,
+            hideZeroProbability
+        );
+        for (int i = 0; i < stateVectorRows.size(); i++) {
+            final StateVectorDisplayRow row = stateVectorRows.get(i);
             text.append("  ")
-                .append(simulation.stateVector().get(i).basisState())
+                .append(displayState(
+                    row.basisState(),
+                    registerBitOrder
+                ))
                 .append(": ")
-                .append(probability)
+                .append(row.probability())
                 .append(System.lineSeparator());
         }
         text.append(System.lineSeparator());
         text.append("State vector amplitudes").append(System.lineSeparator());
-        for (int i = 0; i < simulation.stateVector().size(); i++) {
-            final double real = simulation.stateVector().get(i).real();
-            final double imaginary = simulation.stateVector().get(i).imaginary();
-            final double probability = real * real + imaginary * imaginary;
-            if (
-                hideZeroProbability
-                && probability == 0.0
-            ) {
-                continue;
-            }
+        for (int i = 0; i < stateVectorRows.size(); i++) {
+            final StateVectorDisplayRow row = stateVectorRows.get(i);
             text.append("  ")
-                .append(simulation.stateVector().get(i).basisState())
+                .append(displayState(
+                    row.basisState(),
+                    registerBitOrder
+                ))
                 .append(": ")
-                .append(real)
+                .append(row.real())
                 .append(" + ")
-                .append(imaginary)
+                .append(row.imaginary())
                 .append("i")
                 .append(System.lineSeparator());
         }
@@ -105,7 +123,8 @@ public final class DesktopSimulationTextRenderer {
 
     private static void appendMeasurementFrequencies(
         final StringBuilder text,
-        final SimulationResult simulation
+        final SimulationResult simulation,
+        final boolean registerBitOrder
     ) {
         if (simulation.shots() == 0) {
             text.append("  no shots").append(System.lineSeparator());
@@ -113,11 +132,44 @@ public final class DesktopSimulationTextRenderer {
         }
         for (final Map.Entry<String, Long> entry : simulation.counts().entrySet()) {
             text.append("  ")
-                .append(entry.getKey())
+                .append(displayState(
+                    entry.getKey(),
+                    registerBitOrder
+                ))
                 .append(": ")
                 .append((double) entry.getValue().longValue() / simulation.shots())
                 .append(System.lineSeparator());
         }
+    }
+
+    private static String bitOrderText(
+        final int classicalBitCount,
+        final boolean registerBitOrder
+    ) {
+        if (classicalBitCount <= 0) {
+            return registerBitOrder
+                ? "register order"
+                : "standard MSB-first";
+        }
+        return registerBitOrder
+            ? "register order c[0]...c[" + (classicalBitCount - 1) + "]"
+            : "standard MSB-first c[" + (classicalBitCount - 1) + "]...c[0]";
+    }
+
+    private static String displayState(
+        final String state,
+        final boolean registerBitOrder
+    ) {
+        if (!registerBitOrder) {
+            return state;
+        }
+        final char[] characters = state.toCharArray();
+        for (int left = 0, right = characters.length - 1; left < right; left++, right--) {
+            final char temporary = characters[left];
+            characters[left] = characters[right];
+            characters[right] = temporary;
+        }
+        return new String(characters);
     }
 
     private static boolean stateVectorWasCapturedAfterMeasurement(final SimulationResult simulation) {
