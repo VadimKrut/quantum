@@ -123,7 +123,7 @@ public enum StandardGate implements Gate {
     );
 
     /**
-     * Каноническое имя гейта для Quantum IR и будущих writer-слоев.
+     * Каноническое имя гейта для Quantum IR и writer-слоев.
      */
     private final String gateName;
 

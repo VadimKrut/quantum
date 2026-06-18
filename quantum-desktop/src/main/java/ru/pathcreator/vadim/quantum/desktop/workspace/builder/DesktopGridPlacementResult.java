@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 Vadim Aleksandrovich Zaletaev
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+package ru.pathcreator.vadim.quantum.desktop.workspace.builder;
+
+import java.util.List;
+
+import ru.pathcreator.vadim.quantum.desktop.workspace.DesktopIrOperationSpec;
+
+/**
+ * Результат одного клика по визуальной сетке в native IR builder.
+ */
+public record DesktopGridPlacementResult(
+    List<String> pendingQubits,
+    DesktopIrOperationSpec operation,
+    String hint
+) {
+
+    public DesktopGridPlacementResult {
+        pendingQubits = List.copyOf(pendingQubits);
+    }
+
+    public boolean hasOperation() {
+        return operation != null;
+    }
+}

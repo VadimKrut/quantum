@@ -12,7 +12,7 @@ package ru.pathcreator.vadim.quantum.application.simulation.options;
 import ru.pathcreator.vadim.quantum.domain.parameter.ParameterBindings;
 
 /**
- * Immutable настройки локальной state-vector симуляции.
+ * Неизменяемые настройки локальной state-vector симуляции.
  */
 public final class SimulationOptions {
 
@@ -67,7 +67,7 @@ public final class SimulationOptions {
     /**
      * Builder настроек симуляции.
      */
-public static final class Builder {
+    public static final class Builder {
 
         private int shots;
         private long seed;

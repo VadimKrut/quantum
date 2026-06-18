@@ -217,7 +217,7 @@ public final class QuantumSimulator {
                 options,
                 diagnostics,
                 random,
-                false
+                true
             );
             context.initializeState();
             executeOperations(
@@ -225,6 +225,9 @@ public final class QuantumSimulator {
                 CircuitOperationSequence.of(circuit),
                 -1
             );
+            if (hasError(diagnostics)) {
+                break;
+            }
             addCount(
                 counts,
                 context.finalShotBitString()
@@ -1074,7 +1077,7 @@ public final class QuantumSimulator {
                 modifier.powerExpression(),
                 context.options.parameterBindings()
             );
-        } catch (IllegalArgumentException exception) {
+        } catch (final IllegalArgumentException exception) {
             unsupported(
                 context,
                 SimulationDiagnosticCode.UNBOUND_PARAMETER,
@@ -1278,7 +1281,7 @@ public final class QuantumSimulator {
                     0.0,
                     parseImaginaryCoefficient(withoutI)
                 );
-            } catch (NumberFormatException exception) {
+            } catch (final NumberFormatException exception) {
                 return null;
             }
         }
@@ -1287,7 +1290,7 @@ public final class QuantumSimulator {
                 Double.parseDouble(normalized),
                 0.0
             );
-        } catch (NumberFormatException exception) {
+        } catch (final NumberFormatException exception) {
             return null;
         }
     }
@@ -2802,7 +2805,7 @@ public final class QuantumSimulator {
                     expressions[i],
                     context.options.parameterBindings()
                 );
-            } catch (IllegalArgumentException exception) {
+            } catch (final IllegalArgumentException exception) {
                 unsupported(
                     context,
                     SimulationDiagnosticCode.UNBOUND_PARAMETER,
@@ -3286,7 +3289,7 @@ public final class QuantumSimulator {
     ) {
         try {
             return Long.parseLong(text);
-        } catch (NumberFormatException exception) {
+        } catch (final NumberFormatException exception) {
             return context.localClassicalValues.get(text);
         }
     }
@@ -3310,7 +3313,7 @@ public final class QuantumSimulator {
         for (int i = 0; i < parts.length; i++) {
             try {
                 values[i] = Long.parseLong(parts[i].trim());
-            } catch (NumberFormatException exception) {
+            } catch (final NumberFormatException exception) {
                 return null;
             }
         }

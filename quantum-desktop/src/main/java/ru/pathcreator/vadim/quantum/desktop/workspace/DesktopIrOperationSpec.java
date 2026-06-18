@@ -10,7 +10,7 @@
 package ru.pathcreator.vadim.quantum.desktop.workspace;
 
 /**
- * One operation placed by a user in the native IR workspace.
+ * Одна операция, которую пользователь разместил в native IR workspace.
  */
 public record DesktopIrOperationSpec(
     String gate,
@@ -31,6 +31,9 @@ public record DesktopIrOperationSpec(
     }
 
     public String label() {
+        if (gate.startsWith("CUSTOM:")) {
+            return gate.substring("CUSTOM:".length()) + " (custom operation)";
+        }
         return switch (gate) {
             case "CX", "CY", "CZ", "CH", "SWAP" -> gate + " " + primaryQubit + ", " + secondaryQubit;
             case "CCX" -> gate + " " + primaryQubit + ", " + secondaryQubit + ", " + tertiaryQubit;

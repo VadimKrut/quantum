@@ -10,104 +10,112 @@
 package ru.pathcreator.vadim.quantum.domain.operation;
 
 /**
- * Тип операции внутри gate-based Quantum IR.
+ * Тип операции внутри Quantum IR.
  */
 public enum OperationKind {
 
     /**
-     * Применение квантового гейта.
+     * Применение квантового gate.
      */
     GATE,
 
     /**
-     * Измерение кубита в классический бит.
+     * Измерение qubit в classical bit.
      */
     MEASURE,
 
     /**
-     * Сброс кубита.
+     * Сброс qubit.
      */
     RESET,
 
     /**
-     * Барьер для группы кубитов.
+     * Барьер для группы quantum references.
      */
     BARRIER,
 
     /**
-     * Операция с классическим условием выполнения.
+     * Quantum-controlled операция.
      */
     CONTROLLED,
 
     /**
-     * Присваивание в классической части IR.
+     * Присваивание в classical части IR.
      */
     CLASSICAL_ASSIGNMENT,
 
     /**
-     * Локальное классическое объявление внутри потока операций.
+     * Локальное classical declaration внутри operation stream.
      */
     CLASSICAL_DECLARATION,
 
     /**
-     * Объявление классического массива внутри потока операций.
+     * Локальное declaration classical array внутри operation stream.
      */
     CLASSICAL_ARRAY_DECLARATION,
 
     /**
-     * Вызов callable/subroutine/extern как операция.
+     * Вызов callable, subroutine или extern declaration.
      */
     CALLABLE_INVOCATION,
 
     /**
-     * Операция с предикатом над классической частью IR.
+     * Операция под classical predicate.
      */
     CLASSICALLY_CONTROLLED,
 
     /**
-     * Лексический блок операций с собственной областью видимости.
+     * Лексический блок с вложенным operation block.
      */
     BLOCK,
 
     /**
-     * Ветвление по классическому предикату.
+     * Условный block по classical predicate.
      */
     CONDITIONAL_BLOCK,
 
     /**
-     * Цикл по дискретному диапазону классических значений.
+     * Цикл по дискретному classical range.
      */
     FOR_LOOP,
 
     /**
-     * Цикл по диапазону с runtime/symbolic границами.
+     * Цикл с symbolic/runtime границами.
      */
     SYMBOLIC_FOR_LOOP,
 
     /**
-     * Цикл с классическим предикатом продолжения.
+     * Цикл с classical predicate продолжения.
      */
     WHILE_LOOP,
 
     /**
-     * Временная задержка на квантовых носителях.
+     * Timing delay на quantum references.
      */
     DELAY,
 
     /**
-     * Сгруппированный временной блок операций.
+     * Timing box с вложенным operation block.
      */
     TIMING_BOX,
 
+    /**
+     * Label для branch/control-flow навигации.
+     */
     LABEL,
 
+    /**
+     * Branch к label.
+     */
     BRANCH,
 
+    /**
+     * Остановка выполнения программы.
+     */
     HALT,
 
-    WAIT
-
     /**
-     * Сохраненный фрагмент внешнего языка в потоке операций.
+     * Ожидание runtime/backend события.
      */
+    WAIT
 }

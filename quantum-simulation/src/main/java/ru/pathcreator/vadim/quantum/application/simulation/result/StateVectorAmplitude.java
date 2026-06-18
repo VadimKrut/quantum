@@ -10,7 +10,7 @@
 package ru.pathcreator.vadim.quantum.application.simulation.result;
 
 /**
- * Амплитуда одного basis-state локального state-vector результата.
+ * Амплитуда одного basis-state в локальном state-vector результате.
  */
 public final class StateVectorAmplitude {
 

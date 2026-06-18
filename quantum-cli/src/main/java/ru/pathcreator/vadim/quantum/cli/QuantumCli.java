@@ -109,14 +109,14 @@ public final class QuantumCli {
                 out,
                 err
             );
-        } catch (CliUsageException exception) {
+        } catch (final CliUsageException exception) {
             err.println(exception.getMessage());
             err.println("Use `quantum help` for command syntax.");
             return EXIT_USAGE_ERROR;
-        } catch (IOException exception) {
+        } catch (final IOException exception) {
             err.println("I/O error: " + exception.getMessage());
             return EXIT_INTERNAL_ERROR;
-        } catch (RuntimeException exception) {
+        } catch (final RuntimeException exception) {
             err.println("Internal error: " + exception.getMessage());
             return EXIT_INTERNAL_ERROR;
         }
@@ -1390,9 +1390,7 @@ public final class QuantumCli {
         );
         payload.put(
             "parameterKinds",
-            profile.supportedParameterKinds().stream()
-                .map(Enum::name)
-                .toList()
+            enumNames(profile.supportedParameterKinds())
         );
         payload.put(
             "metadata",
@@ -1724,9 +1722,7 @@ public final class QuantumCli {
         );
         payload.put(
             "circuits",
-            estimate.circuits().stream()
-                .map(QuantumCli::circuitResourcePayload)
-                .toList()
+            circuitResourcePayloads(estimate.circuits())
         );
         return payload;
     }
@@ -1735,9 +1731,7 @@ public final class QuantumCli {
         final Map<String, Object> payload = new LinkedHashMap<>();
         payload.put(
             "circuits",
-            timeline.circuits().stream()
-                .map(QuantumCli::timelineCircuitPayload)
-                .toList()
+            timelineCircuitPayloads(timeline.circuits())
         );
         return payload;
     }
@@ -1758,9 +1752,7 @@ public final class QuantumCli {
         );
         payload.put(
             "steps",
-            timeline.steps().stream()
-                .map(QuantumCli::timelineStepPayload)
-                .toList()
+            timelineStepPayloads(timeline.steps())
         );
         return payload;
     }
@@ -2097,9 +2089,7 @@ public final class QuantumCli {
         );
         payload.put(
             "stages",
-            report.stages().stream()
-                .map(QuantumCli::benchmarkStagePayload)
-                .toList()
+            benchmarkStagePayloads(report.stages())
         );
         return payload;
     }
@@ -2128,9 +2118,7 @@ public final class QuantumCli {
         );
         payload.put(
             "targets",
-            matrix.targets().stream()
-                .map(QuantumCli::targetCompatibilityPayload)
-                .toList()
+            targetCompatibilityPayloads(matrix.targets())
         );
         return payload;
     }
@@ -2181,15 +2169,11 @@ public final class QuantumCli {
         );
         payload.put(
             "capabilities",
-            target.targetProfile().capabilities().stream()
-                .map(Enum::name)
-                .toList()
+            enumNames(target.targetProfile().capabilities())
         );
         payload.put(
             "checks",
-            target.checks().stream()
-                .map(QuantumCli::compatibilityCheckPayload)
-                .toList()
+            compatibilityCheckPayloads(target.checks())
         );
         return payload;
     }
@@ -2255,9 +2239,7 @@ public final class QuantumCli {
         }
         payload.put(
             "targets",
-            report.targets().stream()
-                .map(QuantumCli::crossFormatTargetPayload)
-                .toList()
+            crossFormatTargetPayloads(report.targets())
         );
         return payload;
     }
@@ -2323,9 +2305,7 @@ public final class QuantumCli {
         );
         payload.put(
             "cases",
-            report.cases().stream()
-                .map(QuantumCli::corpusRegressionCasePayload)
-                .toList()
+            corpusRegressionCasePayloads(report.cases())
         );
         return payload;
     }
@@ -2397,26 +2377,11 @@ public final class QuantumCli {
         );
         payload.put(
             "checks",
-            report.checks().stream()
-                .map(QuantumCli::releaseReadinessCheckPayload)
-                .toList()
+            releaseReadinessCheckPayloads(report.checks())
         );
         payload.put(
             "targetProfiles",
-            report.targetProfiles().stream()
-                .map(profile -> Map.of(
-                    "format",
-                    profile.format().name(),
-                    "targetName",
-                    profile.targetName(),
-                    "targetVersion",
-                    profile.targetVersion(),
-                    "capabilityCount",
-                    profile.capabilities().size(),
-                    "nativeGateCount",
-                    profile.nativeGateNames().size()
-                ))
-                .toList()
+            targetProfilePayloads(report.targetProfiles())
         );
         payload.put(
             "corpusRegression",
@@ -2484,11 +2449,127 @@ public final class QuantumCli {
         );
         payload.put(
             "checks",
-            report.checks().stream()
-                .map(QuantumCli::productDoctorCheckPayload)
-                .toList()
+            productDoctorCheckPayloads(report.checks())
         );
         return payload;
+    }
+
+    private static List<String> enumNames(final Iterable<? extends Enum<?>> values) {
+        final ArrayList<String> names = new ArrayList<>();
+        for (final Enum<?> value : values) {
+            names.add(value.name());
+        }
+        return names;
+    }
+
+    private static List<Map<String, Object>> circuitResourcePayloads(final List<CircuitResourceEstimate> estimates) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(estimates.size());
+        for (int i = 0; i < estimates.size(); i++) {
+            payloads.add(circuitResourcePayload(estimates.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> timelineCircuitPayloads(final List<CircuitTimeline> timelines) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(timelines.size());
+        for (int i = 0; i < timelines.size(); i++) {
+            payloads.add(timelineCircuitPayload(timelines.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> timelineStepPayloads(final List<CircuitTimelineStep> steps) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(steps.size());
+        for (int i = 0; i < steps.size(); i++) {
+            payloads.add(timelineStepPayload(steps.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> benchmarkStagePayloads(final List<BenchmarkStageResult> stages) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(stages.size());
+        for (int i = 0; i < stages.size(); i++) {
+            payloads.add(benchmarkStagePayload(stages.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> targetCompatibilityPayloads(final List<TargetCompatibilityReport> targets) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(targets.size());
+        for (int i = 0; i < targets.size(); i++) {
+            payloads.add(targetCompatibilityPayload(targets.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> compatibilityCheckPayloads(final List<CompatibilityCheckResult> checks) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(checks.size());
+        for (int i = 0; i < checks.size(); i++) {
+            payloads.add(compatibilityCheckPayload(checks.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> crossFormatTargetPayloads(final List<CrossFormatTargetVerification> targets) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(targets.size());
+        for (int i = 0; i < targets.size(); i++) {
+            payloads.add(crossFormatTargetPayload(targets.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> corpusRegressionCasePayloads(final List<CorpusRegressionCaseReport> cases) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(cases.size());
+        for (int i = 0; i < cases.size(); i++) {
+            payloads.add(corpusRegressionCasePayload(cases.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> releaseReadinessCheckPayloads(final List<ReleaseReadinessCheck> checks) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(checks.size());
+        for (int i = 0; i < checks.size(); i++) {
+            payloads.add(releaseReadinessCheckPayload(checks.get(i)));
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> targetProfilePayloads(final List<IntegrationCapabilityProfile> profiles) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(profiles.size());
+        for (int i = 0; i < profiles.size(); i++) {
+            final IntegrationCapabilityProfile profile = profiles.get(i);
+            final Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put(
+                "format",
+                profile.format().name()
+            );
+            payload.put(
+                "targetName",
+                profile.targetName()
+            );
+            payload.put(
+                "targetVersion",
+                profile.targetVersion()
+            );
+            payload.put(
+                "capabilityCount",
+                profile.capabilities().size()
+            );
+            payload.put(
+                "nativeGateCount",
+                profile.nativeGateNames().size()
+            );
+            payloads.add(payload);
+        }
+        return payloads;
+    }
+
+    private static List<Map<String, Object>> productDoctorCheckPayloads(final List<ProductDoctorCheck> checks) {
+        final ArrayList<Map<String, Object>> payloads = new ArrayList<>(checks.size());
+        for (int i = 0; i < checks.size(); i++) {
+            payloads.add(productDoctorCheckPayload(checks.get(i)));
+        }
+        return payloads;
     }
 
     private static Map<String, Object> productAuditPayload(final ProductAuditReport report) {

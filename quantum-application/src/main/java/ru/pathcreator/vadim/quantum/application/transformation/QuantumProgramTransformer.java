@@ -561,7 +561,7 @@ public final class QuantumProgramTransformer {
                 );
             }
             return result.expression();
-        } catch (IllegalArgumentException exception) {
+        } catch (final IllegalArgumentException exception) {
             context.diagnostics.add(TransformationDiagnostic.error(
                 TransformationDiagnosticCode.UNKNOWN_PARAMETER_CONSTANT,
                 TransformationStep.PARAMETER_CANONICALIZATION,

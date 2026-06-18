@@ -13,7 +13,7 @@ import ru.pathcreator.vadim.quantum.desktop.smoke.DesktopSmokeApplication;
 import ru.pathcreator.vadim.quantum.desktop.ui.QuantumDesktopApplication;
 
 /**
- * Launcher для shaded jar: запускает JavaFX окно или headless smoke.
+ * Launcher для shaded jar: запускает JavaFX окно или headless smoke-проверку.
  */
 public final class QuantumDesktopLauncher {
 

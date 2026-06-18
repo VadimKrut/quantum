@@ -168,7 +168,7 @@ final class CliArguments {
         }
         try {
             return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
+        } catch (final NumberFormatException exception) {
             throw new CliUsageException("Option --" + name + " must be an integer.");
         }
     }
@@ -183,7 +183,7 @@ final class CliArguments {
         }
         try {
             return Long.parseLong(value);
-        } catch (NumberFormatException exception) {
+        } catch (final NumberFormatException exception) {
             throw new CliUsageException("Option --" + name + " must be a long integer.");
         }
     }

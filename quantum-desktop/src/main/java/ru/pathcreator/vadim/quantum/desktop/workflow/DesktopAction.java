@@ -9,6 +9,9 @@
 
 package ru.pathcreator.vadim.quantum.desktop.workflow;
 
+/**
+ * Набор действий, которые desktop workflow может выполнить и показать пользователю.
+ */
 public enum DesktopAction {
 
     IMPORT,

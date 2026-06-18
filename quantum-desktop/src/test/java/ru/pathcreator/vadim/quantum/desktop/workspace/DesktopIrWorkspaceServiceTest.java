@@ -284,6 +284,53 @@ class DesktopIrWorkspaceServiceTest {
         }
     }
 
+    @Test
+    void projectsNativeJsonBackIntoGraphicalWorkspaceAndDsl() {
+        final QuantumProgram program = service.buildProgram(
+            "dense",
+            "q",
+            5,
+            "c",
+            5,
+            denseGateSpectrumOperations()
+        );
+        final String json = service.writeJson(program).content();
+        final QuantumProgram fromJson = service.readJson(json).program();
+        final DesktopIrProgramSnapshot snapshot = service.projectToGraphicalWorkspace(fromJson);
+        final String dsl = service.generateJavaDsl(
+            snapshot.circuitName(),
+            snapshot.quantumRegisterName(),
+            snapshot.quantumRegisterSize(),
+            snapshot.classicalRegisterName(),
+            snapshot.classicalRegisterSize(),
+            snapshot.operations()
+        );
+
+        assertTrue(snapshot.isComplete());
+        assertEquals(
+            "dense",
+            snapshot.circuitName()
+        );
+        assertEquals(
+            5,
+            snapshot.quantumRegisterSize()
+        );
+        assertEquals(
+            denseGateSpectrumOperations().size(),
+            snapshot.operations().size()
+        );
+        assertTrue(dsl.contains(".ccx(\"q[0]\", \"q[2]\", \"q[4]\")"));
+        assertTrue(dsl.contains(".measure(\"q[4]\", \"c[4]\")"));
+        assertTrue(service.validate(service.buildProgram(
+            snapshot.circuitName(),
+            snapshot.quantumRegisterName(),
+            snapshot.quantumRegisterSize(),
+            snapshot.classicalRegisterName(),
+            snapshot.classicalRegisterSize(),
+            snapshot.operations()
+        )).isValid());
+    }
+
     private static List<DesktopIrOperationSpec> denseGateSpectrumOperations() {
         final java.util.ArrayList<DesktopIrOperationSpec> operations = new java.util.ArrayList<>();
         for (int round = 0; round < 4; round++) {

@@ -15,7 +15,7 @@ import java.util.Map;
 import ru.pathcreator.vadim.quantum.application.simulation.diagnostic.SimulationDiagnostic;
 
 /**
- * Immutable результат локальной симуляции Quantum IR.
+ * Неизменяемый результат локальной симуляции Quantum IR.
  */
 public final class SimulationResult {
 
