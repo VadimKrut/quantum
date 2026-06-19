@@ -21,6 +21,14 @@
         <module>quantum-quil</module>
         <module>quantum-api</module>
         <module>quantum-library</module>
+        <module>quantum-chemistry-core</module>
+        <module>quantum-chemistry-storage</module>
+        <module>quantum-chemistry-library</module>
+        <module>quantum-chemistry-drawing</module>
+        <module>quantum-chemistry-classical</module>
+        <module>quantum-chemistry-quantum</module>
+        <module>quantum-chemistry-openfermion</module>
+        <module>quantum-chemistry-workflow</module>
         <module>quantum-cli</module>
         <module>quantum-desktop</module>
     </modules>

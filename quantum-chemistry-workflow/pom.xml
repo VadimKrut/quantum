@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ru.pathcreator.vadim</groupId>
+        <artifactId>quantum-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>quantum-chemistry-workflow</artifactId>
+    <packaging>jar</packaging>
+
+    <name>quantum-chemistry-workflow</name>
+    <description>Chemistry workbench facade for molecule, calculation, compilation, and report workflows.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-storage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-library</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-drawing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-cdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-classical</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-quantum</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-openfermion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>
