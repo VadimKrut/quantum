@@ -38,11 +38,6 @@
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
-            <artifactId>quantum-chemistry-cdk</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ru.pathcreator.vadim</groupId>
             <artifactId>quantum-chemistry-classical</artifactId>
             <version>${project.version}</version>
         </dependency>
