@@ -1,0 +1,88 @@
+name: Maven Packages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: maven-packages-master
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish Maven modules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Read Maven version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(sed -n 's:.*<revision>\(.*\)</revision>.*:\1:p' pom.xml | head -n 1)"
+          if [ -z "${VERSION}" ]; then
+            echo "Root Maven revision is empty." >&2
+            exit 1
+          fi
+          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Root Maven revision must use major.minor format without leading zeroes, for example 1.0 or 1.1: ${VERSION}" >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Maven version: ${VERSION}"
+
+      - name: Check existing package version
+        id: package_version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          METADATA_URL="https://maven.pkg.github.com/${GITHUB_REPOSITORY}/ru/pathcreator/vadim/quantum-core/maven-metadata.xml"
+          STATUS="$(curl -L -sS -o maven-metadata.xml -w "%{http_code}" \
+            -u "${GITHUB_ACTOR}:${GH_TOKEN}" \
+            "${METADATA_URL}")"
+
+          if [ "${STATUS}" = "404" ]; then
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+            echo "Package metadata does not exist yet."
+            exit 0
+          fi
+
+          if [ "${STATUS}" != "200" ]; then
+            echo "GitHub Packages metadata check failed with HTTP ${STATUS}." >&2
+            cat maven-metadata.xml >&2
+            exit 1
+          fi
+
+          EXISTS="$(python -c "import os, xml.etree.ElementTree as ET; version = os.environ['VERSION']; root = ET.parse('maven-metadata.xml').getroot(); versions = [item.text for item in root.findall('./versioning/versions/version')]; print('true' if version in versions else 'false')")"
+          echo "exists=${EXISTS}" >> "${GITHUB_OUTPUT}"
+          echo "Package version ${VERSION} exists: ${EXISTS}"
+
+      - name: Publish modules to GitHub Packages
+        if: steps.package_version.outputs.exists != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mvn -B -DskipTests deploy
+
+      - name: Skip existing package version
+        if: steps.package_version.outputs.exists == 'true'
+        run: echo "Maven package version ${{ steps.version.outputs.version }} already exists. Increase <revision> for a new immutable package publication."

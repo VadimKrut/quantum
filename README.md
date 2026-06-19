@@ -76,6 +76,31 @@ Platform installers are generated with `dist-windows-exe`, `dist-windows-msi`, `
 Pushes to `master` run the desktop distribution workflow. The workflow reads the root Maven version, publishes artifacts under the release tag `v<version>`, and refreshes the release assets when the Maven version has not changed. Increasing the root Maven version creates a new release tag and a new release.
 Project release versions use `major.minor` numbers without leading zeroes, for example `1.0`, `1.1`, or `2.0`.
 
+## Maven Packages
+
+GitHub Packages publishes the Maven modules separately, so a downstream project can depend only on the parts it needs. For example, an application can use the public facade without depending on the desktop studio:
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/VadimKrut/quantum</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>ru.pathcreator.vadim</groupId>
+        <artifactId>quantum-api</artifactId>
+        <version>1.0</version>
+    </dependency>
+</dependencies>
+```
+
+Other published modules use the same group and version, for example `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil`, and `quantum-library`.
+
+If Maven asks for credentials when reading GitHub Packages, configure a `github` server in the consumer project's Maven `settings.xml` with a GitHub token that can read packages.
+
 ## Supported External Formats
 
 Current baseline integrations:
@@ -172,7 +197,32 @@ App image - это полная папка приложения. Не копир
 Платформенные установщики собираются профилями `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm` или `dist-macos-dmg` на соответствующей операционной системе. Windows installer profiles требуют WiX Toolset, доступный для `jpackage`.
 
 Push в `master` запускает desktop distribution workflow. Workflow читает версию из root Maven, публикует артефакты в release tag `v<version>` и обновляет release assets, если Maven version не изменилась. Увеличение root Maven version создаёт новый release tag и новый release.
-Версии релизов проекта задаются положительными целыми числами без ведущих нулей, например `1`, `2` или `231`.
+Версии релизов проекта задаются числами в формате `major.minor` без ведущих нулей, например `1.0`, `1.1` или `2.0`.
+
+## Maven Packages
+
+GitHub Packages публикует Maven-модули отдельно, поэтому другой проект может подключить только нужную часть библиотеки. Например, приложение может использовать публичный facade без desktop studio:
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/VadimKrut/quantum</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>ru.pathcreator.vadim</groupId>
+        <artifactId>quantum-api</artifactId>
+        <version>1.0</version>
+    </dependency>
+</dependencies>
+```
+
+Остальные опубликованные модули используют тот же group и version, например `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil` и `quantum-library`.
+
+Если Maven при чтении GitHub Packages запросит доступ, настройте server с id `github` в Maven `settings.xml` проекта-потребителя и укажите GitHub token с правом чтения packages.
 
 ## Поддерживаемые Внешние Форматы
 
