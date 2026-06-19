@@ -67,7 +67,19 @@ jobs:
           echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build and package
-        run: mvn -B -pl quantum-desktop -am verify -P${{ matrix.profile }} -DskipTests
+        shell: bash
+        run: |
+          VERSION="$(sed -n 's:.*<revision>\(.*\)</revision>.*:\1:p' pom.xml | head -n 1)"
+          if [ -z "${VERSION}" ]; then
+            echo "Root Maven revision is empty." >&2
+            exit 1
+          fi
+          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Root Maven revision must be a positive integer without leading zeroes: ${VERSION}" >&2
+            exit 1
+          fi
+          echo "Maven version: ${VERSION}"
+          mvn -B -pl quantum-desktop -am verify -P${{ matrix.profile }} -DskipTests
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4
@@ -101,6 +113,10 @@ jobs:
           VERSION="$(sed -n 's:.*<revision>\(.*\)</revision>.*:\1:p' pom.xml | head -n 1)"
           if [ -z "${VERSION}" ]; then
             echo "Root Maven revision is empty." >&2
+            exit 1
+          fi
+          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Root Maven revision must be a positive integer without leading zeroes: ${VERSION}" >&2
             exit 1
           fi
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"

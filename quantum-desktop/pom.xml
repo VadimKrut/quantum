@@ -23,6 +23,7 @@
         <desktop.jpackage.executable>${java.home}${file.separator}bin${file.separator}jpackage</desktop.jpackage.executable>
         <desktop.jpackage.input>${project.build.directory}${file.separator}jpackage-input</desktop.jpackage.input>
         <desktop.jpackage.dist>${project.build.directory}${file.separator}dist</desktop.jpackage.dist>
+        <desktop.jpackage.app.version>${project.version}</desktop.jpackage.app.version>
         <desktop.jpackage.prepare.skip>true</desktop.jpackage.prepare.skip>
         <desktop.icon.windows>${project.basedir}${file.separator}src${file.separator}main${file.separator}packaging${file.separator}windows${file.separator}quantum-ir-studio.ico</desktop.icon.windows>
         <desktop.icon.linux>${project.basedir}${file.separator}src${file.separator}main${file.separator}packaging${file.separator}linux${file.separator}quantum-ir-studio.png</desktop.icon.linux>
@@ -165,7 +166,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
@@ -221,7 +222,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
@@ -279,7 +280,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
@@ -337,7 +338,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
@@ -392,7 +393,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
@@ -447,7 +448,7 @@
                                         <argument>--main-class</argument>
                                         <argument>ru.pathcreator.vadim.quantum.desktop.launcher.QuantumDesktopLauncher</argument>
                                         <argument>--app-version</argument>
-                                        <argument>${project.version}</argument>
+                                        <argument>${desktop.jpackage.app.version}</argument>
                                         <argument>--vendor</argument>
                                         <argument>${desktop.distribution.vendor}</argument>
                                         <argument>--description</argument>
