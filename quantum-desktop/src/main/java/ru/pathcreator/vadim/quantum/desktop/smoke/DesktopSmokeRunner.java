@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 import ru.pathcreator.vadim.quantum.application.integration.format.IntegrationFormat;
+import ru.pathcreator.vadim.quantum.application.product.ProductArtifactLocator;
 import ru.pathcreator.vadim.quantum.desktop.workflow.DesktopWorkflowResult;
 import ru.pathcreator.vadim.quantum.desktop.workflow.DesktopWorkflowService;
 
@@ -260,8 +261,17 @@ public final class DesktopSmokeRunner {
     }
 
     private static boolean hasPackagedDistributionInputs(final Path projectRoot) {
-        return Files.isRegularFile(projectRoot.resolve("quantum-cli").resolve("target").resolve("quantum-cli-0.1.0.jar"))
-            && Files.isRegularFile(projectRoot.resolve("quantum-desktop").resolve("target").resolve("quantum-desktop-0.1.0.jar"));
+        try {
+            return ProductArtifactLocator.hasPackagedJar(
+                projectRoot,
+                "quantum-cli"
+            ) && ProductArtifactLocator.hasPackagedJar(
+                projectRoot,
+                "quantum-desktop"
+            );
+        } catch (final IOException exception) {
+            return false;
+        }
     }
 
     private static Path effectiveCorpusRoot(

@@ -151,8 +151,8 @@ class ProductAuditRunnerTest {
                 "smoke-corpus/openqasm2/bell.qasm",
                 "smoke-corpus/openqasm3/ghz.qasm",
                 "smoke-corpus/quil/bell.quil",
-                "quantum-cli/target/quantum-cli-0.1.0.jar",
-                "quantum-desktop/target/quantum-desktop-0.1.0.jar"
+                "quantum-cli/target/quantum-cli-test.jar",
+                "quantum-desktop/target/quantum-desktop-test.jar"
             }
         );
         return project;

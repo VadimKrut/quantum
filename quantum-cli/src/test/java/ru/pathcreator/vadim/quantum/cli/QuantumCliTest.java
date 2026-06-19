@@ -579,7 +579,7 @@ class QuantumCliTest {
         assertTrue(Files.isRegularFile(output.resolve("README.md")));
         assertTrue(Files.isRegularFile(tempDir.resolve("distribution-output.zip")));
         assertTrue(Files.isRegularFile(output.resolve("manifest.properties")));
-        assertTrue(Files.isRegularFile(output.resolve("lib").resolve("quantum-cli-0.1.0.jar")));
+        assertTrue(Files.isRegularFile(output.resolve("lib").resolve("quantum-cli-test.jar")));
         assertTrue(Files.isRegularFile(output.resolve("report").resolve("product-audit.json")));
         assertTrue(Files.readString(output.resolve("manifest.properties")).contains("format=quantum-product-distribution"));
         final CliRunResult verify = run(
@@ -706,8 +706,8 @@ class QuantumCliTest {
                 "smoke-corpus/openqasm2/bell.qasm",
                 "smoke-corpus/openqasm3/ghz.qasm",
                 "smoke-corpus/quil/bell.quil",
-                "quantum-cli/target/quantum-cli-0.1.0.jar",
-                "quantum-desktop/target/quantum-desktop-0.1.0.jar"
+                "quantum-cli/target/quantum-cli-test.jar",
+                "quantum-desktop/target/quantum-desktop-test.jar"
             }
         );
         return project;

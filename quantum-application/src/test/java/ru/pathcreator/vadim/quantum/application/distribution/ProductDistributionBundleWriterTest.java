@@ -47,11 +47,11 @@ class ProductDistributionBundleWriterTest {
         assertTrue(result.archiveSha256().length() == 64);
         assertTrue(Files.isRegularFile(result.licensePath()));
         assertTrue(Files.isRegularFile(result.manifestPath()));
-        assertTrue(Files.isRegularFile(result.librariesDirectory().resolve("quantum-cli-0.1.0.jar")));
-        assertTrue(Files.isRegularFile(result.librariesDirectory().resolve("quantum-desktop-0.1.0.jar")));
+        assertTrue(Files.isRegularFile(result.librariesDirectory().resolve("quantum-cli-test.jar")));
+        assertTrue(Files.isRegularFile(result.librariesDirectory().resolve("quantum-desktop-test.jar")));
         assertTrue(Files.isRegularFile(result.toolsDirectory().resolve("quantum.ps1")));
         assertTrue(Files.isRegularFile(result.toolsDirectory().resolve("verify-distribution.ps1")));
-        assertTrue(Files.readString(result.toolsDirectory().resolve("quantum.ps1")).contains("lib\\quantum-cli-0.1.0.jar"));
+        assertTrue(Files.readString(result.toolsDirectory().resolve("quantum.ps1")).contains("lib\\quantum-cli-test.jar"));
         assertTrue(Files.readString(result.toolsDirectory().resolve("verify-distribution.ps1")).contains("Manifest SHA-256 mismatch"));
         assertTrue(Files.readString(result.toolsDirectory().resolve("product-smoke.ps1")).contains("Quantum distribution smoke passed."));
         assertTrue(Files.readString(result.toolsDirectory().resolve("product-smoke.ps1")).contains("verify-distribution.ps1"));
@@ -70,14 +70,14 @@ class ProductDistributionBundleWriterTest {
             assertTrue(zip.getEntry("distribution/README.md") != null);
             assertTrue(zip.getEntry("distribution/manifest.properties") != null);
             assertTrue(zip.getEntry("distribution/tools/verify-distribution.ps1") != null);
-            assertTrue(zip.getEntry("distribution/lib/quantum-cli-0.1.0.jar") != null);
+            assertTrue(zip.getEntry("distribution/lib/quantum-cli-test.jar") != null);
         }
     }
 
     @Test
     void failsWhenRequiredJarIsMissing() throws Exception {
         final Path project = completeProject();
-        Files.delete(project.resolve("quantum-desktop").resolve("target").resolve("quantum-desktop-0.1.0.jar"));
+        Files.delete(project.resolve("quantum-desktop").resolve("target").resolve("quantum-desktop-test.jar"));
 
         final IOException exception = assertThrows(
             IOException.class,
@@ -87,7 +87,7 @@ class ProductDistributionBundleWriterTest {
             )
         );
 
-        assertTrue(exception.getMessage().contains("quantum-desktop-0.1.0.jar"));
+        assertTrue(exception.getMessage().contains("quantum-desktop-*.jar"));
     }
 
     @Test
@@ -168,7 +168,7 @@ class ProductDistributionBundleWriterTest {
         final Path project,
         final String module
     ) throws Exception {
-        final Path jar = project.resolve(module).resolve("target").resolve(module + "-0.1.0.jar");
+        final Path jar = project.resolve(module).resolve("target").resolve(module + "-test.jar");
         Files.createDirectories(jar.getParent());
         Files.writeString(
             jar,

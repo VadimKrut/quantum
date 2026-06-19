@@ -31,6 +31,7 @@ Future hardware support should be implemented through dedicated internal backend
 - `quantum-quil` - Quil integration adapter.
 - `quantum-simulation` - local simulation engine.
 - `quantum-api` - stable public Java facade.
+- `quantum-library` - built-in algorithm library and descriptors.
 - `quantum-cli` - command-line interface.
 - `quantum-desktop` - JavaFX desktop studio.
 
@@ -58,8 +59,21 @@ mvn -pl quantum-desktop -am package
 Run the desktop studio:
 
 ```bash
-java -jar quantum-desktop/target/quantum-desktop-0.1.0.jar
+java -jar quantum-desktop/target/quantum-desktop-<version>.jar
 ```
+
+Build a desktop app image with an embedded runtime:
+
+```bash
+mvn -pl quantum-desktop -am clean verify -Pdist-app-image -DskipTests
+```
+
+The generated application is placed under `quantum-desktop/target/dist/`.
+This app image is a complete application directory; do not copy only the launcher executable out of it, because it depends on the sibling `runtime` and `app` directories.
+
+Platform installers are generated with `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm`, or `dist-macos-dmg` on the corresponding operating system. Windows installer profiles require the WiX Toolset available to `jpackage`.
+
+Pushes to `master` run the desktop distribution workflow. The workflow reads the root Maven version, publishes artifacts under the release tag `v<version>`, and refreshes the release assets when the Maven version has not changed. Increasing the root Maven version creates a new release tag and a new release.
 
 ## Supported External Formats
 
@@ -114,6 +128,7 @@ Quantum IR - это Java 25 multi-module проект для описания, �
 - `quantum-quil` - integration adapter для Quil.
 - `quantum-simulation` - локальный simulation engine.
 - `quantum-api` - стабильный публичный Java facade.
+- `quantum-library` - встроенная библиотека алгоритмов и описаний.
 - `quantum-cli` - command-line interface.
 - `quantum-desktop` - JavaFX desktop studio.
 
@@ -141,8 +156,21 @@ mvn -pl quantum-desktop -am package
 Запустить desktop studio:
 
 ```bash
-java -jar quantum-desktop/target/quantum-desktop-0.1.0.jar
+java -jar quantum-desktop/target/quantum-desktop-<version>.jar
 ```
+
+Собрать desktop app image со встроенным runtime:
+
+```bash
+mvn -pl quantum-desktop -am clean verify -Pdist-app-image -DskipTests
+```
+
+Собранное приложение будет находиться в `quantum-desktop/target/dist/`.
+App image - это полная папка приложения. Не копируйте из неё только launcher executable, потому что он зависит от соседних папок `runtime` и `app`.
+
+Платформенные установщики собираются профилями `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm` или `dist-macos-dmg` на соответствующей операционной системе. Windows installer profiles требуют WiX Toolset, доступный для `jpackage`.
+
+Push в `master` запускает desktop distribution workflow. Workflow читает версию из root Maven, публикует артефакты в release tag `v<version>` и обновляет release assets, если Maven version не изменилась. Увеличение root Maven version создаёт новый release tag и новый release.
 
 ## Поддерживаемые Внешние Форматы
 

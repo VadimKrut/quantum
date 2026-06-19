@@ -11,6 +11,7 @@ package ru.pathcreator.vadim.quantum.application.distribution;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -21,12 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Verifies an unpacked Quantum distribution against its manifest.
+ * Проверяет распакованный Quantum distribution bundle по manifest и обязательным файлам.
  */
 public final class ProductDistributionVerifier {
 
     private static final String FORMAT = "quantum-product-distribution";
-    private static final String VERSION = "0.1.0";
     private static final String MANIFEST_FILE = "manifest.properties";
 
     public ProductDistributionVerificationResult verify(final Path distributionDirectory) {
@@ -144,11 +144,14 @@ public final class ProductDistributionVerifier {
                 "Distribution manifest version is invalid."
             ));
         }
-        if (!VERSION.equals(manifest.get("projectVersion"))) {
+        if (manifest.getOrDefault(
+            "projectVersion",
+            ""
+        ).isBlank()) {
             issues.add(issue(
                 "PROJECT_VERSION_INVALID",
                 manifestPath.toString(),
-                "Distribution project version is invalid."
+                "Distribution project version is missing."
             ));
         }
     }
@@ -262,9 +265,7 @@ public final class ProductDistributionVerifier {
             "tools/quantum.ps1",
             "tools/quantum-desktop.ps1",
             "tools/product-smoke.ps1",
-            "tools/verify-distribution.ps1",
-            "lib/quantum-cli-" + VERSION + ".jar",
-            "lib/quantum-desktop-" + VERSION + ".jar"
+            "tools/verify-distribution.ps1"
         };
         for (int index = 0; index < required.length; index++) {
             final Path file = directory.resolve(required[index].replace(
@@ -278,6 +279,51 @@ public final class ProductDistributionVerifier {
                     "Required distribution file is missing."
                 ));
             }
+        }
+        verifyRequiredJar(
+            directory,
+            "quantum-cli",
+            issues
+        );
+        verifyRequiredJar(
+            directory,
+            "quantum-desktop",
+            issues
+        );
+    }
+
+    private static void verifyRequiredJar(
+        final Path directory,
+        final String module,
+        final List<ProductDistributionVerificationIssue> issues
+    ) {
+        final Path library = directory.resolve("lib");
+        if (!Files.isDirectory(library)) {
+            issues.add(issue(
+                "REQUIRED_FILE_MISSING",
+                "lib/" + module + "-*.jar",
+                "Required distribution jar is missing."
+            ));
+            return;
+        }
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+            library,
+            module + "-*.jar"
+        )) {
+            for (final Path ignored : stream) {
+                return;
+            }
+            issues.add(issue(
+                "REQUIRED_FILE_MISSING",
+                "lib/" + module + "-*.jar",
+                "Required distribution jar is missing."
+            ));
+        } catch (final IOException exception) {
+            issues.add(issue(
+                "REQUIRED_FILE_READ_FAILED",
+                "lib/" + module + "-*.jar",
+                exception.getMessage()
+            ));
         }
     }
 

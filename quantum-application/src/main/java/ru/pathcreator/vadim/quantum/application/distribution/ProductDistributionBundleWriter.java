@@ -26,12 +26,13 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import ru.pathcreator.vadim.quantum.application.product.ProductArtifactLocator;
+
 /**
- * Builds a local release distribution bundle from an already packaged project.
+ * Собирает локальный distribution bundle из уже упакованного проекта.
  */
 public final class ProductDistributionBundleWriter {
 
-    private static final String VERSION = "0.1.0";
     private static final String MANIFEST_FILE = "manifest.properties";
 
     public ProductDistributionBundleResult write(
@@ -92,15 +93,16 @@ public final class ProductDistributionBundleWriter {
             examples,
             files
         );
-        copyTools(
-            root,
-            tools,
-            files
-        );
-        copyJars(
+        final String projectVersion = ProductArtifactLocator.projectVersion(root);
+        final DistributionJars jars = copyJars(
             root,
             libraries,
             files
+        );
+        copyTools(
+            tools,
+            files,
+            jars
         );
         if (productReportDirectory != null) {
             copyDirectory(
@@ -123,7 +125,11 @@ public final class ProductDistributionBundleWriter {
         final Path manifest = output.resolve(MANIFEST_FILE);
         writeFile(
             manifest,
-            manifest(output, files),
+            manifest(
+                output,
+                files,
+                projectVersion
+            ),
             files
         );
         files.sort(Comparator.comparing(path -> relative(output, path)));
@@ -149,28 +155,28 @@ public final class ProductDistributionBundleWriter {
     }
 
     private static void copyTools(
-        final Path root,
         final Path tools,
-        final List<Path> files
+        final List<Path> files,
+        final DistributionJars jars
     ) throws IOException {
         writeFile(
             tools.resolve("quantum.ps1"),
-            cliLauncher(),
+            cliLauncher(jars.cliJarFileName()),
             files
         );
         writeFile(
             tools.resolve("quantum-desktop.ps1"),
-            desktopLauncher(),
+            desktopLauncher(jars.desktopJarFileName()),
             files
         );
         writeFile(
             tools.resolve("product-smoke.ps1"),
-            distributionSmoke(),
+            distributionSmoke(jars.desktopJarFileName()),
             files
         );
         writeFile(
             tools.resolve("verify-distribution.ps1"),
-            integrityVerifier(),
+            integrityVerifier(jars),
             files
         );
     }
@@ -214,20 +220,32 @@ public final class ProductDistributionBundleWriter {
         );
     }
 
-    private static void copyJars(
+    private static DistributionJars copyJars(
         final Path root,
         final Path libraries,
         final List<Path> files
     ) throws IOException {
+        final Path cliJar = ProductArtifactLocator.requiredPackagedJar(
+            root,
+            "quantum-cli"
+        );
+        final Path desktopJar = ProductArtifactLocator.requiredPackagedJar(
+            root,
+            "quantum-desktop"
+        );
         copyRequiredFile(
-            root.resolve("quantum-cli").resolve("target").resolve("quantum-cli-" + VERSION + ".jar"),
-            libraries.resolve("quantum-cli-" + VERSION + ".jar"),
+            cliJar,
+            libraries.resolve(cliJar.getFileName()),
             files
         );
         copyRequiredFile(
-            root.resolve("quantum-desktop").resolve("target").resolve("quantum-desktop-" + VERSION + ".jar"),
-            libraries.resolve("quantum-desktop-" + VERSION + ".jar"),
+            desktopJar,
+            libraries.resolve(desktopJar.getFileName()),
             files
+        );
+        return new DistributionJars(
+            cliJar.getFileName().toString(),
+            desktopJar.getFileName().toString()
         );
     }
 
@@ -402,7 +420,7 @@ public final class ProductDistributionBundleWriter {
             + System.lineSeparator();
     }
 
-    private static String cliLauncher() {
+    private static String cliLauncher(final String cliJarFileName) {
         return "param(" + System.lineSeparator()
             + "    [Parameter(ValueFromRemainingArguments = $true)]" + System.lineSeparator()
             + "    [string[]] $CliArguments" + System.lineSeparator()
@@ -411,7 +429,7 @@ public final class ProductDistributionBundleWriter {
             + "$ErrorActionPreference = 'Stop'" + System.lineSeparator()
             + "$tools = $PSScriptRoot" + System.lineSeparator()
             + "$bundle = Split-Path -Parent $tools" + System.lineSeparator()
-            + "$jar = Join-Path $bundle 'lib\\quantum-cli-" + VERSION + ".jar'" + System.lineSeparator()
+            + "$jar = Join-Path $bundle 'lib\\" + cliJarFileName + "'" + System.lineSeparator()
             + "$java = if (Test-Path \"$env:USERPROFILE\\.jdks\\graalvm-jdk-25\\bin\\java.exe\") {" + System.lineSeparator()
             + "    \"$env:USERPROFILE\\.jdks\\graalvm-jdk-25\\bin\\java.exe\"" + System.lineSeparator()
             + "} elseif ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME 'bin\\java.exe'))) {" + System.lineSeparator()
@@ -424,17 +442,17 @@ public final class ProductDistributionBundleWriter {
             + "exit $LASTEXITCODE" + System.lineSeparator();
     }
 
-    private static String desktopLauncher() {
+    private static String desktopLauncher(final String desktopJarFileName) {
         return "$ErrorActionPreference = 'Stop'" + System.lineSeparator()
             + "$tools = $PSScriptRoot" + System.lineSeparator()
             + "$bundle = Split-Path -Parent $tools" + System.lineSeparator()
-            + "$jar = Join-Path $bundle 'lib\\quantum-desktop-" + VERSION + ".jar'" + System.lineSeparator()
+            + "$jar = Join-Path $bundle 'lib\\" + desktopJarFileName + "'" + System.lineSeparator()
             + "if (!(Test-Path $jar)) { throw \"Desktop jar was not found: $jar\" }" + System.lineSeparator()
             + "java -jar $jar" + System.lineSeparator()
             + "exit $LASTEXITCODE" + System.lineSeparator();
     }
 
-    private static String distributionSmoke() {
+    private static String distributionSmoke(final String desktopJarFileName) {
         return "param(" + System.lineSeparator()
             + "    [int] $Port = 18087" + System.lineSeparator()
             + ")" + System.lineSeparator()
@@ -455,11 +473,11 @@ public final class ProductDistributionBundleWriter {
             + "& (Join-Path $tools 'quantum.ps1') validate --input $bell --format json | Out-Null" + System.lineSeparator()
             + "& (Join-Path $tools 'quantum.ps1') simulate --input $bell --shots 64 --seed 5 --format json | Out-Null" + System.lineSeparator()
             + "& (Join-Path $tools 'quantum.ps1') compile --input $bell --output-format openqasm3 --format json | Out-Null" + System.lineSeparator()
-            + "if (!(Test-Path (Join-Path $bundle 'lib\\quantum-desktop-" + VERSION + ".jar'))) { throw 'Desktop jar is missing.' }" + System.lineSeparator()
+            + "if (!(Test-Path (Join-Path $bundle 'lib\\" + desktopJarFileName + "'))) { throw 'Desktop jar is missing.' }" + System.lineSeparator()
             + "Write-Output 'Quantum distribution smoke passed.'" + System.lineSeparator();
     }
 
-    private static String integrityVerifier() {
+    private static String integrityVerifier(final DistributionJars jars) {
         return "$ErrorActionPreference = 'Stop'" + System.lineSeparator()
             + "$tools = $PSScriptRoot" + System.lineSeparator()
             + "$bundle = Split-Path -Parent $tools" + System.lineSeparator()
@@ -492,8 +510,8 @@ public final class ProductDistributionBundleWriter {
             + "    'tools\\quantum-desktop.ps1'," + System.lineSeparator()
             + "    'tools\\product-smoke.ps1'," + System.lineSeparator()
             + "    'tools\\verify-distribution.ps1'," + System.lineSeparator()
-            + "    'lib\\quantum-cli-" + VERSION + ".jar'," + System.lineSeparator()
-            + "    'lib\\quantum-desktop-" + VERSION + ".jar'" + System.lineSeparator()
+            + "    'lib\\" + jars.cliJarFileName() + "'," + System.lineSeparator()
+            + "    'lib\\" + jars.desktopJarFileName() + "'" + System.lineSeparator()
             + ")" + System.lineSeparator()
             + "foreach ($relative in $required) {" + System.lineSeparator()
             + "    $file = Join-Path $bundle $relative" + System.lineSeparator()
@@ -504,12 +522,13 @@ public final class ProductDistributionBundleWriter {
 
     private static String manifest(
         final Path output,
-        final List<Path> files
+        final List<Path> files,
+        final String projectVersion
     ) throws IOException {
         final StringBuilder manifest = new StringBuilder(files.size() * 160);
         manifest.append("format=quantum-product-distribution").append(System.lineSeparator())
             .append("version=1").append(System.lineSeparator())
-            .append("projectVersion=").append(VERSION).append(System.lineSeparator())
+            .append("projectVersion=").append(projectVersion).append(System.lineSeparator())
             .append("createdAt=").append(Instant.now()).append(System.lineSeparator())
             .append("fileCount=").append(files.size()).append(System.lineSeparator());
         for (int index = 0; index < files.size(); index++) {
@@ -551,5 +570,11 @@ public final class ProductDistributionBundleWriter {
                 exception
             );
         }
+    }
+
+    private record DistributionJars(
+        String cliJarFileName,
+        String desktopJarFileName
+    ) {
     }
 }

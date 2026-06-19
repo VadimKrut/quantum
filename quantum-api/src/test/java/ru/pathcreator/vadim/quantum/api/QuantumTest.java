@@ -1331,7 +1331,7 @@ class QuantumTest {
         assertTrue(java.nio.file.Files.isRegularFile(result.archivePath()));
         assertEquals(64, result.archiveSha256().length());
         assertTrue(java.nio.file.Files.isRegularFile(result.manifestPath()));
-        assertTrue(java.nio.file.Files.isRegularFile(result.librariesDirectory().resolve("quantum-cli-0.1.0.jar")));
+        assertTrue(java.nio.file.Files.isRegularFile(result.librariesDirectory().resolve("quantum-cli-test.jar")));
         assertTrue(java.nio.file.Files.readString(result.manifestPath()).contains("format=quantum-product-distribution"));
         final ProductDistributionVerificationResult verification = Quantum.verifyProductDistributionBundle(result.outputDirectory());
         assertTrue(verification.isSuccess());
@@ -1407,7 +1407,7 @@ class QuantumTest {
         final Path project,
         final String module
     ) throws Exception {
-        final Path jar = project.resolve(module).resolve("target").resolve(module + "-0.1.0.jar");
+        final Path jar = project.resolve(module).resolve("target").resolve(module + "-test.jar");
         java.nio.file.Files.createDirectories(jar.getParent());
         java.nio.file.Files.writeString(
             jar,

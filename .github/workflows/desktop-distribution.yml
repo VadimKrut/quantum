@@ -1,0 +1,177 @@
+name: Desktop Distribution
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-distribution-master
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            profile: dist-windows-exe
+            artifact_name: quantum-ir-studio-windows-exe
+            artifact_glob: quantum-desktop/target/dist/*.exe
+          - name: windows-msi
+            os: windows-latest
+            profile: dist-windows-msi
+            artifact_name: quantum-ir-studio-windows-msi
+            artifact_glob: quantum-desktop/target/dist/*.msi
+          - name: linux
+            os: ubuntu-latest
+            profile: dist-linux-deb
+            artifact_name: quantum-ir-studio-linux
+            artifact_glob: quantum-desktop/target/dist/*.deb
+          - name: macos
+            os: macos-latest
+            profile: dist-macos-dmg
+            artifact_name: quantum-ir-studio-macos
+            artifact_glob: quantum-desktop/target/dist/*.dmg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot dpkg
+
+      - name: Install Windows packaging tools
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          choco install wixtoolset -y
+          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build and package
+        run: mvn -B -pl quantum-desktop -am verify -P${{ matrix.profile }} -DskipTests
+
+      - name: Upload platform artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish Maven version release
+    runs-on: ubuntu-latest
+    needs:
+      - build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Read Maven version
+        id: version
+        run: |
+          VERSION="$(sed -n 's:.*<revision>\(.*\)</revision>.*:\1:p' pom.xml | head -n 1)"
+          if [ -z "${VERSION}" ]; then
+            echo "Root Maven revision is empty." >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Normalize asset names
+        run: |
+          mkdir -p release
+          VERSION="${{ steps.version.outputs.version }}"
+          find release-assets -type f -name "*.exe" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-windows.exe" \;
+          find release-assets -type f -name "*.msi" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-windows.msi" \;
+          find release-assets -type f -name "*.deb" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-linux.deb" \;
+          find release-assets -type f -name "*.dmg" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-macos.dmg" \;
+          ls -la release
+
+      - name: Create or move Maven version tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists. Moving it to the current master commit for alpha distribution."
+            git tag -f "${TAG}" "${GITHUB_SHA}"
+            git push --force origin "${TAG}"
+          else
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "${TAG}"
+          fi
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          BODY_FILE="release-body.md"
+          {
+            echo "Quantum IR Studio ${VERSION}"
+            echo
+            echo "Automatic desktop distribution built from Maven version ${VERSION}."
+            echo
+            echo "Assets:"
+            echo "- Windows installer: quantum-ir-studio-${VERSION}-windows.exe"
+            echo "- Windows MSI package: quantum-ir-studio-${VERSION}-windows.msi"
+            echo "- Linux package: quantum-ir-studio-${VERSION}-linux.deb"
+            echo "- macOS image: quantum-ir-studio-${VERSION}-macos.dmg"
+            echo
+            echo "This is an alpha version. If you find errors, please report them in GitHub issues or write to mne13.net@gmail.com."
+          } > "${BODY_FILE}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" \
+              --title "Quantum IR Studio ${VERSION}" \
+              --notes-file "${BODY_FILE}"
+            gh release delete-asset "${TAG}" "quantum-ir-studio-${VERSION}-windows.exe" --yes || true
+            gh release delete-asset "${TAG}" "quantum-ir-studio-${VERSION}-windows.msi" --yes || true
+            gh release delete-asset "${TAG}" "quantum-ir-studio-${VERSION}-linux.deb" --yes || true
+            gh release delete-asset "${TAG}" "quantum-ir-studio-${VERSION}-macos.dmg" --yes || true
+          else
+            gh release create "${TAG}" \
+              --title "Quantum IR Studio ${VERSION}" \
+              --notes-file "${BODY_FILE}" \
+              --target "${GITHUB_SHA}"
+          fi
+
+          gh release upload "${TAG}" release/* --clobber

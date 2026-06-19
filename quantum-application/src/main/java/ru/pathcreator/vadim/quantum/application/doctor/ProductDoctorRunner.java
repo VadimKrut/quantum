@@ -14,6 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
+import ru.pathcreator.vadim.quantum.application.product.ProductArtifactLocator;
+
 /**
  * Проверяет локальную структуру продукта перед smoke/release запуском.
  */
@@ -32,9 +34,9 @@ public final class ProductDoctorRunner {
         "quantum-desktop"
     };
 
-    private static final String[] PACKAGED_JARS = new String[] {
-        "quantum-cli/target/quantum-cli-0.1.0.jar",
-        "quantum-desktop/target/quantum-desktop-0.1.0.jar"
+    private static final String[] PACKAGED_JAR_MODULES = new String[] {
+        "quantum-cli",
+        "quantum-desktop"
     };
 
     public ProductDoctorReport run(final Path projectRoot) {
@@ -213,9 +215,16 @@ public final class ProductDoctorRunner {
 
     private static ProductDoctorCheck checkPackagedJars(final Path root) {
         final ArrayList<String> missing = new ArrayList<>();
-        for (int i = 0; i < PACKAGED_JARS.length; i++) {
-            if (!Files.isRegularFile(root.resolve(PACKAGED_JARS[i]))) {
-                missing.add(PACKAGED_JARS[i]);
+        for (int i = 0; i < PACKAGED_JAR_MODULES.length; i++) {
+            try {
+                if (!ProductArtifactLocator.hasPackagedJar(
+                    root,
+                    PACKAGED_JAR_MODULES[i]
+                )) {
+                    missing.add(PACKAGED_JAR_MODULES[i] + "/target/" + PACKAGED_JAR_MODULES[i] + "-*.jar");
+                }
+            } catch (final IOException exception) {
+                missing.add(PACKAGED_JAR_MODULES[i] + "/target/" + PACKAGED_JAR_MODULES[i] + "-*.jar");
             }
         }
         if (!missing.isEmpty()) {
