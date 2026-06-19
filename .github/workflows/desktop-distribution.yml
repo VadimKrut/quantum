@@ -74,8 +74,8 @@ jobs:
             echo "Root Maven revision is empty." >&2
             exit 1
           fi
-          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*$ ]]; then
-            echo "Root Maven revision must be a positive integer without leading zeroes: ${VERSION}" >&2
+          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Root Maven revision must use major.minor format without leading zeroes, for example 1.0 or 1.1: ${VERSION}" >&2
             exit 1
           fi
           echo "Maven version: ${VERSION}"
@@ -115,8 +115,8 @@ jobs:
             echo "Root Maven revision is empty." >&2
             exit 1
           fi
-          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*$ ]]; then
-            echo "Root Maven revision must be a positive integer without leading zeroes: ${VERSION}" >&2
+          if ! [[ "${VERSION}" =~ ^[1-9][0-9]*\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Root Maven revision must use major.minor format without leading zeroes, for example 1.0 or 1.1: ${VERSION}" >&2
             exit 1
           fi
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"

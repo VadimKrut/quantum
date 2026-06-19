@@ -74,7 +74,7 @@ This app image is a complete application directory; do not copy only the launche
 Platform installers are generated with `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm`, or `dist-macos-dmg` on the corresponding operating system. Windows installer profiles require the WiX Toolset available to `jpackage`.
 
 Pushes to `master` run the desktop distribution workflow. The workflow reads the root Maven version, publishes artifacts under the release tag `v<version>`, and refreshes the release assets when the Maven version has not changed. Increasing the root Maven version creates a new release tag and a new release.
-Project release versions are positive integers without leading zeroes, for example `1`, `2`, or `231`.
+Project release versions use `major.minor` numbers without leading zeroes, for example `1.0`, `1.1`, or `2.0`.
 
 ## Supported External Formats
 
