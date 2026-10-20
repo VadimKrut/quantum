@@ -137,23 +137,21 @@ public final class ChemistryLibraryEntry {
     if (text == null || text.trim().isEmpty()) {
       return true;
     }
-    final String normalized = text.trim().toLowerCase();
-    if (this.id.toLowerCase().contains(normalized)
-        || this.displayName.toLowerCase().contains(normalized)
-        || this.summary.toLowerCase().contains(normalized)) {
+    final String normalized = text.trim().toLowerCase(java.util.Locale.ROOT);
+    if (this.id.toLowerCase(java.util.Locale.ROOT).contains(normalized)
+        || this.displayName.toLowerCase(java.util.Locale.ROOT).contains(normalized)
+        || this.summary.toLowerCase(java.util.Locale.ROOT).contains(normalized)) {
       return true;
     }
     for (int i = 0; i < this.tags.size(); ++i) {
-      if (this.tags.get(i).toLowerCase().contains(normalized)) {
+      if (this.tags.get(i).toLowerCase(java.util.Locale.ROOT).contains(normalized)) {
         return true;
       }
     }
     return false;
   }
 
-  private static List<String> copyTexts(
-      final List<String> values,
-      final String subjectName) {
+  private static List<String> copyTexts(final List<String> values, final String subjectName) {
     if (values == null || values.isEmpty()) {
       return List.of();
     }

@@ -10,8 +10,9 @@
 package ru.pathcreator.vadim.quantum.chemistry.domain.method;
 
 public enum ElectronicStructureMethodType {
-
   HARTREE_FOCK,
+  SEMI_EMPIRICAL,
+  PERTURBATION_THEORY,
   DENSITY_FUNCTIONAL_THEORY,
   CONFIGURATION_INTERACTION,
   COUPLED_CLUSTER,

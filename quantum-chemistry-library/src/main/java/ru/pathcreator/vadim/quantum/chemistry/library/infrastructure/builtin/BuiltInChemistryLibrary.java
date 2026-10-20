@@ -31,53 +31,110 @@ import ru.pathcreator.vadim.quantum.chemistry.storage.domain.model.ChemistryStor
  */
 public final class BuiltInChemistryLibrary {
 
-  private BuiltInChemistryLibrary() {
-  }
+  private BuiltInChemistryLibrary() {}
 
   public static ChemistryLibraryRegistry registry() {
     final ArrayList<ChemistryLibraryEntry> entries = new ArrayList<ChemistryLibraryEntry>();
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.water(),
-        ChemistryLibraryCategory.SOLVENT,
-        ChemistryLibraryDifficulty.INTRODUCTORY,
-        "Water molecule with bent geometry and two O-H bonds.",
-        List.of("water", "solvent", "polar", "benchmark", "вода")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.methane(),
-        ChemistryLibraryCategory.ORGANIC,
-        ChemistryLibraryDifficulty.INTRODUCTORY,
-        "Methane molecule with tetrahedral C-H framework.",
-        List.of("methane", "hydrocarbon", "tetrahedral", "метан")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.ammonia(),
-        ChemistryLibraryCategory.INORGANIC,
-        ChemistryLibraryDifficulty.INTRODUCTORY,
-        "Ammonia molecule with trigonal-pyramidal nitrogen center.",
-        List.of("ammonia", "base", "nitrogen", "аммиак")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.carbonDioxide(),
-        ChemistryLibraryCategory.INORGANIC,
-        ChemistryLibraryDifficulty.INTRODUCTORY,
-        "Carbon dioxide molecule with linear O=C=O connectivity.",
-        List.of("carbon dioxide", "co2", "linear", "углекислый газ")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.oxygen(),
-        ChemistryLibraryCategory.INORGANIC,
-        ChemistryLibraryDifficulty.STANDARD,
-        "Triplet oxygen reference molecule for reaction examples.",
-        List.of("oxygen", "o2", "triplet", "кислород")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.acetone(),
-        ChemistryLibraryCategory.ORGANIC,
-        ChemistryLibraryDifficulty.STANDARD,
-        "Acetone carbonyl solvent molecule with approximate 3D geometry.",
-        List.of("acetone", "carbonyl", "ketone", "solvent", "ацетон")));
-    entries.add(BuiltInChemistryLibrary.moleculeEntry(
-        BuiltInMoleculeCatalog.ethanol(),
-        ChemistryLibraryCategory.SOLVENT,
-        ChemistryLibraryDifficulty.STANDARD,
-        "Ethanol molecule for alcohol and oxidation examples.",
-        List.of("ethanol", "alcohol", "solvent", "этанол")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.hydrogenRadical(),
+            ChemistryLibraryCategory.INORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Atomic hydrogen radical for recombination, radical-chain and quantum-preparation probes.",
+            List.of("hydrogen", "radical", "atom", "recombination", "водород", "радикал")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.water(),
+            ChemistryLibraryCategory.SOLVENT,
+            ChemistryLibraryDifficulty.INTRODUCTORY,
+            "Water molecule with bent geometry and two O-H bonds.",
+            List.of("water", "solvent", "polar", "benchmark", "вода")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.methane(),
+            ChemistryLibraryCategory.ORGANIC,
+            ChemistryLibraryDifficulty.INTRODUCTORY,
+            "Methane molecule with tetrahedral C-H framework.",
+            List.of("methane", "hydrocarbon", "tetrahedral", "метан")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.peraceticAcid(),
+            ChemistryLibraryCategory.ORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Перуксусная кислота: явный граф перкислоты с O-O-H для переноса кислорода; без 3D-координат.",
+            List.of(
+                "peracetic acid",
+                "peracid",
+                "oxidant",
+                "epoxidation",
+                "Baeyer-Villiger",
+                "перуксусная кислота",
+                "перкислота",
+                "окислитель")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.ammonia(),
+            ChemistryLibraryCategory.INORGANIC,
+            ChemistryLibraryDifficulty.INTRODUCTORY,
+            "Ammonia molecule with trigonal-pyramidal nitrogen center.",
+            List.of("ammonia", "base", "nitrogen", "аммиак")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.carbonDioxide(),
+            ChemistryLibraryCategory.INORGANIC,
+            ChemistryLibraryDifficulty.INTRODUCTORY,
+            "Carbon dioxide molecule with linear O=C=O connectivity.",
+            List.of("carbon dioxide", "co2", "linear", "углекислый газ")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.oxygen(),
+            ChemistryLibraryCategory.INORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Triplet oxygen reference molecule for reaction examples.",
+            List.of("oxygen", "o2", "triplet", "кислород")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.acetone(),
+            ChemistryLibraryCategory.ORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Acetone carbonyl solvent molecule with approximate 3D geometry.",
+            List.of("acetone", "carbonyl", "ketone", "solvent", "ацетон")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.ethanol(),
+            ChemistryLibraryCategory.SOLVENT,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Ethanol molecule for alcohol and oxidation examples.",
+            List.of("ethanol", "alcohol", "solvent", "этанол")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.dimethylEther(),
+            ChemistryLibraryCategory.ORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Dimethyl ether molecule, a C2H6O isomer for balanced product-channel examples.",
+            List.of(
+                "dimethyl ether", "ether", "isomer", "C2H6O", "РґРёРјРµС‚РёР»РѕРІС‹Р№ СЌС„РёСЂ")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.twoChloroFourSixDimethylThreePyridinecarbonitrile(),
+            ChemistryLibraryCategory.HETEROCYCLE,
+            ChemistryLibraryDifficulty.ADVANCED,
+            "Activated chloro-nicotinonitrile substrate for SNAr and ANRORC prediction workflows.",
+            List.of(
+                "2-chloro-4,6-dimethyl-3-pyridinecarbonitrile",
+                "chloro nicotinonitrile",
+                "activated heteroaryl chloride",
+                "snar",
+                "anrorc",
+                "pyridinecarbonitrile")));
+    entries.add(
+        BuiltInChemistryLibrary.moleculeEntry(
+            BuiltInMoleculeCatalog.benzylamine(),
+            ChemistryLibraryCategory.ORGANIC,
+            ChemistryLibraryDifficulty.STANDARD,
+            "Benzylamine primary amine nucleophile for amination and substitution workflows.",
+            List.of(
+                "benzylamine", "amine", "primary amine", "nucleophile", "benzylic amine", "snar")));
     entries.add(BuiltInChemistryLibrary.combustionMethaneEntry());
     return ChemistryLibraryRegistry.of(entries);
   }
@@ -89,9 +146,7 @@ public final class BuiltInChemistryLibrary {
       final String summary,
       final List<String> tags) {
     final ChemistryStorageDocument document =
-        ChemistryStorageDocument.builder(
-                "library_" + molecule.id().value(),
-                molecule.displayName())
+        ChemistryStorageDocument.builder("library_" + molecule.id().value(), molecule.displayName())
             .metadata("library.kind", ChemistryLibraryEntryKind.MOLECULE.name())
             .metadata("library.category", category.name())
             .metadata("library.difficulty", difficulty.name())

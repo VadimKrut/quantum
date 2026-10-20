@@ -1,0 +1,475 @@
+# Local manual-choice vocabulary, 2026-10-19. Not an automatic classifier or complete inventory.
+# Reaction labels/EXACT aliases adapted from RSC RXNO (CC BY 4.0); Russian labels/categories edited locally.
+# See reaction-catalog-SOURCES.txt and reaction-catalog-RXNO-LICENSE.txt.
+# id	kind	nameRu	nameEn	aliases separated by |	category	description	sourceUrl
+RXNO:0000024	REACTION	Реакция Хека	Heck reaction	Heck|Mizoroki-Heck|Мизороки Хек|Heck-Mizoroki reaction|Mizoroki-Heck reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000024
+RXNO:0000035	REACTION	Сочетание Стилле	Stille coupling	Stille|Stille reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000035
+RXNO:0000040	REACTION	Реакция Ульмана	Ullmann reaction	Ullmann|Ульман	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000040
+RXNO:0000081	REACTION	Конденсация Ульмана	Ullmann condensation	Ullmann ether synthesis	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000081
+RXNO:0000082	REACTION	Реакция Гольдберга	Goldberg reaction	Goldberg	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000082
+RXNO:0000088	REACTION	Сочетание Негиши	Negishi coupling	Negishi|Негиси|Negishi cross-coupling	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000088
+RXNO:0000098	REACTION	Сочетание Глазера	Glaser coupling	Glaser	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000098
+RXNO:0000099	REACTION	Реакция Эглинтона	Eglinton reaction	Eglinton|Eglinton coupling	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000099
+RXNO:0000100	REACTION	Сочетание Кадио—Ходкевича	Cadiot-Chodkiewicz coupling	Cadiot-Chodkiewicz	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000100
+RXNO:0000137	REACTION	Сочетание Соногаширы	Sonogashira coupling	Sonogashira|Соногашира|Hagihara-Sonogashira coupling|Sonogashira cross-coupling|Sonogashira reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000137
+RXNO:0000140	REACTION	Сочетание Сузуки—Мияуры	Suzuki-Miyaura coupling	Suzuki|Suzuki-Miyaura|Сузуки|Мияура|Suzuki coupling reaction|Suzuki cross-coupling|Suzuki cross-coupling reaction|Suzuki reaction|Suzuki-Miyaura coupling reaction|Suzuki-Miyaura cross-coupling|Suzuki-Miyaura cross-coupling reaction|Suzuki-Miyaura reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000140
+RXNO:0000144	REACTION	Сочетание Кумады	Kumada coupling	Kumada|Kumada-Tamao-Corriu|Kharasch cross-coupling|Kumada cross-coupling	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000144
+RXNO:0000191	REACTION	Реакция Нозаки—Хиямы—Киши	Nozaki-Hiyama-Kishi reaction	NHK|Nozaki-Hiyama-Kishi|Nozaki reaction|Nozaki-Hiyama-Kishi coupling|Nozaki-Kishi reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000191
+RXNO:0000192	REACTION	Аминирование Бухвальда—Хартвига	Buchwald-Hartwig amination	Buchwald-Hartwig|Бухвальд Хартвиг|Бухвальда Хартвига|Buchwald-Hartwig reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000192
+RXNO:0000193	REACTION	Сочетание Хиямы	Hiyama coupling	Hiyama|Хияма|Hiyama cross-coupling	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000193
+RXNO:0000306	REACTION	Внутримолекулярная реакция Хека	intramolecular Heck reaction	intramolecular Heck|intramolecular Heck-Mizoroki	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000306
+RXNO:0000311	REACTION	Реакция Цудзи—Троста	Tsuji-Trost reaction	Tsuji-Trost|Тсуи Трост|аллильное алкилирование|Trost allylation	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000311
+RXNO:0000374	REACTION	Сочетание Чана—Лама	Chan-Lam coupling	Chan-Lam|Чан Лам|Chan-Lam reaction|Chan-Lam-Evans coupling|Chan-Lam-Evans reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000374
+RXNO:0000525	REACTION	Сочетание Кастро—Стивенса	Castro-Stephens coupling	Castro-Stephens	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000525
+RXNO:0000603	REACTION	Кросс-сочетание	cross-coupling	cross coupling|кросс сочетание	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000603
+RXNO:0000604	REACTION	Сочетание Либескинда—Срогля	Liebeskind-Srogl coupling	Liebeskind-Srogl	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000604
+RXNO:0000605	REACTION	Сочетание Фукуямы	Fukuyama coupling		Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000605
+RXNO:0000659	REACTION	Борилирование Мияуры	Miyaura borylation	борирование Мияуры|Miyaura boration|Miyaura borylation reaction	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000659
+RXNO:0000674	REACTION	Декарбоксилирующее кросс-сочетание	decarboxylative cross-coupling	decarboxylative cross coupling	Кросс-сочетания		https://purl.obolibrary.org/obo/RXNO_0000674
+RXNO:0000003	REACTION	Реакция Перкина	Perkin reaction	Perkin	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000003
+RXNO:0000008	REACTION	Сопряжённое присоединение	conjugate addition	1,4 addition|nucleophilic conjugate addition	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000008
+RXNO:0000009	REACTION	Присоединение Михаэля	Michael addition	Michael|Майкла|Михаэль|Michael reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000009
+RXNO:0000014	REACTION	Реакция Гриньяра	Grignard reaction	Grignard|Гриньяр	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000014
+RXNO:0000015	REACTION	Реакция Виттига	Wittig reaction	Wittig|Виттиг|Wittig condensation|Wittig olefination	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000015
+RXNO:0000016	REACTION	Альдольное присоединение	aldol addition	альдоль|aldol reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000016
+RXNO:0000017	REACTION	Альдольная конденсация	aldol condensation		Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000017
+RXNO:0000032	REACTION	Реакция Манниха	Mannich reaction	Mannich|Манних	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000032
+RXNO:0000036	REACTION	Реакция Реформатского	Reformatsky reaction	Reformatsky|Reformatskii reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000036
+RXNO:0000043	REACTION	Конденсация Кляйзена	Claisen condensation	Клайзена|Кляйзен	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000043
+RXNO:0000044	REACTION	Конденсация Кнёвенагеля	Knoevenagel condensation	Knoevenagel|Кневенагеля|Кноевенагеля	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000044
+RXNO:0000045	REACTION	Ацилирование Фриделя—Крафтса	Friedel-Crafts acylation	Фридель Крафтс	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000045
+RXNO:0000046	REACTION	Алкилирование Фриделя—Крафтса	Friedel-Crafts alkylation		Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000046
+RXNO:0000048	REACTION	Реакция Принса	Prins reaction	Prins	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000048
+RXNO:0000056	REACTION	Реакция Хорнера—Уодсворта—Эммонса	Horner-Wadsworth-Emmons reaction	HWE|Horner-Wadsworth-Emmons|Хорнер Уодсворт Эммонс|Emmons reaction|Horner-Emmons reaction|Horner-Emmons-Wadsworth reaction|Horner-Wadsworth-Emmons (HWE) olefination|Horner-Wadsworth-Emmons olefination|Horner-Wittig reaction|Wadsworth-Emmons olefination|Wadsworth-Emmons reaction|Wadsworth-Emmons-Horner reaction|Wittig-Horner reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000056
+RXNO:0000057	REACTION	Реакция Хорнера	Horner reaction	Horner	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000057
+RXNO:0000061	REACTION	Альдольная реакция Мукаямы	Mukaiyama aldol condensation	Mukaiyama aldol|Мукаиямы|Mukaiyama aldol addition|Mukaiyama aldol reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000061
+RXNO:0000065	REACTION	Циклизация Дикмана	Dieckmann cyclisation	Dieckmann|Дикман|Dieckmann condensation|Dieckmann cyclization|Dieckmann reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000065
+RXNO:0000074	REACTION	Реакция Вюрца	Wurtz reaction	Wurtz|Wurtz coupling	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000074
+RXNO:0000076	REACTION	Реакция Морита—Бейлиса—Хиллмана	Baylis-Hillman reaction	MBH|Baylis-Hillman|Morita-Baylis-Hillman|Бейлис Хиллман|MBH reaction|Morita-Baylis-Hillman reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000076
+RXNO:0000077	REACTION	Реакция Дарзана	Darzens reaction	Darzens|Дарзенса|Darzens condensation|Darzens-Claisen reaction|glycidic ester condensation	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000077
+RXNO:0000080	REACTION	Олефинирование Петерсона	Peterson olefination	Peterson|Peterson reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000080
+RXNO:0000084	REACTION	Реакция Барбье	Barbier reaction	Barbier	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000084
+RXNO:0000085	REACTION	Ацилоиновая конденсация	acyloin condensation	acyloin	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000085
+RXNO:0000086	REACTION	Реакция Анри	Henry reaction	Henry|нитроальдольная|nitro-aldol reaction|nitroaldol reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000086
+RXNO:0000097	REACTION	Имино-Реформатского реакция	imino-Reformatsky reaction	imino Reformatsky|imino Reformatsky reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000097
+RXNO:0000107	REACTION	Малоновоэфирный синтез	malonic ester synthesis	malonic ester	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000107
+RXNO:0000114	REACTION	Реакция Николаса	Nicholas reaction	Nicholas	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000114
+RXNO:0000117	REACTION	Олефинирование Жюлиа	Julia olefination	Julia|Джулиа|Julia-Lythgoe olefination	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000117
+RXNO:0000124	REACTION	Реакция Бэмфорда—Стивенса	Bamford-Stevens reaction	Bamford-Stevens	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000124
+RXNO:0000125	REACTION	Реакция Шапиро	Shapiro reaction	Shapiro	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000125
+RXNO:0000126	REACTION	Реакция Дёбнера	Doebner reaction	Doebner|Дебнера	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000126
+RXNO:0000138	REACTION	Бензоиновая конденсация	benzoin condensation	benzoin|benzoin addition	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000138
+RXNO:0000146	REACTION	Реакция Кори—Фукса	Corey-Fuchs reaction	Corey-Fuchs|Ramirez-Corey-Fuchs reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000146
+RXNO:0000182	REACTION	Реакция Кольбе—Шмитта	Kolbe-Schmitt reaction	Kolbe-Schmitt	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000182
+RXNO:0000207	REACTION	Реакция Штреккера	Strecker reaction	Strecker|Стреккера	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000207
+RXNO:0000232	REACTION	Реакция Петасиса	Petasis reaction	Petasis|borono Mannich|Petasis three-component coupling	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000232
+RXNO:0000235	REACTION	Аза-реакция Анри	aza-Henry reaction	aza-Henry|аза Генри	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000235
+RXNO:0000237	REACTION	Реакция Блеза	Blaise reaction	Blaise	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000237
+RXNO:0000241	REACTION	Нитро-реакция Михаэля	nitro-Michael reaction	nitro-Michael	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000241
+RXNO:0000251	REACTION	Олефинирование Сторка—Виттига	Stork-Wittig olefination	Stork-Wittig	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000251
+RXNO:0000264	REACTION	Аза-реакция Бейлиса—Хиллмана	aza-Baylis-Hillman reaction	aza-Baylis-Hillman|aza-Morita-Baylis-Hillman reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000264
+RXNO:0000274	REACTION	Ретроальдольная реакция	retro-aldol addition	retro aldol|retro-aldol reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000274
+RXNO:0000304	REACTION	Олефинирование Жюлиа—Коченского	Julia-Kocienski olefination	Julia-Kocienski|Джулиа Коченского|Julia-Kocienski coupling|Julia-Kocienski reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000304
+RXNO:0000380	REACTION	Аннелирование Робинсона	Robinson annulation	аннеляция Робинсона	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000380
+RXNO:0000387	REACTION	Гомологизация Зейферта—Гильберта	Seyferth-Gilbert homologation	Seyferth-Gilbert	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000387
+RXNO:0000390	REACTION	Гомологизация Охиры—Бестмана	Seyferth-Gilbert-Bestmann homologation	Ohira-Bestmann|Seyferth-Gilbert-Bestmann|Bestmann modification|Ohira-Bestmann homologation|Ohira-Bestmann modification	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000390
+RXNO:0000443	REACTION	Реакция Сакураи	Sakurai reaction	Sakurai|Hosomi-Sakurai|Хосоми Сакураи|Hosomi-Sakurai reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000443
+RXNO:0000459	REACTION	Ацетоуксусноэфирный синтез	acetoacetic ester synthesis	acetoacetic ester	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000459
+RXNO:0000478	REACTION	Модификация Стилла—Дженнари	Still-Gennari modification	Still-Gennari|Still modification	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000478
+RXNO:0000479	REACTION	Олефинирование	olefination		Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000479
+RXNO:0000480	REACTION	Олефинирование Теббе	Tebbe olefination	Tebbe	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000480
+RXNO:0000522	REACTION	Реакция Бетти	Betti reaction	Betti|Betti synthesis	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000522
+RXNO:0000595	REACTION	Конденсация Кляйзена—Шмидта	Claisen-Schmidt condensation	Claisen-Schmidt|Клайзена Шмидта	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000595
+RXNO:0000598	REACTION	Реакция Джонсона—Кори—Чайковского	Johnson-Corey-Chaykovsky reaction	Johnson-Corey-Chaykovsky|Corey-Chaykovsky|Corey-Chaykovsky reaction	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000598
+RXNO:0000655	REACTION	Реакция Фаворского	Favorskii reaction	этинилирование	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000655
+RXNO:0000662	REACTION	Реакция Кори—Зеебаха	Corey-Seebach reaction	Corey-Seebach|умполунг дитиана	Конденсации и образование C–C-связей		https://purl.obolibrary.org/obo/RXNO_0000662
+RXNO:0000053	REACTION	Реакция Бишлера—Напиральского	Bischler-Napieralski reaction	Bischler-Napieralski|Bischler-Napieralski 3,4-dihydroisoquinoline synthesis|Bischler-Napieralski dihydroisoquinoline synthesis|Bischler-Napieralski isoquinoline synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000053
+RXNO:0000059	REACTION	Реакция Пикте—Шпенглера	Pictet-Spengler reaction	Pictet-Spengler|Пикте Шпенглер|Pictet-Spengler isoquinoline synthesis|Pictet-Spengler tetrahydroisoquinoline synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000059
+RXNO:0000062	REACTION	Синтез Скраупа	Skraup reaction	Skraup|Skraup quinoline synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000062
+RXNO:0000064	REACTION	Индольный синтез Фишера	Fischer indole synthesis	Fischer indole|Фишер индол|Fischer indolisation|Fischer indolization	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000064
+RXNO:0000109	REACTION	Реакция Пфитцингера	Pfitzinger reaction	Pfitzinger|Pfitzinger quinoline synthesis|Pfitzinger-Borsche reaction	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000109
+RXNO:0000159	REACTION	Реакция Дёбнера—Миллера	Doebner-Miller reaction	Doebner-Miller|Дебнера Миллера|Doebner-von Miller reaction|Skraup-Doebner-von Miller quinoline synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000159
+RXNO:0000161	REACTION	Синтез Пааля—Кнорра	Paal-Knorr synthesis	Paal-Knorr|Пааль Кнорр	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000161
+RXNO:0000162	REACTION	Синтез фурана по Паалю—Кнорру	Paal-Knorr furan synthesis	Paal-Knorr furan	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000162
+RXNO:0000163	REACTION	Синтез тиофена по Паалю—Кнорру	Paal-Knorr thiophene synthesis	Paal-Knorr thiophene	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000163
+RXNO:0000164	REACTION	Синтез пиррола по Паалю—Кнорру	Paal-Knorr pyrrole synthesis	Paal-Knorr pyrrole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000164
+RXNO:0000238	REACTION	Метод Катрицкого через пирилий/пиридиний	Katritzky pyrylium-pyridinium method	Katritzky pyrylium pyridinium	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000238
+RXNO:0000252	REACTION	Карбазольный синтез Кадогана	Cadogan carbazole synthesis	Cadogan carbazole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000252
+RXNO:0000254	REACTION	Конденсация Макдональда	MacDonald condensation	MacDonald|порфирин	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000254
+RXNO:0000265	REACTION	Аза-Виттига реакция	aza-Wittig reaction	aza-Wittig	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000265
+RXNO:0000268	REACTION	Пиридиновый синтез Ганча	Hantzsch pyridine synthesis	Hantzsch pyridine|Ганч|Hantzsch dihydropyridine synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000268
+RXNO:0000299	REACTION	Конденсация Форбрюггена	Vorbrueggen condensation	Vorbruggen|Vorbrueggen|нуклеозид|Vorbrueggen glycosylation|Vorbruggen condensation|Vorbruggen glycosylation	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000299
+RXNO:0000307	REACTION	Индольный синтез Мори—Бана	Mori-Ban indole synthesis	Mori-Ban|Mori-Ban indole reaction	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000307
+RXNO:0000312	REACTION	Реакция Клаусона—Кааса	Clauson-Kaas reaction	Clauson-Kaas|Clauson-Kaas pyrrole synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000312
+RXNO:0000346	REACTION	Синтез кислородного гетероцикла	oxacycle synthesis	oxacycle	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000346
+RXNO:0000347	REACTION	Синтез азотного гетероцикла	azacycle synthesis	azacycle	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000347
+RXNO:0000348	REACTION	Синтез серного гетероцикла	thiacycle synthesis	thiacycle	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000348
+RXNO:0000349	REACTION	Синтез гетероцикла	heterocycle synthesis		Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000349
+RXNO:0000370	REACTION	Реакция Демко—Шарплесса	Demko-Sharpless reaction	Demko-Sharpless|тетразол	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000370
+RXNO:0000391	REACTION	Пиразольный синтез Кнорра	Knorr pyrazole synthesis	Knorr pyrazole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000391
+RXNO:0000394	REACTION	Хинолиновый синтез Кнорра	Knorr quinoline synthesis	Knorr quinoline	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000394
+RXNO:0000396	REACTION	Индольный синтез Ларока	Larock indole synthesis	Larock indole|Larock indolisation|Larock indolization	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000396
+RXNO:0000397	REACTION	Пиразольный синтез Пехмана	Pechmann pyrazole synthesis	Pechmann pyrazole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000397
+RXNO:0000399	REACTION	Бензимидазольный синтез Филлипса	Phillips benzimidazole synthesis	Phillips benzimidazole|Phillips benzimidazole condensation	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000399
+RXNO:0000402	REACTION	Пиримидиновый синтез Пиннера	Pinner pyrimidine synthesis	Pinner pyrimidine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000402
+RXNO:0000403	REACTION	Триазиновый синтез Пиннера	Pinner triazine synthesis	Pinner triazine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000403
+RXNO:0000404	REACTION	Окса-реакция Пикте—Шпенглера	oxa-Pictet-Spengler reaction	oxa-Pictet-Spengler	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000404
+RXNO:0000420	REACTION	Пиридиновый синтез Крёнке	Kröhnke pyridine synthesis	Krohnke|Kröhnke|Кренке|Krohnke pyridine synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000420
+RXNO:0000467	REACTION	Реакция Альгара—Флинна—Оямады	Algar-Flynn-Oyamada reaction	Algar-Flynn-Oyamada	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000467
+RXNO:0000475	REACTION	Реакция Аллана—Робинсона	Allan-Robinson reaction	Allan-Robinson|флавон	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000475
+RXNO:0000494	REACTION	Индольный синтез Бартоли	Bartoli indole synthesis	Bartoli indole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000494
+RXNO:0000496	REACTION	Реакция Бартона—Зарда	Barton-Zard reaction	Barton-Zard|Barton-Zard synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000496
+RXNO:0000499	REACTION	Бейрутская реакция	Beirut reaction	Beirut|хиноксалин диоксид	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000499
+RXNO:0000501	REACTION	Синтез Фейста—Бенари	Feist-Bénary synthesis	Feist-Benary	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000501
+RXNO:0000508	REACTION	Циклизация Кадогана	Cadogan cyclization	Cadogan reaction|Cadogan ring closure|Cadogan ring-closure	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000508
+RXNO:0000509	REACTION	Индольный синтез Кадогана	Cadogan indole synthesis	Cadogan indole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000509
+RXNO:0000511	REACTION	Индольный синтез Маделунга	Madelung indole synthesis	Madelung indole|Madelung synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000511
+RXNO:0000512	REACTION	Индольный синтез Смита	Smith indole synthesis	Smith indole|Smith-modified Madelung synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000512
+RXNO:0000519	REACTION	Акридиновый синтез Бернтсена	Bernthsen acridine synthesis	Bernthsen acridine|Bernthsen reaction	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000519
+RXNO:0000523	REACTION	Индольный синтез Бишлера—Мёлау	Bischler-Möhlau indole synthesis	Bischler-Mohlau|Бишлера Мелау|Bischler reaction|Bischler-Mohlau indole synthesis|Bischler-Mohlau reaction|Bischler-Möhlau reaction	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000523
+RXNO:0000524	REACTION	Хинолиновый синтез Кампса	Camps quinoline synthesis	Camps quinoline|Camps cyclisation|Camps cyclization	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000524
+RXNO:0000526	REACTION	Пиридиновый синтез Чичибабина	Chichibabin pyridine synthesis	Chichibabin pyridine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000526
+RXNO:0000527	REACTION	Реакция Чичибабина	Chichibabin reaction	Chichibabin amination	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000527
+RXNO:0000532	REACTION	Циклизация Борше—Дрекселя	Borsche-Drechsel cyclisation	Borsche-Drechsel|Borsche-Drechsel carbazole synthesis|Borsche-Drechsel cyclization	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000532
+RXNO:0000545	REACTION	Изатиновый синтез Зандмейера через дифенилмочевину	Sandmeyer diphenylurea isatin synthesis	Sandmeyer diphenylurea isatin	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000545
+RXNO:0000546	REACTION	Изатиновый синтез Зандмейера через изонитрозоацетанилид	Sandmeyer isonitrosoacetanilide isatin synthesis	Sandmeyer isonitrosoacetanilide isatin	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000546
+RXNO:0000577	REACTION	Хинолиновый синтез Фридлендера	Friedlander quinoline synthesis	Friedlander|Friedländer|Friedlaender synthesis|Friedlander synthesis|Friedländer synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000577
+RXNO:0000578	REACTION	Реакция Гевальда	Gewald reaction	Gewald|Gewald thiophene synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000578
+RXNO:0000583	REACTION	Хиназолиновый синтез Ниментовского	Niementowski quinazoline synthesis	Niementowski quinazoline	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000583
+RXNO:0000584	REACTION	Хинолиновый синтез Ниментовского	Niementowski quinoline synthesis	Niementowski quinoline	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000584
+RXNO:0000585	REACTION	Реакция Померанца—Фрича	Pomeranz–Fritsch reaction	Pomeranz-Fritsch|Pomeranz–Fritsch cyclization|Pomeranz–Fritsch isoquinoline synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000585
+RXNO:0000590	REACTION	Синтез Венкера	Wenker synthesis	Wenker|азиридин|Wenker aziridine synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000590
+RXNO:0000591	REACTION	Тиофеновый синтез Гинсберга	Hinsberg thiophene synthesis	Hinsberg thiophene	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000591
+RXNO:0000613	REACTION	Синтез имидазола	imidazole synthesis	imidazole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000613
+RXNO:0000614	REACTION	Синтез индазола	indazole synthesis	indazole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000614
+RXNO:0000615	REACTION	Синтез пиперазина	piperazine synthesis	piperazine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000615
+RXNO:0000616	REACTION	Синтез пиперидина	piperidine synthesis	piperidine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000616
+RXNO:0000617	REACTION	Синтез пирролидина	pyrrolidine synthesis	pyrrolidine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000617
+RXNO:0000632	REACTION	Индольный синтез Байера—Эммерлинга	Baeyer–Emmerling indole synthesis	Baeyer-Emmerling	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000632
+RXNO:0000641	REACTION	Циклизация Конрада—Лимпаха	Conrad-Limpach cyclisation	Conrad-Limpach|Conrad-Limpach cyclization|Conrad-Limpach synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000641
+RXNO:0000642	REACTION	Хинолиновый синтез Комба	Combes quinoline synthesis	Combes quinoline	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000642
+RXNO:0000648	REACTION	Аза-Вакер-циклизация	aza-Wacker cyclisation	aza-Wacker|aza-Wacker cyclization	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000648
+RXNO:0000664	REACTION	Пиридиновый синтез Байера	Baeyer pyridine synthesis	Baeyer pyridine	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000664
+RXNO:0000671	REACTION	Оксиндольный синтез Байера	Baeyer oxindole synthesis	Baeyer oxindole	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000671
+RXNO:0000672	REACTION	Индольный синтез Леймгрубера—Батчо	Leimgruber-Batcho indole synthesis	Leimgruber-Batcho|Batcho-Leimgruber indole synthesis	Гетероциклы		https://purl.obolibrary.org/obo/RXNO_0000672
+RXNO:0000129	REACTION	Реакция Уги	Ugi reaction	Ugi|Ugi 4CR|Уги 4КР|4CC|Ugi four-component condensation|Ugi-4CR	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000129
+RXNO:0000236	REACTION	Реакция Биджинелли	Biginelli reaction	Biginelli|Биджинелли 3КР|Biginelli condensation|Biginelli pyrimidone synthesis|Biginelli three-component reaction	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000236
+RXNO:0000244	REACTION	Реакция Пассерини	Passerini reaction	Passerini|Passerini 3CR	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000244
+RXNO:0000670	REACTION	Реакция Грёбке—Блэкберна—Бьенеме	Groebke-Blackburn-Bienaymé reaction	GBB|Groebke-Blackburn-Bienayme|Гребке|GBB reaction|GBB‐3CR reaction	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000670
+RXNO:0000676	REACTION	Реакция Кабачника—Филдса	Kabachnik-Fields reaction	Kabachnik-Fields	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000676
+RXNO:0000688	REACTION	Реакция Азингера	Asinger reaction	Asinger	Многокомпонентные реакции		https://purl.obolibrary.org/obo/RXNO_0000688
+RXNO:0000006	REACTION	Реакция Дильса—Альдера	Diels-Alder reaction	DA|Diels-Alder|Дильс Альдер|Diels-Alder coupling|Diels-Alder cycloaddition	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000006
+RXNO:0000007	REACTION	Еновая реакция	ene reaction	ene|Alder-ene|Альдера еновая	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000007
+RXNO:0000018	REACTION	1,3-Диполярное циклоприсоединение	1,3-dipolar cycloaddition	Huisgen|Гюйсгена|диполярная циклоаддиция	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000018
+RXNO:0000092	REACTION	Аза-реакция Дильса—Альдера	aza-Diels-Alder reaction	aza-Diels-Alder|aza Diels-Alder cycloaddition|aza Diels-Alder reaction|aza-Diels-Alder cycloaddition|azo Diels-Alder cycloaddition|azo Diels-Alder reaction|azo-Diels-Alder cycloaddition|azo-Diels-Alder reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000092
+RXNO:0000209	REACTION	Циклизация Назарова	Nazarov cyclisation	Nazarov|Nazarov cyclization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000209
+RXNO:0000231	REACTION	Аза-еновая реакция	aza-ene reaction	aza-ene	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000231
+RXNO:0000240	REACTION	Циклизация Бергмана	Bergman cyclisation	Bergman|Bergman cyclization|Bergman reaction|Masamune-Bergman cyclisation|Masamune-Bergman cyclization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000240
+RXNO:0000258	REACTION	Реакция Симмонса—Смита	Simmons-Smith reaction	Simmons-Smith|циклопропанирование|Simmons-Smith cyclopropanation	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000258
+RXNO:0000269	REACTION	Азид-алкиновая клик-реакция	alkyne-azide click reaction	azide alkyne click|клик химия|"click" reaction|'click' reaction|alkyne-azide Huisgen cycloaddition|alkyne-azide Huisgen reaction|azide-alkyne click reaction|azide-alkyne Huisgen cycloaddition|azide-alkyne Huisgen reaction|click reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000269
+RXNO:0000270	REACTION	CuAAC — медь-катализируемое азид-алкиновое циклоприсоединение	copper(I)-catalyzed azide-alkyne cycloaddition	CuAAC|copper click|Cu azide alkyne|copper(I)-catalysed alkyne-azide cycloaddition|copper(I)-catalysed azide-alkyne click reaction|copper(I)-catalysed azide-alkyne cycloaddition|copper(I)-catalyzed alkyne-azide cycloaddition|copper(I)-catalyzed azide-alkyne click reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000270
+RXNO:0000273	REACTION	Ретро-Дильса—Альдера реакция	retro-Diels-Alder reaction	retro-Diels-Alder|retro Diels-Alder reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000273
+RXNO:0000308	REACTION	Лактонизация Ямагучи	Yamaguchi lactonisation	Yamaguchi lactonization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000308
+RXNO:0000310	REACTION	Окса-реакция Дильса—Альдера	oxa-Diels-Alder reaction	oxa-Diels-Alder|oxa Diels-Alder cycloaddition|oxa Diels-Alder reaction|oxa-Diels-Alder cycloaddition|oxo Diels-Alder cycloaddition|oxo Diels-Alder reaction|oxo-Diels-Alder cycloaddition|oxo-Diels-Alder reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000310
+RXNO:0000313	REACTION	Гетеро-реакция Дильса—Альдера	hetero-Diels-Alder reaction	hetero-Diels-Alder	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000313
+RXNO:0000464	REACTION	Реакция Паусона—Ханда	Pauson-Khand reaction	Pauson-Khand	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000464
+RXNO:0000481	REACTION	Циклизация Майерса—Сайто	Myers-Saito cyclisation	Myers-Saito|Myers-Saito cyclization|Myers-Saito process|Myers-Saito reaction	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000481
+RXNO:0000482	REACTION	Циклизация Шмиттеля	Schmittel cyclisation	Schmittel|Schmittel cyclization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000482
+RXNO:0000491	REACTION	Прерванная циклизация Назарова	interrupted Nazarov cyclisation	interrupted Nazarov|interrupted Nazarov cyclization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000491
+RXNO:0000534	REACTION	Циклизация Брэдшера	Bradsher cyclisation	Bradsher|Bradsher cyclization|Bradsher cycloaddition	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000534
+RXNO:0000536	REACTION	Циклизация Пархэма	Parham cyclisation	Parham	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000536
+RXNO:0000582	REACTION	Йодлактонизация	iodolactonization	iodolactonisation	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000582
+RXNO:0000593	REACTION	Галогенлактонизация	halolactonization	halolactonisation	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000593
+RXNO:0000643	REACTION	Реакция Прато	Prato reaction	Prato	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000643
+RXNO:0000646	REACTION	Реакция Бингеля	Bingel reaction	Bingel|фуллерен	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000646
+RXNO:0000647	REACTION	Вакер-циклизация	Wacker cyclisation	Wacker cyclization	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000647
+RXNO:0000681	REACTION	Реакция Дётца	Dötz reaction	Dotz|Dötz|Детца	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000681
+RXNO:0000682	REACTION	Реакция Кулинковича	Kulinkovich reaction	Kulinkovich	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000682
+RXNO:0000683	REACTION	Реакция Кулинковича—де Мейере	Kulinkovich-de Meijere reaction	Kulinkovich-de Meijere	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000683
+RXNO:0000684	REACTION	Реакция Кулинковича—Шимоняка	Kulinkovich-Szymoniak reaction	Kulinkovich-Szymoniak	Циклоприсоединение и циклизация		https://purl.obolibrary.org/obo/RXNO_0000684
+RXNO:0000026	REACTION	Перегруппировка Бекмана	Beckmann rearrangement	Beckmann	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000026
+RXNO:0000028	REACTION	Перегруппировка Коупа	Cope rearrangement		Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000028
+RXNO:0000029	REACTION	Окси-Коупа перегруппировка	oxy-Cope rearrangement	oxy-Cope	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000029
+RXNO:0000050	REACTION	Пинаколиновая перегруппировка	pinacol rearrangement		Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000050
+RXNO:0000051	REACTION	Перегруппировка Вольфа	Wolff rearrangement		Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000051
+RXNO:0000054	REACTION	Перегруппировка Курциуса	Curtius rearrangement	Curtius|Curtius degradation|Curtius reaction	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000054
+RXNO:0000067	REACTION	Бензидиновая перегруппировка	benzidine rearrangement	benzidine	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000067
+RXNO:0000069	REACTION	Перегруппировка Димрота	Dimroth rearrangement	Dimroth	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000069
+RXNO:0000075	REACTION	Бензиловая перегруппировка	benzilic acid rearrangement	benzilic acid	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000075
+RXNO:0000095	REACTION	Перегруппировка Фишера—Хеппа	Fischer-Hepp rearrangement	Fischer-Hepp	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000095
+RXNO:0000113	REACTION	Перегруппировка Брука	Brook rearrangement	Brook	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000113
+RXNO:0000120	REACTION	Перегруппировка Пейна	Payne rearrangement	Payne	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000120
+RXNO:0000122	REACTION	Перегруппировка Бейкера—Венкатарамана	Baker-Venkataraman rearrangement	Baker-Venkataraman	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000122
+RXNO:0000148	REACTION	Перегруппировка Кляйзена	Claisen rearrangement	Клайзена	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000148
+RXNO:0000149	REACTION	Перегруппировка Айрленда—Кляйзена	Ireland-Claisen rearrangement	Ireland-Claisen	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000149
+RXNO:0000152	REACTION	Перегруппировка Эшенмозера—Кляйзена	Eschenmoser-Claisen rearrangement	Eschenmoser-Claisen	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000152
+RXNO:0000153	REACTION	Перегруппировка Джонсона—Кляйзена	Johnson-Claisen rearrangement	Johnson-Claisen	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000153
+RXNO:0000156	REACTION	Перегруппировка Лоссена	Lossen rearrangement	Lossen	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000156
+RXNO:0000170	REACTION	Перегруппировка Шмидта карбоновой кислоты	Schmidt rearrangement, carboxylic acid	Schmidt carboxylic acid	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000170
+RXNO:0000171	REACTION	Перегруппировка Шмидта кетона	Schmidt rearrangement, ketone	Schmidt ketone	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000171
+RXNO:0000174	REACTION	Перегруппировка Соммле—Хаузера	Sommelet-Hauser rearrangement	Sommelet-Hauser	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000174
+RXNO:0000189	REACTION	Перегруппировка Небера	Neber rearrangement	Neber	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000189
+RXNO:0000194	REACTION	Перегруппировка Стивенса	Stevens rearrangement	Stevens	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000194
+RXNO:0000197	REACTION	Аза-Коупа перегруппировка	aza-Cope rearrangement	aza-Cope	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000197
+RXNO:0000201	REACTION	Перегруппировка Штеглиха	Steglich rearrangement		Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000201
+RXNO:0000208	REACTION	Ароматическая перегруппировка Кляйзена	aromatic Claisen rearrangement	aromatic Claisen	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000208
+RXNO:0000220	REACTION	Перегруппировка Пуммерера	Pummerer rearrangement	Pummerer|Pummerer methyl sulfoxide rearrangement	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000220
+RXNO:0000229	REACTION	Перегруппировка Ферье	Ferrier rearrangement	Ferrier|Ferrier reaction	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000229
+RXNO:0000233	REACTION	Перегруппировка Ахматовича	Achmatowicz rearrangement	Achmatowicz	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000233
+RXNO:0000248	REACTION	Перегруппировка Кэрролла	Carroll rearrangement	Carroll|Kimel-Cope rearrangement	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000248
+RXNO:0000250	REACTION	Перегруппировка Фрича—Буттенберга—Вихеля	Fritsch-Buttenberg-Wiechell rearrangement	Fritsch-Buttenberg-Wiechell	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000250
+RXNO:0000260	REACTION	[1,2]-Перегруппировка Виттига	[1,2]-Wittig rearrangement	1,2 Wittig rearrangement|1,2-Wittig rearrangement|[1,2] Wittig rearrangement	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000260
+RXNO:0000261	REACTION	[2,3]-Перегруппировка Виттига	[2,3]-Wittig rearrangement	2,3 Wittig rearrangement|2,3-Wittig rearrangement|[2,3] Wittig rearrangement	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000261
+RXNO:0000381	REACTION	Перегруппировка Тиффено—Демьянова	Tiffeneau-Demjanov rearrangement	Tiffeneau-Demjanov	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000381
+RXNO:0000382	REACTION	Перегруппировка Демьянова	Demjanov rearrangement	Demjanov	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000382
+RXNO:0000385	REACTION	Перегруппировка Фаворского	Favorskii rearrangement		Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000385
+RXNO:0000410	REACTION	Перегруппировка Гофмана	Hofmann rearrangement	Гофман	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000410
+RXNO:0000412	REACTION	Перегруппировка Ньюмана—Кварта	Newman-Kwart rearrangement	Newman-Kwart	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000412
+RXNO:0000444	REACTION	Перегруппировка Фриса	Fries rearrangement	Fries|photo-Fries rearrangement	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000444
+RXNO:0000472	REACTION	Перегруппировка Амадори	Amadori rearrangement	Amadori	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000472
+RXNO:0000476	REACTION	Перегруппировка Мейера—Шустера	Meyer-Schuster rearrangement	Meyer-Schuster	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000476
+RXNO:0000477	REACTION	Перегруппировка Рупе	Rupe rearrangement	Rupe	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000477
+RXNO:0000492	REACTION	Перегруппировка Бамбергера	Bamberger rearrangement	Bamberger	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000492
+RXNO:0000502	REACTION	Перегруппировка Боултона—Катрицкого	Boulton-Katritzky rearrangement	Boulton-Katritzky	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000502
+RXNO:0000513	REACTION	Перегруппировка Мумма	Mumm rearrangement	Mumm	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000513
+RXNO:0000514	REACTION	Перегруппировка Чепмена	Chapman rearrangement	Chapman	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000514
+RXNO:0000594	REACTION	Перегруппировка Чамичана—Деннштедта	Ciamician-Dennstedt rearrangement	Ciamician-Dennstedt	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000594
+RXNO:0000644	REACTION	Перегруппировка Пьянкателли	Piancatelli rearrangement	Piancatelli	Перегруппировки		https://purl.obolibrary.org/obo/RXNO_0000644
+RXNO:0000031	REACTION	Окисление Байера—Виллигера	Baeyer-Villiger oxidation	Baeyer-Villiger|BV|B-V reaction|Baeyer-Villiger oxidative rearrangement|Baeyer-Villiger reaction	Окисление		https://purl.obolibrary.org/obo/RXNO_0000031
+RXNO:0000047	REACTION	Окисление Оппенауэра	Oppenauer oxidation	Oppenauer	Окисление		https://purl.obolibrary.org/obo/RXNO_0000047
+RXNO:0000130	REACTION	Окисление Вакера—Цудзи	Wacker-Tsuji oxidation	Wacker-Tsuji|Ваккер|Wacker oxidation|Wacker reaction	Окисление		https://purl.obolibrary.org/obo/RXNO_0000130
+RXNO:0000141	REACTION	Асимметрическое эпоксидирование Шарплесса	Sharpless asymmetric epoxidation	Sharpless epoxidation|SAE|Katsuki-Sharpless asymmetric epoxidation|Katsuki-Sharpless epoxidation|Sharpless-Katsuki asymmetric epoxidation|Sharpless-Katsuki epoxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000141
+RXNO:0000142	REACTION	Асимметрическое дигидроксилирование Шарплесса	Sharpless asymmetric dihydroxylation	Sharpless AD|SAD|Sharpless bishydroxylation|Sharpless hydroxylation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000142
+RXNO:0000143	REACTION	Асимметрическое аминогидроксилирование Шарплесса	Sharpless asymmetric aminohydroxylation	Sharpless aminohydroxylation|Sharpless oxyamination	Окисление		https://purl.obolibrary.org/obo/RXNO_0000143
+RXNO:0000154	REACTION	Окисление Сверна	Swern oxidation	Swern	Окисление		https://purl.obolibrary.org/obo/RXNO_0000154
+RXNO:0000169	REACTION	Реакция Дейкина	Dakin reaction	Dakin oxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000169
+RXNO:0000184	REACTION	Окисление Пфицнера—Моффатта	Pfitzner-Moffatt oxidation	Pfitzner-Moffatt|Moffatt oxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000184
+RXNO:0000210	REACTION	Окисление Флеминга—Тамао	Fleming-Tamao oxidation	Fleming-Tamao|Tamao-Fleming|Fleming oxidation|Tamao-Fleming oxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000210
+RXNO:0000256	REACTION	Окисление Десса—Мартина	Dess-Martin oxidation	Dess-Martin|DMP|Dess-Martin periodinane oxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000256
+RXNO:0000257	REACTION	Окисление Криге	Criegee oxidation	Criegee|Criegee glycol cleavage|Criegee reaction	Окисление		https://purl.obolibrary.org/obo/RXNO_0000257
+RXNO:0000266	REACTION	Реакция Фентона	Fenton reaction	Fenton|Fenton's reaction	Окисление		https://purl.obolibrary.org/obo/RXNO_0000266
+RXNO:0000287	REACTION	Окисление Линдгрена	Lindgren oxidation	Lindgren|Pinnick|Lindgren-Pinnick|Пинника	Окисление		https://purl.obolibrary.org/obo/RXNO_0000287
+RXNO:0000293	REACTION	Гидроборирование—окисление	hydroboration-oxidation	hydroboration oxidation	Окисление		https://purl.obolibrary.org/obo/RXNO_0000293
+RXNO:0000298	REACTION	Окисление Фетизона	Fetizon oxidation	Fetizon|Fétizon	Окисление		https://purl.obolibrary.org/obo/RXNO_0000298
+RXNO:0000344	REACTION	Окислительное расщепление алкена	alkene oxidative cleavage	oxidative cleavage alkene	Окисление		https://purl.obolibrary.org/obo/RXNO_0000344
+RXNO:0000353	REACTION	Окисление спирта до карбоновой кислоты	alcohol oxidation to carboxylic acid	alcohol oxidation acid	Окисление		https://purl.obolibrary.org/obo/RXNO_0000353
+RXNO:0000354	REACTION	Бензильное окисление	benzylic oxidation		Окисление		https://purl.obolibrary.org/obo/RXNO_0000354
+RXNO:0000355	REACTION	Аллильное окисление	allylic oxidation		Окисление		https://purl.obolibrary.org/obo/RXNO_0000355
+RXNO:0000356	REACTION	Окисление Джонса	Jones oxidation	Jones	Окисление		https://purl.obolibrary.org/obo/RXNO_0000356
+RXNO:0000377	REACTION	Реакция Шолля	Scholl reaction	Scholl	Окисление		https://purl.obolibrary.org/obo/RXNO_0000377
+RXNO:0000405	REACTION	Эпоксидирование Прилежаева	Prilezhaev epoxidation	Prilezhaev|Prileschajew|Prileschajew reaction|Prilezhaev reaction	Окисление		https://purl.obolibrary.org/obo/RXNO_0000405
+RXNO:0000544	REACTION	Окисление Саэгусы	Saegusa oxidation	Saegusa|Saegusa-Ito|Саегусы Ито	Окисление		https://purl.obolibrary.org/obo/RXNO_0000544
+RXNO:0000547	REACTION	Окисление Саретта	Sarett oxidation	Sarett	Окисление		https://purl.obolibrary.org/obo/RXNO_0000547
+RXNO:0000550	REACTION	Окисление Коллинза	Collins oxidation	Collins	Окисление		https://purl.obolibrary.org/obo/RXNO_0000550
+RXNO:0000649	REACTION	Окисление Лемьё—Джонсона	Lemieux-Johnson oxidation	Lemieux-Johnson	Окисление		https://purl.obolibrary.org/obo/RXNO_0000649
+RXNO:0000650	REACTION	Реакция Малапрада	Malaprade reaction	Malaprade	Окисление		https://purl.obolibrary.org/obo/RXNO_0000650
+RXNO:0000665	REACTION	Окисление Кори—Кима	Corey-Kim oxidation	Corey-Kim	Окисление		https://purl.obolibrary.org/obo/RXNO_0000665
+RXNO:0000666	REACTION	Окисление Кори—Саггса	Corey-Suggs oxidation	Corey-Suggs|PCC	Окисление		https://purl.obolibrary.org/obo/RXNO_0000666
+RXNO:0000667	REACTION	Окисление Кори—Шмидта	Corey-Schmidt oxidation	Corey-Schmidt|PDC	Окисление		https://purl.obolibrary.org/obo/RXNO_0000667
+RXNO:0000668	REACTION	Окисление Олбрайта—Голдмана	Albright-Goldman oxidation	Albright-Goldman	Окисление		https://purl.obolibrary.org/obo/RXNO_0000668
+RXNO:0000669	REACTION	Окисление Руботтома	Rubottom oxidation	Rubottom	Окисление		https://purl.obolibrary.org/obo/RXNO_0000669
+RXNO:0000673	REACTION	Окисление IBX	IBX oxidation	IBX	Окисление		https://purl.obolibrary.org/obo/RXNO_0000673
+RXNO:0000686	REACTION	Эпоксидирование Якобсена	Jacobsen epoxidation	Jacobsen|Jacobsen-Katsuki	Окисление		https://purl.obolibrary.org/obo/RXNO_0000686
+RXNO:0000687	REACTION	Эпоксидирование Ши	Shi epoxidation		Окисление		https://purl.obolibrary.org/obo/RXNO_0000687
+RXNO:0000038	REACTION	Восстановление Клемменсена	Clemmensen reduction	Clemmensen	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000038
+RXNO:0000042	REACTION	Восстановление Бёрча	Birch reduction	Birch|Берча	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000042
+RXNO:0000066	REACTION	Реакция Штаудингера	Staudinger reaction	Staudinger reduction|восстановление азида|Staudinger ligation	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000066
+RXNO:0000089	REACTION	Восстановление Меервейна—Понндорфа—Верлея	Meerwein-Ponndorf-Verley reduction	MPV|Meerwein-Ponndorf-Verley	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000089
+RXNO:0000101	REACTION	Реакция Лейкарта	Leuckart reaction	Leuckart	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000101
+RXNO:0000102	REACTION	Реакция Лейкарта—Валлаха	Leuckart-Wallach reaction	Leuckart-Wallach|Wallach reaction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000102
+RXNO:0000119	REACTION	Восстановление Буво—Блана	Bouveault-Blanc reaction	Bouveault-Blanc|Bouveault-Blanc procedure|Bouveault-Blanc reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000119
+RXNO:0000134	REACTION	Деоксигенирование Бартона—Маккомби	Barton-McCombie deoxygenation	Barton-McCombie|Barton deoxygenation|Barton reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000134
+RXNO:0000136	REACTION	Восстановление Розенмунда	Rosenmund reduction	Rosenmund|Rosenmund reaction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000136
+RXNO:0000218	REACTION	Реакция Канниццаро	Cannizzaro reaction	Cannizzaro	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000218
+RXNO:0000226	REACTION	Восстановление Кижнера—Вольфа	Wolff-Kishner reduction	Wolff-Kishner|Вольфа Кижнера	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000226
+RXNO:0000227	REACTION	Модификация Хуан-Минлона восстановления Кижнера—Вольфа	Wolff-Kishner reduction, Huang-Minlon modification	Huang-Minlon|Huang-Minlon modification	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000227
+RXNO:0000242	REACTION	Асимметрическое гидрирование Нойори: алкен	Noyori asymmetric hydrogenation, alkene	Noyori alkene|Noyori hydrogenation, alkene	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000242
+RXNO:0000243	REACTION	Асимметрическое гидрирование Нойори: карбонил	Noyori asymmetric hydrogenation, carbonyl	Noyori carbonyl|Noyori hydrogenation, carbonyl	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000243
+RXNO:0000275	REACTION	Гидрирование Сторка—Крэбтри	Stork-Crabtree hydrogenation	Stork-Crabtree	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000275
+RXNO:0000286	REACTION	Восстановление Люша	Luche reduction		Восстановление		https://purl.obolibrary.org/obo/RXNO_0000286
+RXNO:0000335	REACTION	Восстановительное аминирование	reductive amination		Восстановление		https://purl.obolibrary.org/obo/RXNO_0000335
+RXNO:0000337	REACTION	Восстановление нитрогруппы до амина	nitro reduction to amine	nitro reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000337
+RXNO:0000338	REACTION	Восстановление амида до амина	amide reduction to amine	amide reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000338
+RXNO:0000339	REACTION	Восстановление алкена до алкана	alkene reduction to alkane	alkene reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000339
+RXNO:0000342	REACTION	Восстановление нитрила до амина	nitrile reduction to amine	nitrile reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000342
+RXNO:0000343	REACTION	Восстановление имина до амина	imine reduction to amine	imine reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000343
+RXNO:0000350	REACTION	Восстановление алкина до алкана	alkyne reduction to alkane	alkyne reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000350
+RXNO:0000352	REACTION	Восстановление гетероарена до насыщенного гетероцикла	heteroaryl reduction to saturated heterocycle	heteroaryl reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000352
+RXNO:0000431	REACTION	Восстановление карбоновой кислоты до спирта	carboxylic acid to primary alcohol reduction	carboxylic acid reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000431
+RXNO:0000498	REACTION	Восстановление Бешама	Béchamp reduction	Bechamp|Béchamp|Bechamp reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000498
+RXNO:0000510	REACTION	Восстановление Бенкезера	Benkeser reduction	Benkeser|Benkeser reaction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000510
+RXNO:0000597	REACTION	Восстановление Кори—Бакши—Шибаты	Corey-Bakshi-Shibata reduction	CBS|Corey-Bakshi-Shibata|CBS reduction|Corey-Itsuno reduction	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000597
+RXNO:0000656	REACTION	Диимидное восстановление	Diimide reduction	diimide	Восстановление		https://purl.obolibrary.org/obo/RXNO_0000656
+RXNO:0000680	REACTION	Восстановление Фукуямы	Fukuyama reduction		Восстановление		https://purl.obolibrary.org/obo/RXNO_0000680
+RXNO:0000078	REACTION	Введение защитной группы	protection reaction	protection|защита	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000078
+RXNO:0000079	REACTION	Boc-защита	Boc protection	трет бутоксикарбонил	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000079
+RXNO:0000160	REACTION	Fmoc-защита	Fmoc protection	флуоренилметоксикарбонил	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000160
+RXNO:0000203	REACTION	Снятие защитной группы	deprotection reaction	deprotection|деблокирование	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000203
+RXNO:0000320	REACTION	Снятие защиты аминогруппы	amino group deprotection	amino deprotection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000320
+RXNO:0000321	REACTION	Защита аминогруппы	amino group protection	amine protection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000321
+RXNO:0000322	REACTION	Бензильная защита амина	benzylamine protection	N-benzyl	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000322
+RXNO:0000323	REACTION	Защита гидроксильной группы	hydroxyl group protection	hydroxyl protection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000323
+RXNO:0000324	REACTION	Бензильная защита спирта	benzyl ether protection	OBn	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000324
+RXNO:0000325	REACTION	Защита карбоксильной группы	carboxylic acid protection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000325
+RXNO:0000326	REACTION	Снятие Boc-защиты	Boc deprotection	дебокирование	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000326
+RXNO:0000327	REACTION	Снятие бензильной защиты амина	benzylamine deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000327
+RXNO:0000328	REACTION	Силильная защита	silyl protection	TBS|TBDMS|TIPS|TBDPS|TMS	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000328
+RXNO:0000330	REACTION	Ацетильная защита	acetate protection	OAc|O-Ac protection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000330
+RXNO:0000418	REACTION	Фталимидная защита	phthalimide protection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000418
+RXNO:0000419	REACTION	Снятие фталимидной защиты	phthalimide deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000419
+RXNO:0000428	REACTION	Пивалоильная защита	pivaloyl protection	Piv	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000428
+RXNO:0000429	REACTION	Снятие пивалоильной защиты	pivaloyl deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000429
+RXNO:0000430	REACTION	Снятие защиты гидроксильной группы	hydroxy group deprotection	hydroxy deprotection|alcohol deprotection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000430
+RXNO:0000432	REACTION	Трет-бутильная защита	tert-butyl protection	tBu	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000432
+RXNO:0000433	REACTION	Снятие защиты карбоксильной группы	carboxy group deprotection	carboxy deprotection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000433
+RXNO:0000434	REACTION	Снятие защиты трет-бутилового эфира	tert-butyl ester deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000434
+RXNO:0000435	REACTION	Снятие защиты метилового эфира	methyl ester deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000435
+RXNO:0000436	REACTION	Снятие защиты этилового эфира	ethyl ester deprotection		Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000436
+RXNO:0000657	REACTION	Защита карбонильной группы	carbonyl group protection	carbonyl protection	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000657
+RXNO:0000658	REACTION	Ацетальная защита	acetal protection	кеталь	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000658
+RXNO:0000692	REACTION	Снятие силильной защиты	silyl deprotection	десилилирование	Защита и снятие защиты		https://purl.obolibrary.org/obo/RXNO_0000692
+RXNO:0000013	REACTION	Диазотирование	diazotisation	diazotization	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000013
+RXNO:0000021	REACTION	Реакция Зандмейера	Sandmeyer reaction	Sandmeyer|Зандмейер	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000021
+RXNO:0000022	REACTION	Галогенирование Гаттермана	Gattermann halogenation		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000022
+RXNO:0000034	REACTION	Реакция Мицунобу	Mitsunobu reaction	Mitsunobu	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000034
+RXNO:0000055	REACTION	Реакция Вильсмайера—Хаака	Vilsmeier-Haack reaction	Vilsmeier-Haack|Вильсмайер Хаак|Vilsmeier-Haack formylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000055
+RXNO:0000058	REACTION	Реакция Риттера	Ritter reaction	Ritter	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000058
+RXNO:0000060	REACTION	Реакция Михаэлиса—Арбузова	Arbuzov reaction	Michaelis-Arbuzov|Arbuzov|Michaelis-Arbuzov phosphonate synthesis|Michaelis-Arbuzov reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000060
+RXNO:0000063	REACTION	Реакция Арндта—Эйстерта	Arndt-Eistert reaction	Arndt-Eistert|Arndt-Eistert synthesis	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000063
+RXNO:0000071	REACTION	Деградация Эдмана	Edman degradation	Edman	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000071
+RXNO:0000072	REACTION	Реакция Реймера—Тимана	Reimer-Tiemann reaction	Reimer-Tiemann	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000072
+RXNO:0000090	REACTION	Синтез простых эфиров Вильямсона	Williamson ether synthesis	Williamson ether|Williamson etherification	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000090
+RXNO:0000094	REACTION	Реакция Рамберга—Беклунда	Ramberg-Bäcklund reaction	Ramberg-Backlund|Ramberg-Bäcklund|Ramberg-Backlund reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000094
+RXNO:0000096	REACTION	Азосочетание	azo coupling		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000096
+RXNO:0000103	REACTION	Синтез Габриэля	Gabriel synthesis	Gabriel	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000103
+RXNO:0000104	REACTION	Метод Инга—Манске	Ing-Manske procedure	Ing-Manske	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000104
+RXNO:0000106	REACTION	Реакция Хунсдиккера	Hunsdiecker reaction	Hunsdiecker|Бородина Хунсдиккера|Borodin reaction|Borodine reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000106
+RXNO:0000111	REACTION	Фрагментация Гроба	Grob fragmentation	Grob	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000111
+RXNO:0000118	REACTION	Реакция Соммле	Sommelet reaction	Sommelet	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000118
+RXNO:0000127	REACTION	Реакция Бальца—Шимана	Balz-Schiemann reaction	Balz-Schiemann|Schiemann reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000127
+RXNO:0000128	REACTION	Электролиз Кольбе	Kolbe electrolysis	Crum-Brown-Walker reaction|Kolbe electrolytic synthesis|Kolbe electrosynthesis|Kolbe reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000128
+RXNO:0000139	REACTION	Реакция Гаттермана	Gattermann reaction	Gattermann formylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000139
+RXNO:0000155	REACTION	Реакция Финкельштейна	Finkelstein reaction	Finkelstein	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000155
+RXNO:0000157	REACTION	Реакция Нефа	Nef reaction		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000157
+RXNO:0000158	REACTION	Реакция Яппа—Клингемана	Japp-Klingemann reaction	Japp-Klingemann	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000158
+RXNO:0000165	REACTION	Реакция Шоттена—Баумана	Schotten-Baumann reaction	Schotten-Baumann	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000165
+RXNO:0000166	REACTION	Элиминирование Гофмана	Hofmann elimination	exhaustive methylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000166
+RXNO:0000167	REACTION	Этерификация Фишера—Шпейера	Fischer-Speier esterification	Fischer-Speier|Fischer esterification	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000167
+RXNO:0000175	REACTION	Реакция Дейкина—Уэста	Dakin-West reaction	Dakin-West	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000175
+RXNO:0000176	REACTION	Фрагментация Бекмана	Beckmann fragmentation		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000176
+RXNO:0000183	REACTION	Реакция Перкова	Perkow reaction	Perkow	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000183
+RXNO:0000185	REACTION	Реакция Вильгеродта	Willgerodt reaction	Willgerodt	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000185
+RXNO:0000186	REACTION	Реакция Вильгеродта—Киндлера	Willgerodt-Kindler reaction	Willgerodt-Kindler	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000186
+RXNO:0000187	REACTION	Реакция Тищенко	Tishchenko reaction	Tishchenko	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000187
+RXNO:0000221	REACTION	Реакция Полоновского	Polonovski reaction	Polonovski	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000221
+RXNO:0000223	REACTION	Реакция Меншуткина	Menshutkin reaction	Menshutkin|Menschutkin reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000223
+RXNO:0000224	REACTION	Деградация Штреккера	Strecker degradation		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000224
+RXNO:0000228	REACTION	Переэтерификация Земплена	Zemplen transesterification	Zemplen|Zemplén|Zemplen procedure	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000228
+RXNO:0000272	REACTION	Гидроформилирование	hydroformylation	оксосинтез	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000272
+RXNO:0000288	REACTION	Реакция Розенмунда—Брауна	Rosenmund-von Braun reaction	Rosenmund-von Braun|Rosenmund-von Braun synthesis	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000288
+RXNO:0000290	REACTION	Гидросилилирование	hydrosilylation	hydrosilation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000290
+RXNO:0000291	REACTION	Гидроаминирование	hydroamination		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000291
+RXNO:0000292	REACTION	Гидроборирование	hydroboration		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000292
+RXNO:0000295	REACTION	Гидроцирконирование	hydrozirconation		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000295
+RXNO:0000309	REACTION	Этерификация Ямагучи	Yamaguchi esterification		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000309
+RXNO:0000340	REACTION	N-Алкилирование амида	amide N-alkylation	amide N alkylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000340
+RXNO:0000341	REACTION	N-Алкилирование анилина	aniline N-alkylation	aniline N alkylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000341
+RXNO:0000345	REACTION	N-Алкилирование гетероарена	heteroaryl N-alkylation	heteroaryl N alkylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000345
+RXNO:0000357	REACTION	N-Ацилирование с образованием амида	N-acylation to amide	amidation|амидирование|amide coupling	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000357
+RXNO:0000358	REACTION	N-Ацилирование с образованием мочевины	N-acylation to urea	urea formation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000358
+RXNO:0000359	REACTION	N-Ацилирование с образованием карбамата	N-acylation to carbamate	carbamate formation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000359
+RXNO:0000360	REACTION	O-Ацилирование с образованием сложного эфира	O-acylation to ester	O acylation ester	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000360
+RXNO:0000361	REACTION	Реакция Пиннера	Pinner reaction		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000361
+RXNO:0000363	REACTION	Превращение амида в имидоилхлорид	amide to imidoyl chloride conversion	imidoyl chloride	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000363
+RXNO:0000364	REACTION	Превращение спирта в галогенид	alcohol to halide conversion	alcohol halide	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000364
+RXNO:0000365	REACTION	Получение хлорангидрида карбоновой кислоты	carboxylic acid to acid chloride conversion	acid chloride formation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000365
+RXNO:0000366	REACTION	Превращение нитрила в карбоновую кислоту	nitrile to acid conversion	nitrile hydrolysis	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000366
+RXNO:0000367	REACTION	Получение имина из карбонильного соединения	carbonyl compound to imine conversion	imine formation|Schiff base|основание Шиффа	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000367
+RXNO:0000372	REACTION	N-Арилирование гетероарена	heteroaryl N-arylation	heteroaryl N arylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000372
+RXNO:0000376	REACTION	Метилирование Эшвайлера—Кларка	Eschweiler-Clarke methylation	Eschweiler-Clarke|Eschweiler-Clarke reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000376
+RXNO:0000406	REACTION	Галогенирование Аппеля	Appel halogenation	Appel|Appel reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000406
+RXNO:0000447	REACTION	Реакция Даффа	Duff reaction	Duff	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000447
+RXNO:0000507	REACTION	Декарбоксилирование Крапчо	Krapcho decarboxylation	Krapcho|Krapcho decarbalkoxylation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000507
+RXNO:0000538	REACTION	Реакция Чугаева	Chugaev reaction	Chugaev	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000538
+RXNO:0000539	REACTION	Элиминирование Коупа	Cope elimination	Cope reaction	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000539
+RXNO:0000586	REACTION	Этерификация Штеглиха	Steglich esterification		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000586
+RXNO:0000621	REACTION	Реакция Гелля—Фольгарда—Зелинского	Hell-Volhard-Zelinsky reaction	HVZ|Hell-Volhard-Zelinsky|Hell-Volhard-Zelinsky halogenation	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000621
+RXNO:0000654	REACTION	Гидратация Мукаямы	Mukaiyama hydration		Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000654
+RXNO:0000660	REACTION	Элиминирование Кори—Винтера	Corey-Winter elimination	Corey-Winter	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000660
+RXNO:0000661	REACTION	Декарбонилирование Цудзи—Уилкинсона	Tsuji-Wilkinson decarbonylation	Tsuji-Wilkinson	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000661
+RXNO:0000689	REACTION	Галоформная реакция	haloform reaction	haloform|йодоформная	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000689
+RXNO:0000690	REACTION	Реакция Атертона—Тодда	Atherton-Todd reaction	Atherton-Todd	Функциональные превращения		https://purl.obolibrary.org/obo/RXNO_0000690
+RXNO:0000245	REACTION	Метатезис с замыканием цикла	ring-closing metathesis	RCM|ring closing metathesis|ring closing alkene metathesis|ring closing olefin metathesis|ring-closing alkene metathesis|ring-closing olefin metathesis	Метатезис		https://purl.obolibrary.org/obo/RXNO_0000245
+RXNO:0000247	REACTION	Метатезисная полимеризация с раскрытием цикла	ring-opening metathesis polymerisation	ROMP|ring opening metathesis polymerization|ring-opening metathesis polymerization	Метатезис		https://purl.obolibrary.org/obo/RXNO_0000247
+RXNO:0000280	REACTION	Метатезис алкенов	alkene metathesis	olefin metathesis|cross metathesis|cross-metathesis|Grubbs metathesis|Grubbs reaction|transalkylidenation	Метатезис		https://purl.obolibrary.org/obo/RXNO_0000280
+RXNO:0000281	REACTION	Метатезис алкинов	alkyne metathesis		Метатезис		https://purl.obolibrary.org/obo/RXNO_0000281
+RXNO:0000282	REACTION	Енинный метатезис	enyne metathesis		Метатезис		https://purl.obolibrary.org/obo/RXNO_0000282
+RXNO:0000283	REACTION	Енинный метатезис с замыканием цикла	ring-closing enyne metathesis	RCEYM|ring closing enyne metathesis	Метатезис		https://purl.obolibrary.org/obo/RXNO_0000283
+RXNO:0000284	REACTION	Метатезис с раскрытием цикла	ring-opening metathesis	ROM|ring opening metathesis	Метатезис		https://purl.obolibrary.org/obo/RXNO_0000284
+RXNO:0000083	REACTION	Реакция Патерно—Бюхи	Paternò–Büchi reaction	Paterno-Buchi|Paternò-Büchi|Paterno-Buchi reaction	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000083
+RXNO:0000087	REACTION	Реакция Бартона	Barton reaction		Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000087
+RXNO:0000135	REACTION	Декарбоксилирование Бартона	Barton decarboxylation		Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000135
+RXNO:0000177	REACTION	Реакция Хараша	Kharasch reaction	Kharasch|ATRA|Kharasch addition reaction	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000177
+RXNO:0000178	REACTION	Реакция Хараша—Сосновского	Kharasch-Sosnovsky reaction	Kharasch-Sosnovsky	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000178
+RXNO:0000225	REACTION	Бромирование Воля—Циглера	Wohl-Ziegler bromination	Wohl-Ziegler|Wohl-Ziegler reaction	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000225
+RXNO:0000300	REACTION	Тиол-еновая реакция	thiol-ene reaction	thiol ene|thiol-ene click reaction	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000300
+RXNO:0000383	REACTION	Тиол-иновая реакция	thiol-yne reaction	thiol yne|alkyne hydrothiolation	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000383
+RXNO:0000618	REACTION	Реакция Гофмана—Лёффлера—Фрейтага	Hofmann-Löffler-Freytag reaction	HLF|Hofmann-Loffler-Freytag|Леффлера|Hofmann-Löffler reaction	Радикальные и фотохимические реакции		https://purl.obolibrary.org/obo/RXNO_0000618
+MECH:SN1	MECHANISM	SN1 — нуклеофильное замещение	Unimolecular nucleophilic substitution	SN1|S_N1|S N 1|сн1	Замещение		https://goldbook.iupac.org/terms/view/08191
+MECH:SN2	MECHANISM	SN2 — нуклеофильное замещение	Bimolecular nucleophilic substitution	SN2|S_N2|S N 2|сн2	Замещение		https://goldbook.iupac.org/terms/view/08191
+MECH:SNAR	MECHANISM	SNAr — нуклеофильное ароматическое замещение	Nucleophilic aromatic substitution	SNAr|S_NAr|ароматическое нуклеофильное	Замещение		https://openstax.org/books/organic-chemistry/pages/16-6-nucleophilic-aromatic-substitution
+MECH:SEAR	MECHANISM	SEAr — электрофильное ароматическое замещение	Electrophilic aromatic substitution	SEAr|S_EAr|EAS|ароматическое электрофильное	Замещение		https://goldbook.iupac.org/terms/view/08167
+MECH:ALLYLIC_SUBSTITUTION	MECHANISM	Аллильное замещение	Allylic substitution	allylic substitution|SN2 prime|SN2′|SN2'	Замещение		https://iupac.qmul.ac.uk/gtpoc/A.html#16
+MECH:NUCLEOPHILIC_SUBSTITUTION	MECHANISM	Нуклеофильное замещение	Nucleophilic substitution	SN|нуклеофильная субституция	Замещение		https://goldbook.iupac.org/terms/view/08191
+MECH:ELECTROPHILIC_SUBSTITUTION	MECHANISM	Электрофильное замещение	Electrophilic substitution	SE|электрофильная субституция	Замещение		https://goldbook.iupac.org/terms/view/08167
+MECH:ADDITION_ELIMINATION	MECHANISM	Замещение через присоединение—элиминирование	Addition-elimination substitution	addition elimination|присоединение отщепление	Замещение		https://openstax.org/books/organic-chemistry/pages/16-6-nucleophilic-aromatic-substitution
+MECH:ACYL_SUBSTITUTION	MECHANISM	Нуклеофильное ацильное замещение	Nucleophilic acyl substitution	acyl substitution|ацильное замещение|тетраэдрический интермедиат	Замещение		https://openstax.org/books/organic-chemistry/pages/21-2-nucleophilic-acyl-substitution-reactions
+MECH:ELIMINATION_ADDITION	MECHANISM	Замещение через элиминирование—присоединение	Elimination-addition substitution	benzyne mechanism|aryne|бензиновый|ариновый	Замещение		https://openstax.org/books/organic-chemistry/pages/16-7-benzyne
+MECH:E1	MECHANISM	E1 — мономолекулярное элиминирование	Unimolecular elimination	E1|E 1	Элиминирование		https://academic.oup.com/book/45854/chapter-abstract/400781461
+MECH:E2	MECHANISM	E2 — бимолекулярное элиминирование	Bimolecular elimination	E2|E 2	Элиминирование		https://academic.oup.com/book/45854/chapter-abstract/400781461
+MECH:E1CB	MECHANISM	E1cB — элиминирование через сопряжённое основание	Conjugate-base elimination	E1cB|E1cb|E 1 c B|карбанионное элиминирование	Элиминирование		https://www.chem.ucla.edu/~harding/IGOC/E/E1cb_mechanism.html
+MECH:ELIMINATION	MECHANISM	Элиминирование	Elimination	отщепление	Элиминирование		https://iupac.qmul.ac.uk/gtpoc/E.html#30
+MECH:ALPHA_ELIMINATION	MECHANISM	α-Элиминирование	Alpha elimination	alpha elimination|альфа элиминирование|1,1 elimination	Элиминирование		https://iupac.qmul.ac.uk/gtpoc/A.html#52
+MECH:ADDITION	MECHANISM	Присоединение	Addition	addition reaction	Присоединение		https://iupac.qmul.ac.uk/gtpoc/A.html#10
+MECH:NUCLEOPHILIC_ADDITION	MECHANISM	Нуклеофильное присоединение	Nucleophilic addition	AN|A_N|карбонильное присоединение	Присоединение		https://openstax.org/books/organic-chemistry/pages/19-4-nucleophilic-addition-reactions-of-aldehydes-and-ketones
+MECH:ELECTROPHILIC_ADDITION	MECHANISM	Электрофильное присоединение	Electrophilic addition	AE|A_E	Присоединение		https://openstax.org/books/organic-chemistry/pages/7-7-electrophilic-addition-reactions-of-alkenes
+MECH:CONJUGATE_ADDITION	MECHANISM	Сопряжённое присоединение	Conjugate addition	1,4 addition|Michael mechanism|1 4 присоединение	Присоединение		https://purl.obolibrary.org/obo/RXNO_0000008
+MECH:RADICAL_ADDITION	MECHANISM	Радикальное присоединение	Radical addition	AR|A_R	Присоединение		https://doi.org/10.1021/acs.orglett.9b02023
+MECH:RADICAL_CHAIN	MECHANISM	Радикальная цепная реакция	Radical chain reaction	chain radical|радикальная цепь	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/CaCl.html#19
+MECH:HOMOLYSIS	MECHANISM	Гомолитический разрыв связи	Homolysis	homolytic cleavage|гомолиз	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/H.html#26
+MECH:HETEROLYSIS	MECHANISM	Гетеролитический разрыв связи	Heterolysis	heterolytic cleavage|гетеролиз	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/H.html#16
+MECH:RADICAL_COMBINATION	MECHANISM	Рекомбинация радикалов	Radical combination	radical recombination|обрыв цепи	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/R.html#04
+MECH:SET	MECHANISM	Одноэлектронный перенос	Single-electron transfer	SET|single electron|перенос электрона	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/SaSp.html#15
+MECH:INNER_SPHERE_ET	MECHANISM	Внутрисферный перенос электрона	Inner-sphere electron transfer	inner sphere	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/I.html#15
+MECH:OUTER_SPHERE_ET	MECHANISM	Внешнесферный перенос электрона	Outer-sphere electron transfer	outer sphere	Радикалы и перенос электрона		https://iupac.qmul.ac.uk/gtpoc/NO.html#22
+MECH:HAT	MECHANISM	Перенос атома водорода	Hydrogen atom transfer	HAT|hydrogen abstraction|отрыв атома водорода	Радикалы и перенос электрона		https://doi.org/10.1021/jacsau.1c00460
+MECH:PCET	MECHANISM	Протон-сопряжённый перенос электрона	Proton-coupled electron transfer	PCET|протон сопряженный	Радикалы и перенос электрона		https://pmc.ncbi.nlm.nih.gov/articles/PMC2875774/
+MECH:PHOTOREDOX	MECHANISM	Фоторедокс-катализ	Photoredox catalysis	photoredox|фоторедокс	Радикалы и перенос электрона		https://pmc.ncbi.nlm.nih.gov/articles/PMC2723798/
+MECH:PERICYCLIC	MECHANISM	Перициклический механизм	Pericyclic mechanism	pericyclic	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/PQ.html#04
+MECH:CYCLOADDITION	MECHANISM	Циклоприсоединение	Cycloaddition	cycloaddition|циклоаддиция	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/CoCy.html#39
+MECH:DIPOLAR_CYCLOADDITION	MECHANISM	1,3-Диполярное циклоприсоединение	1,3-Dipolar cycloaddition	dipolar cycloaddition|[3+2]	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/D.html#19
+MECH:CYCLOELIMINATION	MECHANISM	Циклоэлиминирование	Cycloelimination	cycloelimination|ретроциклоприсоединение	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/CoCy.html#40
+MECH:ELECTROCYCLIC	MECHANISM	Электроциклическая реакция	Electrocyclic reaction	electrocyclic|электроциклизация	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/E.html#06
+MECH:SIGMATROPIC	MECHANISM	Сигматропная перегруппировка	Sigmatropic rearrangement	sigmatropic|сигматропный	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/SaSp.html#13
+MECH:SIGMATROPIC_33	MECHANISM	[3,3]-Сигматропная перегруппировка	[3,3]-Sigmatropic rearrangement	3,3 sigmatropic|3 3 сигматропная	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/SaSp.html#13
+MECH:SIGMATROPIC_15	MECHANISM	[1,5]-Сигматропный сдвиг	[1,5]-Sigmatropic shift	1,5 sigmatropic|1 5 сдвиг	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/SaSp.html#13
+MECH:DYOTROPIC	MECHANISM	Диотропная перегруппировка	Dyotropic rearrangement	dyotropic	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/D.html#34
+MECH:PSEUDOPERICYCLIC	MECHANISM	Псевдоперициклический механизм	Pseudopericyclic mechanism	pseudopericyclic	Перициклические процессы		https://iupac.qmul.ac.uk/gtpoc/PQ.html#42
+MECH:REARRANGEMENT	MECHANISM	Молекулярная перегруппировка	Molecular rearrangement	rearrangement	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/M.html#40
+MECH:ANIONOTROPIC	MECHANISM	Анионотропная перегруппировка	Anionotropic rearrangement	anionotropic|нуклеофильная миграция	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/A.html#23
+MECH:CATIONOTROPIC	MECHANISM	Катионотропная перегруппировка	Cationotropic rearrangement	cationotropic	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/CaCl.html#18
+MECH:TAUTOMERIZATION	MECHANISM	Таутомеризация	Tautomerization	tautomerism|кето енольная	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/TtZ.html#05
+MECH:PROTON_TRANSFER	MECHANISM	Перенос протона	Proton transfer	PT|протонирование|депротонирование	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/PQ.html#36
+MECH:GENERAL_ACID	MECHANISM	Общий кислотный катализ	General acid catalysis	general acid	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/FG.html#15
+MECH:GENERAL_BASE	MECHANISM	Общий основной катализ	General base catalysis	general base	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/FG.html#16
+MECH:NUCLEOPHILIC_CATALYSIS	MECHANISM	Нуклеофильный катализ	Nucleophilic catalysis	nucleophilic catalysis	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/NO.html#12
+MECH:PHASE_TRANSFER	MECHANISM	Межфазный катализ	Phase-transfer catalysis	PTC|phase transfer	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/PQ.html#09
+MECH:CONCERTED	MECHANISM	Согласованный механизм	Concerted mechanism	concerted|синхронный	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/CoCy.html#08
+MECH:STEPWISE	MECHANISM	Ступенчатый механизм	Stepwise mechanism	stepwise|постадийный	Перегруппировки и общие пути		https://iupac.qmul.ac.uk/gtpoc/StSy.html#04
+MECH:OXIDATIVE_ADDITION	MECHANISM	Окислительное присоединение	Oxidative addition	OA|oxidative addition	Элементарные стадии металлокатализа		https://goldbook.iupac.org/terms/view/O04367
+MECH:REDUCTIVE_ELIMINATION	MECHANISM	Восстановительное элиминирование	Reductive elimination	RE|reductive elimination	Элементарные стадии металлокатализа		https://iupac.qmul.ac.uk/gtpoc/R.html#28
+MECH:TRANSMETALATION	MECHANISM	Трансметаллирование	Transmetalation	transmetallation|TM|трансметалляция	Элементарные стадии металлокатализа		https://doi.org/10.1039/D1CC06064C
+MECH:MIGRATORY_INSERTION	MECHANISM	Миграционное внедрение	Migratory insertion	migratory insertion|MI	Элементарные стадии металлокатализа		https://iupac.qmul.ac.uk/gtpoc/M.html#31
+MECH:INSERTION	MECHANISM	Внедрение	Insertion	insertion	Элементарные стадии металлокатализа		https://iupac.qmul.ac.uk/gtpoc/I.html#16
+MECH:BETA_HYDRIDE_ELIMINATION	MECHANISM	β-Гидридное элиминирование	Beta-hydride elimination	beta hydride elimination|бета гидридное	Элементарные стадии металлокатализа		https://doi.org/10.1039/C3CC46271D
+MECH:LIGAND_SUBSTITUTION	MECHANISM	Замещение лиганда	Ligand substitution	ligand exchange|обмен лигандов	Элементарные стадии металлокатализа		https://authors.library.caltech.edu/records/j9xkd-ag283

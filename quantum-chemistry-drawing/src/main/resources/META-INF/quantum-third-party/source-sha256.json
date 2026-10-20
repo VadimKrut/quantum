@@ -1,0 +1,20 @@
+{
+  "beam-core-1.3.10-sources.jar": "40314569f492e00217c999dc122fc00ec82a7fa930cfc8f7a243e858e10f3254",
+  "beam-func-1.3.10-sources.jar": "96bd4f8edb22066d4debce727f4bb071e892d2cf64eb2e82aa130b35ebf2a65c",
+  "cdk-atomtype-2.12-sources.jar": "e570a2e370f0b8d090b63d2407b4137bade9523e2511b41ad15fbd14725a039e",
+  "cdk-builder3d-2.12-sources.jar": "3cdceae0342d5e7c300e8e378bee3d85d03afa1747cdee3e45f9b9acef44e8dc",
+  "cdk-core-2.12-sources.jar": "d1837572218b9f0a35a65641127a4659704900ad23fcb65dd55c12382e2ed215",
+  "cdk-ctab-2.12-sources.jar": "87e0b83985f19eeeae6c22133aba469ec43278374cf4735aac9da17e7bfe2bf9",
+  "cdk-data-2.12-sources.jar": "ffb88217ed4c7da51adc46faf039992cd32e804d8edf953a6a2f608019db78f9",
+  "cdk-forcefield-2.12-sources.jar": "511297151d353c469b484f8acd1a40766dca5f8b4f03e7080b26f76347e55622",
+  "cdk-interfaces-2.12-sources.jar": "6abb34fb48bb82251efab900e156d7093bb0224151c54e0e06b56051761a8fe9",
+  "cdk-io-2.12-sources.jar": "ca6201681cf1ceca35470fed705dfe2ee5cb3a197b701dc19cf70394e73deb2f",
+  "cdk-ioformats-2.12-sources.jar": "de34cac752a78655f6c9da3ef71469cc0c757b31a0af29d6b4c36b96d4db736f",
+  "cdk-isomorphism-2.12-sources.jar": "7f487d439c0ccf36bd76d505a3f09e694a8c1360cd1468ee360d8c14717f1ace",
+  "cdk-sdg-2.12-sources.jar": "93e0d3520e09b0949922e48821bbac335e480369ecddc4039fa3b87fd857eaf7",
+  "cdk-silent-2.12-sources.jar": "d8f3fa0606067a880b407d5ba038c10f46fd74f88104098854a4fbc5ae54d56f",
+  "cdk-smiles-2.12-sources.jar": "9779b64794448257a3e09cda696bdc69d9e98f585a200c3e6840682a3f76c7e1",
+  "cdk-standard-2.12-sources.jar": "c432a12cdf477837e3517623844681f17d93a950eda3669ca6ee2d091cec2a6d",
+  "cdk-valencycheck-2.12-sources.jar": "c56dd9c6cb23b4f6f45a3cae96b4f7fda912792eb1f7cd8e4551b81999ae54ac",
+  "vecmath-1.5.2-sources.jar": "7bea4e97b737757c14bc346a45bb5e57a3f6ddd5c1bafe51e4d1eacd64347030"
+}

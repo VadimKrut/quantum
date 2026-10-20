@@ -1,3 +1,49 @@
+#chemistry-workspace .tool-bar {
+    -fx-background-color: -app-surface-muted;
+    -fx-padding: 6;
+}
+
+#chemistry-workspace .button,
+#chemistry-workspace .toggle-button {
+    -fx-background-color: -app-surface;
+    -fx-text-fill: -app-text;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 6 10;
+}
+
+#chemistry-workspace .toggle-button:selected {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+}
+
+#chemistry-workspace .table-view,
+#chemistry-workspace .table-row-cell {
+    -fx-background-color: -app-surface;
+    -fx-text-background-color: -app-text;
+}
+
+#chemistry-workspace .table-row-cell:odd {
+    -fx-background-color: -app-surface-muted;
+}
+
+#chemistry-workspace .table-row-cell:selected {
+    -fx-background-color: -app-accent-soft;
+}
+
+#chemistry-workspace .table-cell {
+    -fx-text-fill: -app-text;
+    -fx-border-color: transparent transparent -app-border transparent;
+    -fx-padding: 7;
+}
+
+#chemistry-workspace .column-header,
+#chemistry-workspace .column-header-background,
+#chemistry-workspace .filler {
+    -fx-background-color: -app-surface-strong;
+}
+
 .theme-light {
     -app-bg: #f6f8fc;
     -app-surface: #ffffff;
@@ -9,6 +55,8 @@
     -app-accent: #2563eb;
     -app-accent-strong: #1d4ed8;
     -app-accent-soft: #dbeafe;
+    -app-success-text: #236744;
+    -app-warning-text: #87510c;
     -app-danger-soft: #fee2e2;
     -app-danger-text: #7f1d1d;
     -app-shadow: #94a3b8;
@@ -28,6 +76,8 @@
     -app-accent: #60a5fa;
     -app-accent-strong: #3b82f6;
     -app-accent-soft: #1e3a5f;
+    -app-success-text: #86d9ac;
+    -app-warning-text: #f1c078;
     -app-danger-soft: #4c1d1d;
     -app-danger-text: #fecaca;
     -app-shadow: #020617;
@@ -47,6 +97,8 @@
     -app-accent: #2563eb;
     -app-accent-strong: #1d4ed8;
     -app-accent-soft: #dbeafe;
+    -app-success-text: #236744;
+    -app-warning-text: #87510c;
     -app-danger-soft: #fee2e2;
     -app-danger-text: #7f1d1d;
     -app-shadow: #94a3b8;
@@ -69,6 +121,8 @@
     -app-accent: #2563eb;
     -app-accent-strong: #1d4ed8;
     -app-accent-soft: #dbeafe;
+    -app-success-text: #236744;
+    -app-warning-text: #87510c;
     -app-danger-soft: #fee2e2;
     -app-danger-text: #7f1d1d;
     -app-shadow: #94a3b8;
@@ -88,6 +142,8 @@
     -app-accent: #60a5fa;
     -app-accent-strong: #3b82f6;
     -app-accent-soft: #1e3a5f;
+    -app-success-text: #86d9ac;
+    -app-warning-text: #f1c078;
     -app-danger-soft: #4c1d1d;
     -app-danger-text: #fecaca;
     -app-shadow: #020617;
@@ -955,3 +1011,652 @@
 .scroll-bar .track {
     -fx-background-color: transparent;
 }
+
+/* Chemistry editor: a quiet canvas with contextual laboratory panels. */
+#chemistry-workspace { -fx-font-size: 13px; -fx-background-color: -app-surface; }
+#chemistry-main-toolbar { -fx-background-color: -app-surface; -fx-padding: 8 12; -fx-spacing: 6; -fx-border-color: transparent transparent -app-border transparent; }
+#chemistry-workspace .laboratory-palette { -fx-background-color: -app-surface; -fx-padding: 12 7; -fx-border-color: transparent -app-border transparent -app-border; }
+#chemistry-workspace .laboratory-palette-scroll { -fx-padding: 0; -fx-background-color: -app-surface; -fx-border-color: transparent; }
+#chemistry-workspace .laboratory-palette-scroll > .viewport { -fx-background-color: -app-surface; }
+#chemistry-workspace .laboratory-icon-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 6; -fx-min-width: 36; -fx-min-height: 36; }
+#chemistry-workspace .laboratory-icon-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace .laboratory-icon-button:selected { -fx-background-color: -app-accent-soft; -fx-border-color: transparent; }
+#chemistry-workspace .laboratory-tool-icon { -fx-fill: transparent; -fx-stroke: -app-text; -fx-stroke-width: 1.5; -fx-stroke-line-cap: round; -fx-stroke-line-join: round; }
+#chemistry-workspace .laboratory-element { -fx-background-color: transparent; -fx-border-color: transparent; -fx-font-size: 15; -fx-font-weight: bold; -fx-min-width: 36; -fx-min-height: 34; -fx-padding: 5; }
+#chemistry-workspace .element-O { -fx-text-fill: #d34444; }
+#chemistry-workspace .element-N { -fx-text-fill: #4279ce; }
+#chemistry-workspace .element-S { -fx-text-fill: #a6841b; }
+#chemistry-workspace .element-F, #chemistry-workspace .element-Cl { -fx-text-fill: #31995a; }
+#chemistry-workspace .element-Br { -fx-text-fill: #a25634; }
+#chemistry-workspace .laboratory-element:hover { -fx-background-color: -app-accent-soft; }
+#chemistry-workspace .laboratory-save { -fx-background-color: -app-accent; -fx-text-fill: white; -fx-border-color: transparent; }
+#chemistry-document-title { -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 0 12; }
+#chemistry-status { -fx-padding: 7 12; -fx-text-fill: -app-muted; -fx-font-size: 12; -fx-border-color: -app-border transparent transparent transparent; }
+#chemistry-drawing-tabs > .tab-header-area > .tab-header-background { -fx-background-color: -app-surface; }
+#chemistry-drawing-tabs > .tab-header-area { -fx-padding: 4 8 0 8; }
+#chemistry-drawing-tabs > .tab-header-area > .headers-region > .tab { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 8 16; }
+#chemistry-drawing-tabs > .tab-header-area > .headers-region > .tab:selected { -fx-border-color: transparent transparent -app-accent transparent; -fx-border-width: 0 0 2 0; }
+#chemistry-workspace .laboratory-view-bar { -fx-background-color: -app-surface; -fx-border-color: transparent transparent -app-border transparent; }
+#chemistry-workspace .laboratory-view-bar .toggle-button { -fx-border-color: transparent; -fx-background-color: transparent; -fx-text-fill: -app-muted; -fx-padding: 3 9; }
+#chemistry-workspace .laboratory-view-bar .toggle-button:selected { -fx-background-color: -app-accent-soft; -fx-text-fill: -app-text; }
+#chemistry-component-panel > .title { -fx-background-color: -app-surface; -fx-border-color: -app-border transparent transparent transparent; -fx-padding: 10 14; }
+#chemistry-component-panel > .content { -fx-border-color: transparent; }
+#chemistry-workspace .table-cell { -fx-border-color: transparent transparent -app-border transparent; }
+#chemistry-workspace .table-row-cell:empty { -fx-background-color: -app-surface; }
+#chemistry-workspace .table-row-cell:empty .table-cell { -fx-border-color: transparent; }
+#chemistry-canvas { -fx-background-color: white; -fx-padding: 0; }
+#chemistry-canvas > .viewport { -fx-background-color: white; }
+
+#chemistry-workspace .tab-label { -fx-effect: null; }
+#chemistry-main-toolbar .menu-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 6; }
+#chemistry-main-toolbar .button, #chemistry-main-toolbar .toggle-button { -fx-border-color: transparent; }
+#chemistry-workspace .laboratory-view-bar .button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 2 9; }
+#chemistry-workspace #chemistry-main-toolbar { -fx-background-color: -app-surface; }
+#chemistry-component-panel { -fx-text-fill: -app-text; }
+
+/* Compact shell keeps the molecule, rather than application branding, in the foreground. */
+.workbench-header.workbench-header-compact { -fx-padding: 6 14; -fx-spacing: 4; -fx-background-color: -app-surface; -fx-border-color: transparent transparent -app-border transparent; }
+.workbench-header-compact .header-title { -fx-font-size: 15; -fx-text-fill: -app-text; }
+.workbench-header-compact .header-subtitle { -fx-text-fill: -app-muted; }
+.workbench-header-compact #workspace-settings-toggle { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: -app-muted; -fx-padding: 3 8; }
+#chemistry-main-toolbar { -fx-padding: 5 10; }
+#chemistry-workspace .laboratory-view-bar { -fx-padding: 4 8; }
+#chemistry-workspace .laboratory-view-bar .menu-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 3 7; }
+#chemistry-workspace .laboratory-view-bar .button { -fx-padding: 3 7; }
+#chemistry-workspace .laboratory-palette { -fx-padding: 8 5; }
+#chemistry-workspace .laboratory-icon-button { -fx-min-width: 34; -fx-min-height: 34; -fx-padding: 5; }
+
+/* One shared view strip replaces the stacked drawing tabs and view toolbar. */
+#chemistry-drawing-tabs > .tab-header-area { -fx-min-height: 0; -fx-pref-height: 0; -fx-max-height: 0; -fx-padding: 0; -fx-opacity: 0; }
+#chemistry-workspace .laboratory-view-bar .laboratory-icon-button { -fx-padding: 3; -fx-min-width: 30; -fx-min-height: 30; }
+#chemistry-workspace .laboratory-view-bar .button:hover, #chemistry-workspace .laboratory-view-bar .toggle-button:hover { -fx-background-color: -app-accent-soft; }
+#chemistry-workspace .laboratory-palette { -fx-padding: 6 5; }
+#chemistry-component-panel > .title { -fx-padding: 6 12; }
+#chemistry-status { -fx-padding: 5 12; }
+
+/* 3D tools use the same quiet controls as the drawing strip. */
+#chemistry-geometry-pane { -fx-background-color: -app-surface; -fx-padding: 8; }
+#chemistry-workspace .laboratory-geometry-tools .button, #chemistry-workspace .laboratory-geometry-tools .toggle-button, #chemistry-workspace .laboratory-geometry-tools .menu-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 5 8; }
+#chemistry-workspace .laboratory-geometry-tools .toggle-button:selected, #chemistry-workspace .laboratory-geometry-tools .button:hover, #chemistry-workspace .laboratory-geometry-tools .toggle-button:hover, #chemistry-workspace .laboratory-geometry-tools .menu-button:hover { -fx-background-color: -app-accent-soft; }
+
+/* Reaction sheets keep amounts alongside structures and wrap participants within each side. */
+#chemistry-reaction-pane { -fx-background-color: -app-surface; }
+#chemistry-reaction-pane .scroll-pane, #chemistry-reaction-pane .scroll-pane > .viewport { -fx-background-color: -app-surface; -fx-border-color: transparent; }
+#chemistry-workspace .laboratory-reaction-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 6; -fx-background-radius: 6; }
+#chemistry-workspace .laboratory-reaction-quantity { -fx-background-color: -app-accent-soft; -fx-border-color: transparent; -fx-padding: 5 9; -fx-font-size: 12; }
+
+.laboratory-batch-anchor { -fx-background-color: -app-accent-soft; -fx-background-radius: 10; }
+.laboratory-batch-row { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 8; -fx-background-radius: 8; }
+#chemistry-batch-plan { -fx-background-color: -app-bg; }
+#chemistry-batch-plan .scroll-pane, #chemistry-batch-plan .scroll-pane > .viewport { -fx-background-color: -app-bg; }
+#chemistry-stoichiometry-page .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+#chemistry-stoichiometry-page .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-stoichiometry-page .menu-button .arrow { -fx-background-color: -app-text; }
+#chemistry-archive-documents .list-cell { -fx-font-family: "Segoe UI", "Arial"; }
+
+#chemistry-stereo-help > .title, #chemistry-stereo-help > .content {
+  -fx-background-color: -app-surface;
+  -fx-border-color: -app-border;
+}
+#chemistry-stereo-help > .title > .text { -fx-fill: -app-text; }
+#chemistry-stereo-help > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-journal-reading > .title, #chemistry-journal-reading > .content {
+  -fx-background-color: -app-surface;
+  -fx-border-color: -app-border;
+}
+#chemistry-journal-reading > .title > .text { -fx-fill: -app-text; }
+#chemistry-journal-reading > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-stock-batches .table-cell, #chemistry-library-entries .list-cell,
+#chemistry-library-page .text-area { -fx-font-family: "Segoe UI", "Arial"; }
+#chemistry-workspace #chemistry-3d-camera > .title, #chemistry-workspace #chemistry-3d-camera > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-3d-camera > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace .laboratory-computation-page { -fx-background-color: -app-surface; }
+#chemistry-workspace .laboratory-computation-page .text-area, #chemistry-workspace #chemistry-calculation-archive-page .text-area { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+#chemistry-workspace #chemistry-calculation-parameters > .title, #chemistry-workspace #chemistry-calculation-parameters > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-calculation-parameters > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace #chemistry-calculation-parameters, #chemistry-workspace #chemistry-3d-camera { -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-prediction-review { -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-prediction-review > .title, #chemistry-workspace .laboratory-prediction-review > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace .laboratory-prediction-review > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace #chemistry-saved-prediction-page .text-area { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+
+#chemistry-stage-form .text-area { -fx-font-family: "Segoe UI"; }
+#chemistry-stage-form .laboratory-stage-participant { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 5; -fx-background-radius: 5; }
+#chemistry-stage-form .scroll-pane, #chemistry-stage-form .scroll-pane > .viewport { -fx-background-color: -app-bg; -fx-border-color: transparent; }
+#chemistry-reaction-pane .laboratory-stage-structure:focused { -fx-border-color: -app-accent; -fx-border-radius: 4; }
+#chemistry-reaction-pane .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+#chemistry-reaction-pane .menu-button > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-history-page .text-area, #chemistry-history-page .list-view { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+#chemistry-history-page .table-cell { -fx-padding: 8; }
+
+#chemistry-document-bar { -fx-background-color: -app-surface; -fx-border-color: transparent transparent -app-border transparent; }
+#chemistry-document-bar #chemistry-main-toolbar { -fx-border-color: transparent; }
+#chemistry-workspace #chemistry-3d-compact-controls { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-3d-compact-controls > .title, #chemistry-workspace #chemistry-3d-compact-controls > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-3d-compact-controls > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-workspace .laboratory-structure-page { -fx-background-color: -app-surface; }
+#chemistry-workspace .laboratory-structure-page .laboratory-inline-message { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-hydrogen-review { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-hydrogen-review > .title, #chemistry-workspace #chemistry-hydrogen-review > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-hydrogen-review > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-workspace #chemistry-attachment-metadata { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-attachment-metadata > .title, #chemistry-workspace #chemistry-attachment-metadata > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-attachment-metadata > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-workspace #chemistry-material-report-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-material-report-page .titled-pane > .title,
+#chemistry-workspace #chemistry-material-report-page .titled-pane > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-material-report-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace #chemistry-material-report-page .text-area { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+
+#chemistry-workspace #chemistry-stock-form .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-stock-form .titled-pane > .title,
+#chemistry-workspace #chemistry-stock-form .titled-pane > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-stock-form .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace #chemistry-stock-form *:disabled { -fx-opacity: 1; }
+#chemistry-workspace #chemistry-stock-form .button:disabled { -fx-opacity: .45; }
+
+#chemistry-file-operation { -fx-background-color: -app-surface; }
+#chemistry-file-error { -fx-background-color: -app-danger-soft; }
+#chemistry-file-error-message { -fx-text-fill: -app-danger-text; }
+
+#chemistry-workspace #chemistry-project-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-project-page .titled-pane > .title,
+#chemistry-workspace #chemistry-project-page .titled-pane > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-workspace #chemistry-project-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace #chemistry-project-page .list-view { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+#chemistry-workspace #chemistry-text-input { -fx-font-family: "Consolas", monospace; -fx-font-size: 13px; }
+#chemistry-workspace #chemistry-recovery-page .list-view { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+#chemistry-workspace .button.laboratory-keyboard-focus,
+#chemistry-workspace .toggle-button.laboratory-keyboard-focus,
+#chemistry-workspace .text-field.laboratory-keyboard-focus,
+#chemistry-workspace .text-area.laboratory-keyboard-focus,
+#chemistry-workspace .combo-box.laboratory-keyboard-focus,
+#chemistry-workspace .list-view.laboratory-keyboard-focus,
+#chemistry-workspace .table-view.laboratory-keyboard-focus {
+  -fx-border-color: -app-accent;
+  -fx-border-width: 2;
+  -fx-border-insets: -1;
+}
+
+#chemistry-components-pane .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+#chemistry-components-pane .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-components-pane .menu-button > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-components-pane .menu-button > .label { -fx-text-fill: -app-text; }
+
+#chemistry-overview-page .laboratory-overview-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 8; -fx-border-radius: 8; }
+#chemistry-overview-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-overview-page .titled-pane > .title, #chemistry-overview-page .titled-pane > .content { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-overview-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-series-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-series-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 9 12; }
+#chemistry-series-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 10; }
+#chemistry-series-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-series-page .table-cell { -fx-padding: 5 8; }
+#chemistry-series-page .text-field { -fx-font-family: "Segoe UI"; }
+#chemistry-series-page *:disabled { -fx-opacity: 1; }
+#chemistry-series-page .button:disabled { -fx-opacity: .45; }
+
+#chemistry-structure-search-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-structure-search-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 8 12; }
+#chemistry-structure-search-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 10; }
+#chemistry-structure-search-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-structure-search-page .laboratory-search-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 8; -fx-border-radius: 8; }
+
+#chemistry-analysis-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-analysis-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 8 12; }
+#chemistry-analysis-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 10; }
+#chemistry-analysis-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-analysis-page .laboratory-search-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 8; -fx-border-radius: 8; }
+#chemistry-analysis-page .table-cell { -fx-padding: 5 8; }
+
+#chemistry-report-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-report-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 8 12; }
+#chemistry-report-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 4; }
+#chemistry-report-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+.laboratory-identity-search { -fx-background-color: rgba(90,140,200,0.10); -fx-background-radius: 10; }
+#chemistry-identity-page .titled-pane > .title { -fx-background-color: rgba(90,140,200,0.12); }
+#chemistry-identity-page .titled-pane > .content { -fx-background-color: transparent; -fx-padding: 10; }
+#chemistry-identity-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-identity-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-exchange-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-exchange-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 8 12; }
+#chemistry-exchange-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 4; }
+#chemistry-exchange-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-sample-page .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-sample-page .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 8 12; }
+#chemistry-sample-page .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 10; }
+#chemistry-sample-page .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-sample-page .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+#chemistry-sample-page .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-sample-page .menu-button > .label { -fx-text-fill: -app-text; }
+#chemistry-sample-page .menu-button > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-spectrum-pane .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-spectrum-pane .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 7 10; }
+#chemistry-spectrum-pane .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 8; }
+#chemistry-spectrum-pane .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+#chemistry-sample-catalog .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-sample-catalog .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 7 10; }
+#chemistry-sample-catalog .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-padding: 8; }
+#chemistry-sample-catalog .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-sample-catalog .laboratory-search-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 8; -fx-border-radius: 8; }
+#chemistry-sample-catalog .catalog-paper { -fx-background-color: -app-surface-muted; }
+#chemistry-sample-catalog .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+#chemistry-sample-catalog .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-sample-catalog .menu-button > .label { -fx-text-fill: -app-text; }
+#chemistry-sample-catalog .menu-button > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+/* Shared local-workbench surfaces remain readable in both themes. */
+#chemistry-workspace .titled-pane { -fx-text-fill: -app-text; }
+#chemistry-workspace .titled-pane > .title { -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-padding: 9 12; }
+#chemistry-workspace .titled-pane > .title > .arrow-button > .arrow { -fx-background-color: -app-text; }
+#chemistry-workspace .titled-pane > .content { -fx-background-color: -app-surface; -fx-border-color: -app-border; }
+#chemistry-workspace .tree-view, #chemistry-workspace .tree-cell { -fx-background-color: -app-surface; -fx-text-fill: -app-text; -fx-font-family: "Segoe UI", "Arial"; }
+#chemistry-workspace .tree-cell:selected { -fx-background-color: -app-accent-soft; }
+#chemistry-workspace .tree-cell > .tree-disclosure-node > .arrow { -fx-background-color: -app-muted; }
+#chemistry-workspace .laboratory-desk-section { -fx-background-color: -app-surface; -fx-background-radius: 10; -fx-border-color: -app-border; -fx-border-radius: 10; }
+#chemistry-workspace .laboratory-result-summary { -fx-background-color: -app-surface-muted; -fx-padding: 12; -fx-background-radius: 7; }
+#chemistry-workspace .laboratory-scheme-strip, #chemistry-workspace .laboratory-scheme-strip > .viewport { -fx-background-color: transparent; -fx-padding: 0; }
+#chemistry-workspace .laboratory-link { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: -app-accent; -fx-padding: 3 0; }
+#conformer-page .list-cell { -fx-font-family: "Segoe UI", "Arial"; -fx-padding: 7 10; }
+/* Human-readable choices and history; preserve code and coordinate-input fonts. */
+#chemistry-procedure-page .list-view,
+#chemistry-procedure-page .list-cell,
+#conformer-page .list-view,
+#conformer-page .list-cell,
+#chemistry-solution-page .list-view,
+#chemistry-solution-page .list-cell { -fx-font-family: "Segoe UI", "Arial"; }
+.chemistry-dialog { -fx-background-color: -app-surface; }
+.chemistry-dialog .list-cell { -fx-font-family: "Segoe UI", "Arial"; }
+
+/* Menus for quantity shortcuts and workflow actions share the active theme. */
+#chemistry-workspace .menu-button { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 4; -fx-background-radius: 4; }
+#chemistry-workspace .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace .menu-button > .label { -fx-text-fill: -app-text; }
+#chemistry-workspace .menu-button > .arrow-button > .arrow { -fx-background-color: -app-text; }
+
+/* Native JavaFX charts share the workbench palette; analytical Canvas/export plots are separate. */
+#chemistry-workspace .chart { -fx-background-color: transparent; }
+#chemistry-workspace .chart-plot-background { -fx-background-color: -app-surface; }
+#chemistry-workspace .chart-title,
+#chemistry-workspace .chart .axis-label,
+#chemistry-workspace .chart-legend-item { -fx-text-fill: -app-text; }
+#chemistry-workspace .chart-legend {
+    -fx-background-color: -app-surface-muted;
+    -fx-background-insets: 0;
+    -fx-border-color: -app-border;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 6 10;
+}
+#chemistry-workspace .chart .axis {
+    AXIS_COLOR: -app-muted;
+    -fx-tick-label-fill: -app-muted;
+}
+#chemistry-workspace .chart .axis-tick-mark { -fx-stroke: -app-muted; }
+#chemistry-workspace .chart .axis-minor-tick-mark { -fx-stroke: -app-border; }
+#chemistry-workspace .chart-vertical-grid-lines,
+#chemistry-workspace .chart-horizontal-grid-lines { -fx-stroke: -app-border; }
+#chemistry-workspace .chart-vertical-zero-line,
+#chemistry-workspace .chart-horizontal-zero-line { -fx-stroke: -app-muted; }
+#chemistry-workspace .chart-alternative-column-fill,
+#chemistry-workspace .chart-alternative-row-fill { -fx-fill: transparent; -fx-stroke: transparent; }
+/* Preserve individual series colors instead of the dashboard's decorative .chart-bar gradient. */
+#chemistry-workspace .chart .chart-bar { -fx-background-color: -fx-bar-fill; -fx-background-radius: 2; }
+#chemistry-workspace .chart .default-color0.chart-line-symbol,
+#chemistry-workspace .chart .default-color0.chart-area-symbol { -fx-background-color: CHART_COLOR_1, -app-surface; }
+#chemistry-workspace .chart .default-color1.chart-line-symbol,
+#chemistry-workspace .chart .default-color1.chart-area-symbol { -fx-background-color: CHART_COLOR_2, -app-surface; }
+#chemistry-workspace .chart .default-color2.chart-line-symbol,
+#chemistry-workspace .chart .default-color2.chart-area-symbol { -fx-background-color: CHART_COLOR_3, -app-surface; }
+#chemistry-workspace .chart .default-color3.chart-line-symbol,
+#chemistry-workspace .chart .default-color3.chart-area-symbol { -fx-background-color: CHART_COLOR_4, -app-surface; }
+#chemistry-workspace .chart .default-color4.chart-line-symbol,
+#chemistry-workspace .chart .default-color4.chart-area-symbol { -fx-background-color: CHART_COLOR_5, -app-surface; }
+#chemistry-workspace .chart .default-color5.chart-line-symbol,
+#chemistry-workspace .chart .default-color5.chart-area-symbol { -fx-background-color: CHART_COLOR_6, -app-surface; }
+#chemistry-workspace .chart .default-color6.chart-line-symbol,
+#chemistry-workspace .chart .default-color6.chart-area-symbol { -fx-background-color: CHART_COLOR_7, -app-surface; }
+#chemistry-workspace .chart .default-color7.chart-line-symbol,
+#chemistry-workspace .chart .default-color7.chart-area-symbol { -fx-background-color: CHART_COLOR_8, -app-surface; }
+#chemistry-workspace .chart .default-color5.chart-symbol { -fx-background-color: CHART_COLOR_6, -app-surface; }
+#chemistry-workspace .chart .default-color6.chart-symbol { -fx-background-color: CHART_COLOR_7, -app-surface; }
+#chemistry-workspace .chart .default-color7.chart-symbol { -fx-background-color: CHART_COLOR_8, -app-surface; }
+/* Distinct series palette with raised luminance for dark plotting surfaces. */
+.theme-dark #chemistry-workspace .chart,
+#chemistry-workspace.theme-dark .chart {
+    CHART_COLOR_1: #f28e65;
+    CHART_COLOR_2: #e7c859;
+    CHART_COLOR_3: #63cce2;
+    CHART_COLOR_4: #87c98f;
+    CHART_COLOR_5: #b49ae8;
+    CHART_COLOR_6: #ed8c93;
+    CHART_COLOR_7: #d39ada;
+    CHART_COLOR_8: #dca4cb;
+}
+
+/* Chemistry110: task hierarchy, neutral input surfaces, and fewer nested boxes. */
+.tab-pane.chemistry-focused-workspace > .tab-header-area {
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+    -fx-padding: 0;
+    -fx-opacity: 0;
+}
+.laboratory-workspace-selector {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 5;
+    -fx-padding: 5 9;
+    -fx-font-size: 13px;
+}
+.laboratory-workspace-selector > .label { -fx-text-fill: -app-text; -fx-font-weight: bold; }
+.laboratory-workspace-selector > .arrow-button > .arrow { -fx-background-color: -app-muted; }
+.laboratory-workspace-selector:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace #chemistry-document-bar {
+    -fx-background-color: -app-surface;
+    -fx-padding: 8 16 4 16;
+    -fx-spacing: 4;
+    -fx-border-color: transparent;
+}
+#chemistry-workspace #chemistry-main-toolbar {
+    -fx-padding: 4 0;
+    -fx-spacing: 5;
+    -fx-border-color: transparent;
+}
+#chemistry-workspace #chemistry-main-toolbar .button,
+#chemistry-workspace #chemistry-main-toolbar .toggle-button,
+#chemistry-workspace #chemistry-main-toolbar .menu-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6 10;
+    -fx-background-radius: 5;
+}
+#chemistry-workspace #chemistry-main-toolbar .button:hover,
+#chemistry-workspace #chemistry-main-toolbar .toggle-button:hover,
+#chemistry-workspace #chemistry-main-toolbar .menu-button:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace .laboratory-view-bar {
+    -fx-background-color: -app-bg;
+    -fx-padding: 5 10;
+    -fx-spacing: 4;
+    -fx-border-color: -app-border transparent transparent transparent;
+}
+#chemistry-workspace .laboratory-view-bar .toggle-button:selected {
+    -fx-background-color: -app-surface;
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent transparent -app-accent transparent;
+    -fx-border-width: 0 0 2 0;
+}
+/* A selected display cell is not a focused or selected field. Keep popup selection unchanged. */
+#chemistry-workspace .combo-box > .list-cell,
+#chemistry-workspace .combo-box > .list-cell:selected { -fx-background-color: transparent; -fx-text-fill: -app-text; }
+#chemistry-workspace .text-field,
+#chemistry-workspace .combo-box { -fx-background-radius: 5; -fx-border-radius: 5; }
+#chemistry-workspace .text-field:focused,
+#chemistry-workspace .text-area:focused,
+#chemistry-workspace .combo-box:focused,
+#chemistry-workspace .list-view:focused { -fx-border-color: -app-accent; -fx-effect: null; }
+#chemistry-workspace #experiment-desk .text-area { -fx-font-family: "Segoe UI", "Arial"; -fx-font-size: 13px; }
+#chemistry-workspace .titled-pane > .title {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -app-border transparent;
+    -fx-padding: 9 10;
+}
+#chemistry-workspace .titled-pane > .title:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace .titled-pane > .content { -fx-background-color: transparent; -fx-border-color: transparent; }
+#chemistry-workspace .laboratory-batch-anchor { -fx-background-color: -app-surface-muted; -fx-background-radius: 8; }
+#chemistry-workspace .laboratory-input-heading { -fx-font-size: 15px; -fx-font-weight: bold; }
+#chemistry-workspace #chemistry-batch-source-options > .title { -fx-border-color: transparent; -fx-padding: 4 0; }
+#chemistry-workspace #chemistry-main-toolbar .separator:vertical .line { -fx-border-color: transparent -app-border transparent transparent; -fx-border-width: 0 1 0 0; }
+#chemistry-workspace #chemistry-document-title { -fx-font-size: 15px; -fx-font-weight: bold; }
+#chemistry-workspace .laboratory-desk-section {
+    -fx-background-color: -app-surface;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+#chemistry-workspace .laboratory-desk-header { -fx-padding: 0; -fx-spacing: 12; }
+#chemistry-workspace .laboratory-desk-context { -fx-padding: 0; -fx-spacing: 8; }
+#chemistry-workspace .laboratory-desk-navigation { -fx-padding: 0; -fx-hgap: 6; -fx-vgap: 4; }
+#chemistry-workspace .laboratory-desk-tab {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-background-radius: 4 4 0 0;
+    -fx-border-radius: 0;
+    -fx-padding: 8 12;
+    -fx-text-fill: -app-muted;
+}
+#chemistry-workspace .laboratory-desk-tab:hover { -fx-background-color: -app-surface-muted; -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-desk-tab:selected {
+    -fx-background-color: -app-surface-muted;
+    -fx-border-color: transparent transparent -app-accent transparent;
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
+}
+#chemistry-workspace .laboratory-desk-step {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -app-border transparent;
+    -fx-padding: 10 0;
+}
+#chemistry-workspace #chemistry-reaction-pane .laboratory-reaction-card {
+    -fx-background-color: -app-surface;
+    -fx-border-color: transparent transparent -app-border transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+#chemistry-workspace .laboratory-reaction-quantity {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-padding: 5 8;
+    -fx-font-size: 13px;
+}
+#chemistry-workspace .laboratory-reaction-quantity:hover { -fx-background-color: -app-surface-muted; }
+/* Primary actions stay legible in both themes; secondary controls never compete by saturation. */
+#chemistry-workspace .button.laboratory-save,
+#chemistry-workspace .button.primary-button,
+#chemistry-workspace .button.laboratory-primary-action,
+#chemistry-workspace .menu-button.laboratory-primary-action,
+#chemistry-workspace #chemistry-main-toolbar .button.laboratory-primary-action {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+    -fx-background-radius: 5;
+    -fx-font-weight: bold;
+    -fx-padding: 7 12;
+}
+#chemistry-workspace .button.laboratory-save:hover,
+#chemistry-workspace .button.primary-button:hover,
+#chemistry-workspace .button.laboratory-primary-action:hover,
+#chemistry-workspace .menu-button.laboratory-primary-action:hover,
+#chemistry-workspace #chemistry-main-toolbar .button.laboratory-primary-action:hover { -fx-background-color: #1d4ed8; }
+#chemistry-workspace .button:focused,
+#chemistry-workspace .menu-button:focused,
+#chemistry-workspace .toggle-button:focused,
+.laboratory-workspace-selector:focused { -fx-border-color: -app-accent; -fx-border-radius: 5; }
+
+/* Saving remains visible in the document header without competing with the current workflow action. */
+#chemistry-workspace #chemistry-document-bar .button.laboratory-save {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-border-color: -app-border;
+    -fx-font-weight: normal;
+    -fx-padding: 6 11;
+}
+#chemistry-workspace #chemistry-document-bar .button.laboratory-save:hover { -fx-background-color: -app-surface-muted; }
+
+/* Context styles must not suppress the keyboard focus indicator. */
+#chemistry-workspace #chemistry-main-toolbar .button:focused,
+#chemistry-workspace #chemistry-main-toolbar .toggle-button:focused,
+#chemistry-workspace #chemistry-main-toolbar .menu-button:focused,
+#chemistry-workspace #chemistry-document-bar .button.laboratory-save:focused { -fx-border-color: -app-accent; }
+#chemistry-workspace .button.laboratory-primary-action:focused,
+#chemistry-workspace .button.laboratory-save:focused,
+#chemistry-workspace .button.primary-button:focused,
+#chemistry-workspace .menu-button.laboratory-primary-action:focused,
+#chemistry-workspace #chemistry-main-toolbar .button.laboratory-primary-action:focused {
+    -fx-border-color: -app-text;
+    -fx-border-width: 1;
+    -fx-border-insets: -3;
+    -fx-border-radius: 7;
+}
+
+#chemistry-workspace .menu-button.laboratory-primary-action > .label { -fx-text-fill: white; }
+#chemistry-workspace .menu-button.laboratory-primary-action > .arrow-button > .arrow { -fx-background-color: white; }
+
+/* Workspace111: the global quantum header stays dark in the light theme. */
+.workbench-header .laboratory-workspace-selector > .label { -fx-text-fill: -app-header-text; }
+.workbench-header .laboratory-workspace-selector > .arrow-button > .arrow { -fx-background-color: -app-header-muted; }
+.workbench-header .laboratory-workspace-selector:hover { -fx-background-color: rgba(255, 255, 255, 0.10); }
+.workbench-header.workbench-header-compact .laboratory-workspace-selector > .label { -fx-text-fill: -app-text; }
+.workbench-header.workbench-header-compact .laboratory-workspace-selector > .arrow-button > .arrow { -fx-background-color: -app-muted; }
+.workbench-header.workbench-header-compact .laboratory-workspace-selector:hover { -fx-background-color: -app-surface-muted; }
+
+
+/* Daily chemistry: clear results, quiet structure previews and fewer nested frames. */
+#chemistry-workspace #experiment-desk .laboratory-reaction-card {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+}
+#chemistry-workspace .laboratory-summary-heading { -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 2 0 6 0; }
+#chemistry-workspace .laboratory-summary-cell {
+    -fx-padding: 10 4;
+    -fx-border-color: transparent transparent -app-border transparent;
+}
+#chemistry-workspace .laboratory-summary-value { -fx-font-weight: bold; }
+#chemistry-workspace #chemistry-batch-theory { -fx-background-color: transparent; -fx-padding: 8 4; }
+#chemistry-workspace #desk-batch { -fx-background-color: transparent; }
+
+/* Linked analysis titles follow the active chemistry theme. */
+#chemistry-workspace .hyperlink { -fx-text-fill: -app-accent; -fx-border-color: transparent; -fx-padding: 3 0; }
+#chemistry-workspace .hyperlink:hover { -fx-underline: true; }
+#chemistry-workspace .hyperlink:focused { -fx-border-color: -app-accent; -fx-border-style: segments(2, 2); }
+
+/* Chemistry records are prose; source editors retain their explicit monospaced style. */
+#chemistry-workspace .list-view, #chemistry-workspace .list-cell { -fx-font-family: "Segoe UI", "Arial"; -fx-font-size: 13px; }
+
+/* Start page: one clear primary action, optional recovery, readable project links. */
+#chemistry-welcome { -fx-background-color: -app-bg; }
+#chemistry-welcome .welcome-scroll, #chemistry-welcome .welcome-scroll > .viewport { -fx-background-color: -app-bg; -fx-border-width: 0; }
+#chemistry-welcome .welcome-eyebrow { -fx-text-fill: -app-accent; -fx-font-size: 11px; -fx-font-weight: bold; }
+#chemistry-welcome .welcome-title { -fx-text-fill: -app-text; -fx-font-size: 30px; -fx-font-weight: bold; }
+#chemistry-welcome .welcome-intro { -fx-text-fill: -app-muted; -fx-font-size: 15px; }
+#chemistry-welcome .welcome-hint { -fx-text-fill: -app-muted; -fx-font-size: 13px; }
+#chemistry-welcome .welcome-card, #chemistry-welcome .welcome-card-primary { -fx-padding: 22; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: -app-border; -fx-background-color: -app-surface; -fx-cursor: hand; }
+#chemistry-welcome .welcome-card:hover { -fx-background-color: -app-surface-muted; -fx-border-color: -app-accent; }
+#chemistry-welcome .welcome-card-primary { -fx-background-color: #245be5; -fx-border-color: #245be5; }
+#chemistry-welcome .welcome-card-primary:hover { -fx-opacity: 0.9; }
+#chemistry-welcome .welcome-card-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-welcome .welcome-card-detail { -fx-font-size: 13px; -fx-text-fill: -app-muted; }
+#chemistry-welcome .welcome-card-primary .label { -fx-text-fill: white; }
+#chemistry-welcome .welcome-section-title { -fx-text-fill: -app-text; -fx-font-size: 17px; -fx-font-weight: bold; }
+#chemistry-welcome .welcome-recovery { -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-radius: 12; -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; }
+#chemistry-welcome .welcome-list-item { -fx-padding: 12 14; -fx-background-color: -app-surface; -fx-background-radius: 8; -fx-border-radius: 8; -fx-text-fill: -app-text; }
+#chemistry-welcome .button:focused { -fx-border-color: -app-accent; -fx-border-width: 2; }
+
+/* Stable navigation for the experiment, drawing and input pages. */
+#chemistry-workspace .laboratory-navigation-header { -fx-background-color: -app-surface; -fx-alignment: center-left; -fx-padding: 12 12 10 12; }
+#chemistry-workspace .laboratory-navigation-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-navigation-back { -fx-padding: 7 12; -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-navigation-back:hover { -fx-background-color: -app-surface-muted; }
+#chemistry-workspace #chemistry-document-title { -fx-padding: 0; -fx-font-size: 17px; }
+#chemistry-workspace #chemistry-stage-navigation { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+
+/* Drawing guidance stays next to the canvas, with details available on demand. */
+#chemistry-workspace .laboratory-drawing-guide { -fx-background-color: -app-surface-muted; -fx-padding: 7 12; -fx-spacing: 4; -fx-border-color: transparent transparent -app-border transparent; }
+#chemistry-workspace .laboratory-drawing-guide-title { -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-drawing-guide-tip { -fx-text-fill: -app-muted; -fx-font-size: 12px; }
+#chemistry-workspace .laboratory-drawing-guide-toggle, #chemistry-workspace .laboratory-drawing-guide-help { -fx-background-color: -app-surface; -fx-text-fill: -app-text; -fx-padding: 5 9; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: -app-border; }
+#chemistry-workspace .laboratory-drawing-guide-toggle:selected { -fx-background-color: -app-surface-muted; -fx-border-color: -app-accent; }
+#chemistry-workspace .laboratory-drawing-guide-keys { -fx-background-color: -app-surface; -fx-padding: 8 12; }
+#chemistry-workspace .laboratory-drawing-guide-key { -fx-font-weight: bold; -fx-text-fill: -app-accent; }
+#chemistry-workspace .laboratory-element:selected { -fx-background-color: #dbeafe; -fx-border-color: #2563eb; -fx-border-radius: 5; -fx-background-radius: 5; }
+.theme-dark #chemistry-workspace .laboratory-element:selected { -fx-background-color: #21375b; -fx-border-color: #60a5fa; }
+
+/* Experiment inputs: compact sections, readable names and predictable form actions. */
+#chemistry-workspace .laboratory-form-card { -fx-background-color: -app-surface; -fx-background-radius: 9; -fx-border-color: -app-border; -fx-border-radius: 9; -fx-padding: 14 16; }
+#chemistry-workspace .laboratory-form-section-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-workspace .laboratory-form-footer { -fx-background-color: -app-surface; -fx-border-color: -app-border transparent transparent transparent; }
+#chemistry-workspace .laboratory-compound-name { -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -app-text; }
+#chemistry-workspace #chemistry-stage-form .tab-pane > .tab-header-area { -fx-padding: 4 12 0 12; }
+#chemistry-workspace #chemistry-stage-form .tab { -fx-padding: 7 12; }
+#chemistry-workspace #chemistry-stage-materials { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 5; }
+#chemistry-workspace #chemistry-batch-theory { -fx-background-color: -app-surface-muted; -fx-background-radius: 8; -fx-padding: 12 14; }
+#chemistry-workspace .laboratory-summary-cell { -fx-padding: 10 8; }
+#chemistry-workspace #desk-batch .text-field, #chemistry-workspace #desk-batch .combo-box { -fx-min-height: 32; }
+
+/* Reaction overview: quiet participant groups, clear names and human-readable conditions. */
+#chemistry-workspace #experiment-desk .laboratory-reaction-card {
+    -fx-background-color: -app-bg;
+    -fx-background-radius: 9;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+}
+#chemistry-workspace #experiment-desk .laboratory-compound-name { -fx-font-size: 14px; -fx-font-weight: bold; }
+#chemistry-workspace #experiment-desk .laboratory-compound-role { -fx-font-size: 11px; -fx-text-fill: -app-muted; }
+#chemistry-workspace #experiment-desk .laboratory-compound-actions { -fx-alignment: center-left; }
+#chemistry-workspace #experiment-desk .laboratory-compound-rename { -fx-padding: 5 9; }
+#chemistry-workspace #experiment-desk .laboratory-reaction-conditions {
+    -fx-background-color: -app-surface-muted;
+    -fx-background-radius: 7;
+    -fx-padding: 10 12;
+    -fx-text-fill: -app-text;
+}
+
+/* Optional online lookup shares the same compact, offline-first naming dialog. */
+.laboratory-component-naming { -fx-background-color: -app-surface; -fx-padding: 16; }
+.laboratory-component-naming .laboratory-name-heading { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+.laboratory-component-naming .laboratory-name-context { -fx-font-size: 12px; -fx-text-fill: -app-muted; }
+.laboratory-component-naming .laboratory-name-field { -fx-font-size: 15px; -fx-padding: 9 11; }
+.laboratory-component-naming .laboratory-name-hint { -fx-text-fill: -app-muted; -fx-font-size: 12px; }
+.laboratory-component-naming .laboratory-name-status { -fx-text-fill: -app-text; -fx-padding: 4 0; }
+.laboratory-component-naming .laboratory-name-actions { -fx-alignment: center-left; -fx-hgap: 9; -fx-vgap: 7; }
+.laboratory-component-naming .laboratory-secondary-action { -fx-padding: 7 11; -fx-background-color: -app-surface-muted; -fx-border-color: -app-border; -fx-text-fill: -app-text; }
+
+/* Daily work areas use the available width; plan and recorded actions remain distinct. */
+#chemistry-workspace .desk-work-area { -fx-spacing: 16; -fx-background-color: transparent; }
+#chemistry-workspace .desk-two-column { -fx-spacing: 16; -fx-hgap: 16; -fx-vgap: 16; }
+#chemistry-workspace .desk-panel { -fx-padding: 16; -fx-spacing: 12; -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 9; -fx-border-radius: 9; }
+#chemistry-workspace .desk-panel-heading { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-workspace .desk-panel-subtitle { -fx-font-size: 12px; -fx-text-fill: -app-muted; }
+#chemistry-workspace .desk-section-heading { -fx-font-size: 21px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-workspace .desk-section-description { -fx-font-size: 13px; -fx-text-fill: -app-muted; }
+#chemistry-workspace .desk-metric { -fx-font-size: 23px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-workspace .desk-result-summary { -fx-padding: 16; -fx-spacing: 10; -fx-background-color: -app-surface-muted; -fx-background-radius: 9; }
+#chemistry-workspace #experiment-desk .desk-work-area .laboratory-desk-section { -fx-padding: 0; -fx-background-color: transparent; -fx-border-color: transparent; }
+#chemistry-procedure-page #procedure-split { -fx-padding: 0; -fx-background-color: transparent; -fx-border-width: 0; }
+#chemistry-procedure-page #procedure-split > .split-pane-divider { -fx-background-color: transparent; -fx-padding: 0 6; }
+#chemistry-procedure-page #procedure-steps { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-background-radius: 8; -fx-border-radius: 8; }
+#chemistry-procedure-page #procedure-steps .list-cell { -fx-padding: 12 10; -fx-background-color: transparent; }
+#chemistry-procedure-page #procedure-steps .list-cell:filled:selected { -fx-background-color: -app-accent-soft; }
+#chemistry-procedure-page .procedure-step-name { -fx-font-weight: bold; -fx-text-fill: -app-text; }
+#chemistry-procedure-page #procedure-tabs { -fx-background-color: transparent; }
+#chemistry-procedure-page #procedure-tabs > .tab-header-area .tab { -fx-padding: 8 14; }
+#chemistry-procedure-page #procedure-tabs > .tab-content-area { -fx-background-color: transparent; -fx-padding: 0; }
+
+/* Local model workspace: flexible cards, clear calculation provenance. */
+#chemistry-nmr-model .nmr-model-card {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 16;
+}
+#chemistry-nmr-model .nmr-model-card-title { -fx-font-size: 16px; -fx-font-weight: bold; }
+#chemistry-nmr-model .nmr-model-eyebrow { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -app-muted; }
+#chemistry-nmr-model .nmr-model-notice { -fx-padding: 10 4; -fx-text-fill: -app-muted; }
+#chemistry-nmr-model .nmr-model-pure { -fx-text-fill: #2472c8; }
+#chemistry-nmr-model .nmr-model-mixture { -fx-text-fill: #7c3ec8; }
+.theme-dark #chemistry-nmr-model .nmr-model-pure { -fx-text-fill: #80b9ff; }
+.theme-dark #chemistry-nmr-model .nmr-model-mixture { -fx-text-fill: #d2a2ff; }

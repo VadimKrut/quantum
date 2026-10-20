@@ -16,7 +16,7 @@ public final class ChemistryStorageFormatVersion {
 
   public static final ChemistryStorageFormatVersion CURRENT = new ChemistryStorageFormatVersion(1);
   private static final int MIN_VERSION = 1;
-  private static final int MAX_VERSION = 1;
+  private static final int MAX_VERSION = 17;
   private final int number;
 
   private ChemistryStorageFormatVersion(final int number) {

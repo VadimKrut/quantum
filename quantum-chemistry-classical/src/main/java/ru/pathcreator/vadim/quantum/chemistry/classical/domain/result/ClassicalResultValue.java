@@ -29,8 +29,7 @@ public final class ClassicalResultValue {
       final String name,
       final ClassicalResultValueKind kind,
       final String unit,
-      final List<String> values
-  ) {
+      final List<String> values) {
     this.name = name;
     this.kind = kind;
     this.unit = unit;
@@ -38,24 +37,15 @@ public final class ClassicalResultValue {
   }
 
   public static ClassicalResultValue scalar(
-      final String name,
-      final double value,
-      final String unit
-  ) {
+      final String name, final double value, final String unit) {
     if (!Double.isFinite(value)) {
       throw new IllegalArgumentException("Classical result scalar must be finite.");
     }
     return ClassicalResultValue.of(
-        name,
-        ClassicalResultValueKind.SCALAR,
-        unit,
-        List.of(Double.toString(value)));
+        name, ClassicalResultValueKind.SCALAR, unit, List.of(Double.toString(value)));
   }
 
-  public static ClassicalResultValue text(
-      final String name,
-      final String value
-  ) {
+  public static ClassicalResultValue text(final String name, final String value) {
     return ClassicalResultValue.of(
         name,
         ClassicalResultValueKind.TEXT,
@@ -67,15 +57,12 @@ public final class ClassicalResultValue {
       final String name,
       final ClassicalResultValueKind kind,
       final String unit,
-      final List<String> values
-  ) {
+      final List<String> values) {
     if (kind == null) {
       throw new IllegalArgumentException("Classical result value kind must not be null.");
     }
     return new ClassicalResultValue(
-        IdentifierValue.requireIdentifier(
-            name,
-            "Classical result value name"),
+        IdentifierValue.requireIdentifier(name, "Classical result value name"),
         kind,
         unit == null ? "" : unit,
         List.copyOf(ClassicalResultValue.requireValues(values)));
@@ -97,14 +84,34 @@ public final class ClassicalResultValue {
     return this.values;
   }
 
+  public int valueCount() {
+    return this.values.size();
+  }
+
+  public boolean singleValue() {
+    return this.values.size() == 1;
+  }
+
+  public String firstValue() {
+    return this.values.get(0);
+  }
+
+  public double scalarValue() {
+    if (this.kind != ClassicalResultValueKind.SCALAR) {
+      throw new IllegalStateException("Classical result value is not scalar.");
+    }
+    if (!this.singleValue()) {
+      throw new IllegalStateException("Classical scalar result must contain exactly one value.");
+    }
+    return Double.parseDouble(this.firstValue());
+  }
+
   private static List<String> requireValues(final List<String> values) {
     if (values == null || values.isEmpty()) {
       throw new IllegalArgumentException("Classical result values must not be empty.");
     }
     for (int i = 0; i < values.size(); ++i) {
-      TextValue.requireText(
-          values.get(i),
-          "Classical result value item");
+      TextValue.requireText(values.get(i), "Classical result value item");
     }
     return values;
   }

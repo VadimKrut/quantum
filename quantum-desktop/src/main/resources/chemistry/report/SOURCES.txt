@@ -1,0 +1,8 @@
+Report fonts: Noto Sans Regular, Noto Sans Bold, Noto Sans Math Regular.
+Source: https://github.com/notofonts/noto-fonts/tree/main/hinted/ttf
+Downloaded: 2026-10-18. Unmodified font binaries distributed under SIL OFL 1.1.
+License: OFL.txt in this directory. These fonts are embedded as subsets in exported PDF documents.
+
+PDF writer and preview renderer: Apache PDFBox 3.0.8, Apache License 2.0.
+Source and documentation: https://pdfbox.apache.org/
+PDFBox, pdfbox-io and fontbox are declared Maven dependencies; this application uses no remote PDF service.

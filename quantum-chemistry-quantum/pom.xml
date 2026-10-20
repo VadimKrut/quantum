@@ -23,12 +23,22 @@
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-fermion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
             <artifactId>quantum-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
             <artifactId>quantum-application</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-simulation</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

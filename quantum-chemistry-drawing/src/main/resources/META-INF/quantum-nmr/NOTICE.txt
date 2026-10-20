@@ -1,0 +1,4 @@
+Contains information from nmrshiftdb2 (https://nmrshiftdb.nmr.uni-koeln.de/), made available under the nmrshiftdb2 Database License included here.
+The two gzip files contain the complete, byte-identical nmrshiftdb.csv entries from the official predictorh.jar/predictorc.jar published 2023-10-03. Source URLs, archive hashes, extracted-content hashes and packaged hashes are in data-manifest.json.
+No nmrshiftdb2 executable code is included. The application uses its own streaming lookup and the existing CDK 2.12 HOSECodeGenerator. This is the standard HOSE model, not the upstream ExtendedHOSE stereochemical predictor.
+The database license includes attribution, derivative database and OSI software conditions (including section 4.5). Compression does not remove these conditions. The application source is provided under MPL-2.0.

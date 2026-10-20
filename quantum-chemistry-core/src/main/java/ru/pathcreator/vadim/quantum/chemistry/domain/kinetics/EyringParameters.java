@@ -15,18 +15,18 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.thermodynamics.Thermodynami
 import ru.pathcreator.vadim.quantum.chemistry.domain.unit.EnergyValue;
 import ru.pathcreator.vadim.quantum.chemistry.domain.unit.Temperature;
 
+/** Параметры Эйринга для оценки переходно-состояниевой константы скорости. */
 public final class EyringParameters {
 
   private static final double BOLTZMANN_CONSTANT_JOULE_PER_KELVIN = 1.380649E-23;
   private static final double PLANCK_CONSTANT_JOULE_SECOND = 6.62607015E-34;
   private static final double GAS_CONSTANT_JOULE_PER_MOLE_KELVIN = 8.31446261815324;
+  private static final double MINIMUM_POSITIVE_RATE_CONSTANT = 1.0E-300;
   private final EnergyValue activationEnthalpy;
   private final EntropyValue activationEntropy;
 
   private EyringParameters(
-      final EnergyValue activationEnthalpy,
-      final EntropyValue activationEntropy
-  ) {
+      final EnergyValue activationEnthalpy, final EntropyValue activationEntropy) {
     this.activationEnthalpy = activationEnthalpy;
     this.activationEntropy = activationEntropy;
   }
@@ -68,7 +68,8 @@ public final class EyringParameters {
             -activationEnthalpyJoulePerMole
                 / (GAS_CONSTANT_JOULE_PER_MOLE_KELVIN * temperatureKelvin));
     return RateConstant.of(
-        thermalFactor * entropyFactor * enthalpyFactor, RateConstantUnit.PER_SECOND);
+        Math.max(MINIMUM_POSITIVE_RATE_CONSTANT, thermalFactor * entropyFactor * enthalpyFactor),
+        RateConstantUnit.PER_SECOND);
   }
 
   public boolean equals(final Object other) {

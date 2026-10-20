@@ -24,12 +24,16 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.experiment.ChemistryTaskTyp
 import ru.pathcreator.vadim.quantum.chemistry.domain.kinetics.ReactionKineticProfile;
 import ru.pathcreator.vadim.quantum.chemistry.domain.mechanism.ElementaryReactionStep;
 import ru.pathcreator.vadim.quantum.chemistry.domain.mechanism.ReactionMechanism;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisSet;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ElectronicStructureSpinTreatment;
 import ru.pathcreator.vadim.quantum.chemistry.domain.problem.ElectronicHamiltonianSummary;
 import ru.pathcreator.vadim.quantum.chemistry.domain.problem.ElectronicStructureProblem;
+import ru.pathcreator.vadim.quantum.chemistry.domain.prediction.ReactionPredictionRequest;
+import ru.pathcreator.vadim.quantum.chemistry.domain.prediction.ReactionProductCandidate;
 import ru.pathcreator.vadim.quantum.chemistry.domain.property.MolecularPropertySet;
 import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.Reaction;
 import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.ReactionBalance;
+import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.ReactionId;
 import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.ReactionParticipant;
 import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.ReactionSide;
 import ru.pathcreator.vadim.quantum.chemistry.domain.redox.ElectronTransferTransition;
@@ -108,6 +112,38 @@ public final class ChemistryCoreValidator {
     }
     this.validateReactionSideMolecules(reaction.reactants(), diagnostics);
     this.validateReactionSideMolecules(reaction.products(), diagnostics);
+    return ChemistryValidationResult.of(diagnostics);
+  }
+
+  public ChemistryValidationResult validateReactionPredictionRequest(
+      final ReactionPredictionRequest request) {
+    if (request == null) {
+      throw new IllegalArgumentException("Reaction prediction request must not be null.");
+    }
+    final ArrayList<ChemistryDiagnostic> diagnostics = new ArrayList<ChemistryDiagnostic>();
+    final ChemistryDiagnosticTarget target =
+        ChemistryCoreValidator.target("REACTION_PREDICTION", request.id());
+    this.validateReactionSideMolecules(request.reactants(), diagnostics);
+    if (!request.hasSeedCandidates()) {
+      diagnostics.add(
+          ChemistryCoreValidator.warning(
+              ChemistryDiagnosticCode.REACTION_PREDICTION_HAS_NO_CANDIDATES,
+              "Reaction prediction request has no candidate products.",
+              target));
+      return ChemistryValidationResult.of(diagnostics);
+    }
+    final List<ReactionProductCandidate> candidates = request.seedCandidates();
+    for (int i = 0; i < candidates.size(); ++i) {
+      final ReactionProductCandidate candidate = candidates.get(i);
+      if (candidate.evidence().isEmpty()) {
+        diagnostics.add(
+            ChemistryCoreValidator.warning(
+                ChemistryDiagnosticCode.REACTION_PREDICTION_CANDIDATE_HAS_NO_EVIDENCE,
+                "Reaction prediction candidate has no explanatory evidence.",
+                target));
+      }
+      this.validateReactionPredictionCandidate(request, candidate, i, diagnostics);
+    }
     return ChemistryValidationResult.of(diagnostics);
   }
 
@@ -207,7 +243,8 @@ public final class ChemistryCoreValidator {
     return ChemistryValidationResult.of(diagnostics);
   }
 
-  public ChemistryValidationResult validateMolecularMicrostateSet(final MolecularMicrostateSet set) {
+  public ChemistryValidationResult validateMolecularMicrostateSet(
+      final MolecularMicrostateSet set) {
     if (set == null) {
       throw new IllegalArgumentException("Molecular microstate set must not be null.");
     }
@@ -347,6 +384,7 @@ public final class ChemistryCoreValidator {
     ChemistryCoreValidator.validateActiveSpace(experiment, diagnostics);
     ChemistryCoreValidator.validateActiveSpaceAgainstMolecule(experiment, diagnostics);
     ChemistryCoreValidator.validateMethodAgainstSubject(experiment, diagnostics);
+    ChemistryCoreValidator.validateBasisSetAgainstSubject(experiment, diagnostics);
     return ChemistryValidationResult.of(diagnostics);
   }
 
@@ -360,6 +398,8 @@ public final class ChemistryCoreValidator {
     ChemistryCoreValidator.validateElectronicProblemTask(problem, diagnostics);
     ChemistryCoreValidator.validateMethodAgainstMolecule(
         problem.molecule(), problem.task().method().spinTreatment(), diagnostics);
+    ChemistryCoreValidator.validateBasisSetAgainstMolecule(
+        problem.task().basisSet(), problem.molecule(), diagnostics);
     ChemistryCoreValidator.validateElectronicProblemTerms(problem, diagnostics);
     ChemistryCoreValidator.validateElectronicHamiltonianShape(problem, diagnostics);
     ChemistryCoreValidator.validateElectronicProblemOrbitalBasis(problem, diagnostics);
@@ -429,6 +469,13 @@ public final class ChemistryCoreValidator {
             ChemistryCoreValidator.warning(
                 ChemistryDiagnosticCode.REACTION_MECHANISM_STEP_HAS_NO_TRANSITION_STATE,
                 "Reaction mechanism elementary step has no transition state.",
+                target));
+      }
+      if (!step.hasEvents()) {
+        diagnostics.add(
+            ChemistryCoreValidator.warning(
+                ChemistryDiagnosticCode.REACTION_MECHANISM_STEP_HAS_NO_EVENTS,
+                "Reaction mechanism elementary step has no mechanistic events.",
                 target));
       }
       if (!step.hasForwardBarrier()) {
@@ -521,8 +568,8 @@ public final class ChemistryCoreValidator {
               "Molecular orbital basis contains fractional orbital occupation.",
               target));
     }
-    if (Math.abs(problem.orbitalBasis().occupiedElectronCount()
-            - problem.hamiltonian().electronCount())
+    if (Math.abs(
+            problem.orbitalBasis().occupiedElectronCount() - problem.hamiltonian().electronCount())
         > 1.0E-9) {
       diagnostics.add(
           ChemistryCoreValidator.warning(
@@ -552,6 +599,40 @@ public final class ChemistryCoreValidator {
     for (int i = 0; i < participants.size(); ++i) {
       diagnostics.addAll(this.validateMolecule(participants.get(i).molecule()).diagnostics());
     }
+  }
+
+  private void validateReactionPredictionCandidate(
+      final ReactionPredictionRequest request,
+      final ReactionProductCandidate candidate,
+      final int candidateIndex,
+      final List<ChemistryDiagnostic> diagnostics) {
+    this.validateReactionSideMolecules(candidate.products(), diagnostics);
+    final Reaction probeReaction =
+        Reaction.of(
+            ReactionId.of(request.id() + "_candidate_" + candidateIndex),
+            "Reaction prediction candidate",
+            request.reactants(),
+            candidate.products(),
+            request.conditions(),
+            ru.pathcreator.vadim.quantum.chemistry.domain.metadata.ChemistryMetadata.EMPTY);
+    final ReactionBalance balance = probeReaction.balance();
+    final ChemistryDiagnosticTarget target =
+        ChemistryCoreValidator.target("REACTION_PREDICTION_CANDIDATE", request.id());
+    if (!balance.atomBalanced()) {
+      diagnostics.add(
+          ChemistryCoreValidator.error(
+              ChemistryDiagnosticCode.REACTION_PREDICTION_CANDIDATE_ATOMS_NOT_BALANCED,
+              "Reaction prediction candidate atom counts are not balanced.",
+              target));
+    }
+    if (balance.chargeBalanced()) {
+      return;
+    }
+    diagnostics.add(
+        ChemistryCoreValidator.error(
+            ChemistryDiagnosticCode.REACTION_PREDICTION_CANDIDATE_CHARGE_NOT_BALANCED,
+            "Reaction prediction candidate charge is not balanced.",
+            target));
   }
 
   private static void validateActiveSpace(
@@ -603,7 +684,9 @@ public final class ChemistryCoreValidator {
   }
 
   private static void validateActiveSpaceAgainstReactionSide(
-      final ReactionSide side, final int activeElectronCount, final List<ChemistryDiagnostic> diagnostics) {
+      final ReactionSide side,
+      final int activeElectronCount,
+      final List<ChemistryDiagnostic> diagnostics) {
     List<ReactionParticipant> participants = side.participants();
     for (int i = 0; i < participants.size(); ++i) {
       ChemistryCoreValidator.validateActiveSpaceAgainstMolecule(
@@ -612,7 +695,9 @@ public final class ChemistryCoreValidator {
   }
 
   private static void validateActiveSpaceAgainstMolecule(
-      final Molecule molecule, final int activeElectronCount, final List<ChemistryDiagnostic> diagnostics) {
+      final Molecule molecule,
+      final int activeElectronCount,
+      final List<ChemistryDiagnostic> diagnostics) {
     MolecularElectronicConfiguration configuration = molecule.electronicConfiguration();
     if (activeElectronCount <= configuration.electronCount()) {
       return;
@@ -674,8 +759,64 @@ public final class ChemistryCoreValidator {
                 ChemistrySubjectKind.MOLECULE.name(), molecule.stableId())));
   }
 
+  private static void validateBasisSetAgainstSubject(
+      final ChemistryExperiment experiment, final List<ChemistryDiagnostic> diagnostics) {
+    if (experiment.subject().subjectKind() == ChemistrySubjectKind.REACTION) {
+      ChemistryCoreValidator.validateBasisSetAgainstReaction(experiment, diagnostics);
+      return;
+    }
+    if (experiment.subject().subjectKind() != ChemistrySubjectKind.MOLECULE) {
+      return;
+    }
+    ChemistryCoreValidator.validateBasisSetAgainstMolecule(
+        experiment.task().basisSet(), (Molecule) experiment.subject(), diagnostics);
+  }
+
+  private static void validateBasisSetAgainstReaction(
+      final ChemistryExperiment experiment, final List<ChemistryDiagnostic> diagnostics) {
+    final Reaction reaction = (Reaction) experiment.subject();
+    ChemistryCoreValidator.validateBasisSetAgainstReactionSide(
+        experiment.task().basisSet(), reaction.reactants(), diagnostics);
+    ChemistryCoreValidator.validateBasisSetAgainstReactionSide(
+        experiment.task().basisSet(), reaction.products(), diagnostics);
+  }
+
+  private static void validateBasisSetAgainstReactionSide(
+      final BasisSet basisSet,
+      final ReactionSide side,
+      final List<ChemistryDiagnostic> diagnostics) {
+    final List<ReactionParticipant> participants = side.participants();
+    for (int i = 0; i < participants.size(); ++i) {
+      ChemistryCoreValidator.validateBasisSetAgainstMolecule(
+          basisSet, participants.get(i).molecule(), diagnostics);
+    }
+  }
+
+  private static void validateBasisSetAgainstMolecule(
+      final BasisSet basisSet,
+      final Molecule molecule,
+      final List<ChemistryDiagnostic> diagnostics) {
+    if (!basisSet.hasStructuredDefinition()) {
+      return;
+    }
+    final List<Atom> atoms = molecule.atoms();
+    for (int i = 0; i < atoms.size(); ++i) {
+      if (!basisSet.definition().supports(atoms.get(i).element().symbol())) {
+        diagnostics.add(
+            ChemistryCoreValidator.error(
+                ChemistryDiagnosticCode.TASK_BASIS_SET_INCOMPATIBLE_WITH_SUBJECT,
+                "Structured basis set does not define shells for molecule element.",
+                ChemistryCoreValidator.target(
+                    ChemistrySubjectKind.MOLECULE.name(), molecule.stableId())));
+        return;
+      }
+    }
+  }
+
   private static void validateAtomFormalCharges(
-      final Molecule molecule, final List<ChemistryDiagnostic> diagnostics, final ChemistryDiagnosticTarget target) {
+      final Molecule molecule,
+      final List<ChemistryDiagnostic> diagnostics,
+      final ChemistryDiagnosticTarget target) {
     if (!molecule.electronicConfiguration().formalChargesMatchMolecularCharge()) {
       diagnostics.add(
           ChemistryCoreValidator.error(
@@ -703,7 +844,25 @@ public final class ChemistryCoreValidator {
       final Molecule molecule,
       final List<ChemistryDiagnostic> diagnostics,
       final ChemistryDiagnosticTarget target) {
-    if (molecule.stereochemistry().empty() || ChemistryCoreValidator.hasCompleteGeometry(molecule)) {
+    if (molecule
+        .metadata()
+        .attributes()
+        .containsKey(
+            ru.pathcreator.vadim.quantum.chemistry.domain.stereo.Stereochemistry
+                .REVIEW_ATTRIBUTE)) {
+      diagnostics.add(
+          ChemistryCoreValidator.warning(
+              ChemistryDiagnosticCode.MOLECULE_STEREOCHEMISTRY_NEEDS_REVIEW,
+              molecule
+                  .metadata()
+                  .attributes()
+                  .get(
+                      ru.pathcreator.vadim.quantum.chemistry.domain.stereo.Stereochemistry
+                          .REVIEW_ATTRIBUTE),
+              target));
+    }
+    if (molecule.stereochemistry().empty()
+        || ChemistryCoreValidator.hasCompleteGeometry(molecule)) {
       return;
     }
     diagnostics.add(
@@ -743,7 +902,9 @@ public final class ChemistryCoreValidator {
   }
 
   private static void validateRadicalSpin(
-      final Molecule molecule, final List<ChemistryDiagnostic> diagnostics, final ChemistryDiagnosticTarget target) {
+      final Molecule molecule,
+      final List<ChemistryDiagnostic> diagnostics,
+      final ChemistryDiagnosticTarget target) {
     final MolecularElectronicConfiguration configuration = molecule.electronicConfiguration();
     final int unpairedElectrons = configuration.explicitUnpairedElectronCount();
     if (unpairedElectrons > 0 && molecule.spinMultiplicity().value() == 1) {
@@ -763,7 +924,9 @@ public final class ChemistryCoreValidator {
   }
 
   private static void validateElectronicConfiguration(
-      final Molecule molecule, final List<ChemistryDiagnostic> diagnostics, final ChemistryDiagnosticTarget target) {
+      final Molecule molecule,
+      final List<ChemistryDiagnostic> diagnostics,
+      final ChemistryDiagnosticTarget target) {
     if (molecule.electronicConfiguration().spinMultiplicityPossible()) {
       return;
     }
@@ -775,7 +938,9 @@ public final class ChemistryCoreValidator {
   }
 
   private static void validateValence(
-      final Molecule molecule, final List<ChemistryDiagnostic> diagnostics, final ChemistryDiagnosticTarget target) {
+      final Molecule molecule,
+      final List<ChemistryDiagnostic> diagnostics,
+      final ChemistryDiagnosticTarget target) {
     final MolecularValence valence = MolecularValenceAnalyzer.analyze(molecule);
     if (valence.hasUnknownBondOrder()) {
       diagnostics.add(
@@ -826,19 +991,20 @@ public final class ChemistryCoreValidator {
   }
 
   private static ChemistryDiagnostic warning(
-      final ChemistryDiagnosticCode code, final String message, final ChemistryDiagnosticTarget target) {
+      final ChemistryDiagnosticCode code,
+      final String message,
+      final ChemistryDiagnosticTarget target) {
     return ChemistryDiagnostic.of(ChemistryDiagnosticSeverity.WARNING, code, message, target);
   }
 
   private static ChemistryDiagnostic error(
-      final ChemistryDiagnosticCode code, final String message, final ChemistryDiagnosticTarget target) {
+      final ChemistryDiagnosticCode code,
+      final String message,
+      final ChemistryDiagnosticTarget target) {
     return ChemistryDiagnostic.of(ChemistryDiagnosticSeverity.ERROR, code, message, target);
   }
 
-  private static ChemistryDiagnosticTarget target(
-      final String kind,
-      final String id
-  ) {
+  private static ChemistryDiagnosticTarget target(final String kind, final String id) {
     return ChemistryDiagnosticTarget.of(kind, id);
   }
 }

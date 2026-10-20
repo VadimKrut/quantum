@@ -1,0 +1,54 @@
+Third-party components used by drawing, identity and initial-geometry adapters
+
+Chemistry Development Kit (CDK) 2.12 — GNU LGPL 2.1 or later.
+https://github.com/cdk/cdk
+Copyright notices are retained in the accompanying source archives and cdk-NOTICE.txt.
+License text: LGPL-2.1.txt (and GPL-2.0.txt).
+Modules: cdk-sdg, cdk-silent, cdk-atomtype, cdk-core, cdk-ctab,
+cdk-interfaces, cdk-io, cdk-ioformats, cdk-isomorphism, cdk-smiles,
+cdk-standard, cdk-valencycheck, cdk-builder3d, cdk-forcefield, cdk-data.
+
+Beam 1.3.10 — BSD 2-Clause.
+Copyright (c) 2013, European Bioinformatics Institute (EMBL-EBI).
+https://github.com/johnmay/beam
+Full notice and terms: beam-NOTICE.txt. Modules: beam-core, beam-func.
+
+Vecmath 1.5.2 — GPL version 2 with the Classpath exception.
+Copyright 1998–2008 Sun Microsystems, Inc. All rights reserved.
+https://github.com/hharrison/vecmath
+Full license and exception: vecmath-LICENSE.txt; notice: vecmath-NOTICE.txt.
+
+The above libraries are unmodified. Their exact published Maven source JARs
+are included under META-INF/quantum-third-party/sources in the application JAR.
+Use the JDK jar tool or any ZIP reader to extract this directory. Individual
+source files retain their original author notices and license terms.
+
+To rebuild or relink the adapter, use the Quantum IR Studio source checkout,
+JDK 25 and Maven. The dependencies are declared in quantum-chemistry-drawing/pom.xml;
+replace their versions with locally installed compatible modified artifacts as needed.
+Run Maven with -pl quantum-desktop -am package. The resulting desktop JAR includes
+the selected dependency classes and service registrations. The source-copy build
+step includes matching dependency source archives and fails if they are unavailable.
+No library chemical model is persisted. Adapters return 2D depictions and bounded
+initial 3D candidates with independent stereochemical verification to the existing
+Quantum chemistry core. CDK initial candidates are not optimized structures or measured facts.
+Core calculations and QCHEM data use the core.
+
+Initial 3D template construction runs in a separate bounded JVM using the same
+packaged libraries; the application verifies atom mapping and stereochemistry
+from returned coordinates before accepting them. Library source is unmodified.
+
+OpenChemLib 2026.10.1 — BSD 3-Clause.
+Copyright (c) 1997–2016 Actelion Pharmaceuticals Ltd.; author notices are retained in its source archive.
+https://github.com/Actelion/openchemlib
+Full license and copyright notice: openchemlib-LICENSE.txt.
+The bundled smile package retains Apache License 2.0; full terms: openchemlib-smile-LICENSE.txt.
+The exact published openchemlib-2026.10.1-sources.jar is included with the source archives.
+OpenChemLib is unmodified. Its old JavaFX dependencies are excluded.
+Conformer generation uses its ring-fragment and torsion sampling, followed by MMFF94s+
+minimization (vacuum, dielectric 1, non-bonded cutoff 100 angstrom). Only converged
+local minima with independent atom-mapping/geometry/stereochemistry checks are returned.
+These model energies are not physical measurements, free energies, or a guarantee of
+the global minimum. Missing atom parameters or unsupported stereo produce diagnostics.
+Hydrogens needed internally are not added to the persisted source graph. The bounded
+worker JVM is terminated on cancellation/deadline; no new library chemical model is stored.

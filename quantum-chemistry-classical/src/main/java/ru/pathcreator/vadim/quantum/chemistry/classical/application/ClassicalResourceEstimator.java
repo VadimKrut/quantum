@@ -24,26 +24,24 @@ public final class ClassicalResourceEstimator {
   private static final long MINIMUM_MEMORY_BYTES = 64L * 1024L * 1024L;
 
   public ClassicalResourceEstimate estimate(
-      final ClassicalCalculationRequest request,
-      final ClassicalSubjectSize size
-  ) {
+      final ClassicalCalculationRequest request, final ClassicalSubjectSize size) {
     if (request == null) {
       throw new IllegalArgumentException("Classical resource estimator request must not be null.");
     }
     if (size == null) {
-      throw new IllegalArgumentException("Classical resource estimator subject size must not be null.");
+      throw new IllegalArgumentException(
+          "Classical resource estimator subject size must not be null.");
     }
-    final long activeElectronCount = request.hasActiveSpace()
-        ? request.activeSpace().electronCount()
-        : 0L;
-    final long activeOrbitalCount = request.hasActiveSpace()
-        ? request.activeSpace().orbitalCount()
-        : 0L;
+    final long activeElectronCount =
+        request.hasActiveSpace() ? request.activeSpace().electronCount() : 0L;
+    final long activeOrbitalCount =
+        request.hasActiveSpace() ? request.activeSpace().orbitalCount() : 0L;
     final long basisFunctionCount = this.estimateBasisFunctionCount(request, size);
     final ClassicalScalingClass scalingClass = this.scalingClass(request);
-    final long memoryBytes = this.estimateMemoryBytes(basisFunctionCount, scalingClass);
+    final long memoryBytes = this.estimateMemoryBytes(request, basisFunctionCount, scalingClass);
     final long diskBytes = this.multiplySaturated(memoryBytes, 4L);
-    final long cpuMilliseconds = this.estimateCpuMilliseconds(basisFunctionCount, scalingClass);
+    final long cpuMilliseconds =
+        this.estimateCpuMilliseconds(request, basisFunctionCount, scalingClass);
     return ClassicalResourceEstimate.of(
         size.atomCount(),
         size.bondCount(),
@@ -58,9 +56,7 @@ public final class ClassicalResourceEstimator {
   }
 
   private long estimateBasisFunctionCount(
-      final ClassicalCalculationRequest request,
-      final ClassicalSubjectSize size
-  ) {
+      final ClassicalCalculationRequest request, final ClassicalSubjectSize size) {
     final String basisName = request.basisSet().name().value().toLowerCase(java.util.Locale.ROOT);
     final long multiplier = this.basisFunctionMultiplier(basisName);
     final long atomWeighted = this.multiplySaturated(size.atomCount(), multiplier);
@@ -71,22 +67,13 @@ public final class ClassicalResourceEstimator {
     if (basisName.contains("sto")) {
       return 2L;
     }
-    if (
-        basisName.contains("6-31")
-        || basisName.contains("def2-svp")
-    ) {
+    if (basisName.contains("6-31") || basisName.contains("def2-svp")) {
       return 6L;
     }
-    if (
-        basisName.contains("tz")
-        || basisName.contains("triple")
-    ) {
+    if (basisName.contains("tz") || basisName.contains("triple")) {
       return 10L;
     }
-    if (
-        basisName.contains("qz")
-        || basisName.contains("quadruple")
-    ) {
+    if (basisName.contains("qz") || basisName.contains("quadruple")) {
       return 16L;
     }
     return 4L;
@@ -94,18 +81,38 @@ public final class ClassicalResourceEstimator {
 
   private ClassicalScalingClass scalingClass(final ClassicalCalculationRequest request) {
     final ElectronicStructureMethodType type = request.method().type();
+    if (request.calculationKinds().contains(ClassicalCalculationKind.QUANTUM_VQE_OPTIMIZATION)) {
+      return ClassicalScalingClass.EXPONENTIAL;
+    }
     if (type == ElectronicStructureMethodType.FULL_CONFIGURATION_INTERACTION) {
       return ClassicalScalingClass.EXPONENTIAL;
     }
     if (type == ElectronicStructureMethodType.COUPLED_CLUSTER) {
       return ClassicalScalingClass.SEXTIC;
     }
+    if (type == ElectronicStructureMethodType.PERTURBATION_THEORY) {
+      return ClassicalScalingClass.QUINTIC;
+    }
     if (type == ElectronicStructureMethodType.CONFIGURATION_INTERACTION
         || type == ElectronicStructureMethodType.MULTI_CONFIGURATIONAL_SELF_CONSISTENT_FIELD) {
       return ClassicalScalingClass.QUINTIC;
     }
-    if (request.calculationKinds().contains(ClassicalCalculationKind.FREQUENCY_ANALYSIS)) {
+    if (request.calculationKinds().contains(ClassicalCalculationKind.HESSIAN_ANALYSIS)
+        || request.calculationKinds().contains(ClassicalCalculationKind.FREQUENCY_ANALYSIS)
+        || request.calculationKinds().contains(ClassicalCalculationKind.TRANSITION_STATE_SEARCH)
+        || request.calculationKinds().contains(ClassicalCalculationKind.IRC_ANALYSIS)) {
       return ClassicalScalingClass.QUARTIC;
+    }
+    if (request.calculationKinds().contains(ClassicalCalculationKind.REACTION_NETWORK_ANALYSIS)
+        || request.calculationKinds().contains(ClassicalCalculationKind.RETROSYNTHESIS_PLANNING)
+        || request
+            .calculationKinds()
+            .contains(ClassicalCalculationKind.REACTION_CONDITION_SCREENING)) {
+      return ClassicalScalingClass.CUBIC;
+    }
+    if (request.calculationKinds().contains(ClassicalCalculationKind.GEOMETRY_GRADIENT)
+        || request.calculationKinds().contains(ClassicalCalculationKind.GEOMETRY_OPTIMIZATION)) {
+      return ClassicalScalingClass.QUADRATIC;
     }
     if (type == ElectronicStructureMethodType.HARTREE_FOCK
         || type == ElectronicStructureMethodType.DENSITY_FUNCTIONAL_THEORY) {
@@ -115,27 +122,54 @@ public final class ClassicalResourceEstimator {
   }
 
   private long estimateMemoryBytes(
+      final ClassicalCalculationRequest request,
       final long basisFunctionCount,
-      final ClassicalScalingClass scalingClass
-  ) {
+      final ClassicalScalingClass scalingClass) {
+    if (request.calculationKinds().contains(ClassicalCalculationKind.QUANTUM_VQE_OPTIMIZATION)) {
+      final long activeOrbitalCount =
+          request.hasActiveSpace()
+              ? request.activeSpace().orbitalCount()
+              : Math.min(basisFunctionCount, 20L);
+      final long qubitCount = Math.max(1L, this.multiplySaturated(activeOrbitalCount, 2L));
+      final long stateCount = this.powerOfTwoSaturated(Math.min(qubitCount, 62L));
+      return Math.max(
+          this.multiplySaturated(stateCount, BYTES_PER_COMPLEX_DOUBLE), MINIMUM_MEMORY_BYTES);
+    }
     final long squared = this.multiplySaturated(basisFunctionCount, basisFunctionCount);
     final long base = this.multiplySaturated(squared, BYTES_PER_COMPLEX_DOUBLE);
     if (scalingClass == ClassicalScalingClass.EXPONENTIAL) {
       return this.multiplySaturated(base, 128L);
     }
-    if (scalingClass == ClassicalScalingClass.SEXTIC || scalingClass == ClassicalScalingClass.QUINTIC) {
+    if (scalingClass == ClassicalScalingClass.SEXTIC
+        || scalingClass == ClassicalScalingClass.QUINTIC) {
       return this.multiplySaturated(base, 16L);
     }
     return Math.max(base, MINIMUM_MEMORY_BYTES);
   }
 
   private long estimateCpuMilliseconds(
+      final ClassicalCalculationRequest request,
       final long basisFunctionCount,
-      final ClassicalScalingClass scalingClass
-  ) {
-    final long power = this.cpuScalingPower(
-        basisFunctionCount,
-        scalingClass);
+      final ClassicalScalingClass scalingClass) {
+    if (request.calculationKinds().contains(ClassicalCalculationKind.QUANTUM_VQE_OPTIMIZATION)) {
+      final long activeOrbitalCount =
+          request.hasActiveSpace()
+              ? request.activeSpace().orbitalCount()
+              : Math.min(basisFunctionCount, 20L);
+      final long qubitCount = Math.max(1L, this.multiplySaturated(activeOrbitalCount, 2L));
+      final long parameterCount = Math.max(1L, this.multiplySaturated(activeOrbitalCount, 2L));
+      final long stateCount = this.powerOfTwoSaturated(Math.min(qubitCount, 62L));
+      final long hamiltonianTermCount =
+          this.multiplySaturated(
+              this.multiplySaturated(activeOrbitalCount, activeOrbitalCount),
+              Math.max(activeOrbitalCount, 1L));
+      final long iterationWork =
+          this.multiplySaturated(
+              this.multiplySaturated(parameterCount, Math.max(hamiltonianTermCount, 1L)),
+              Math.max(stateCount, 1L));
+      return Math.max(iterationWork / 1_000L, 1L);
+    }
+    final long power = this.cpuScalingPower(basisFunctionCount, scalingClass);
     long result = 1L;
     for (long i = 0L; i < power; ++i) {
       result = this.multiplySaturated(result, Math.max(basisFunctionCount, 1L));
@@ -144,11 +178,12 @@ public final class ClassicalResourceEstimator {
   }
 
   private long cpuScalingPower(
-      final long basisFunctionCount,
-      final ClassicalScalingClass scalingClass
-  ) {
+      final long basisFunctionCount, final ClassicalScalingClass scalingClass) {
     if (scalingClass == ClassicalScalingClass.QUARTIC) {
       return 4L;
+    }
+    if (scalingClass == ClassicalScalingClass.QUADRATIC) {
+      return 2L;
     }
     if (scalingClass == ClassicalScalingClass.QUINTIC) {
       return 5L;
@@ -162,14 +197,18 @@ public final class ClassicalResourceEstimator {
     return 3L;
   }
 
-  private long multiplySaturated(
-      final long first,
-      final long second
-  ) {
+  private long multiplySaturated(final long first, final long second) {
     try {
       return Math.multiplyExact(first, second);
     } catch (final ArithmeticException exception) {
       return Long.MAX_VALUE;
     }
+  }
+
+  private long powerOfTwoSaturated(final long exponent) {
+    if (exponent >= Long.SIZE - 1L) {
+      return Long.MAX_VALUE;
+    }
+    return 1L << exponent;
   }
 }

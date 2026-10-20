@@ -14,10 +14,11 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.thermodynamics.Thermodynami
 import ru.pathcreator.vadim.quantum.chemistry.domain.unit.EnergyValue;
 import ru.pathcreator.vadim.quantum.chemistry.domain.unit.Temperature;
 
-/** Параметры Аррениуса для вычисления rate constant при заданной температуре. */
+/** Параметры Аррениуса для вычисления константы скорости при заданной температуре. */
 public final class ArrheniusParameters {
 
   private static final double GAS_CONSTANT_KILOJOULE_PER_MOLE_KELVIN = 0.00831446261815324;
+  private static final double MINIMUM_POSITIVE_RATE_CONSTANT = 1.0E-300;
   private final double preExponentialFactor;
   private final RateConstantUnit unit;
   private final EnergyValue activationEnergy;
@@ -72,7 +73,9 @@ public final class ArrheniusParameters {
     final double exponent =
         -activationEnergyKiloJoulePerMole
             / (GAS_CONSTANT_KILOJOULE_PER_MOLE_KELVIN * temperatureKelvin);
-    return RateConstant.of(this.preExponentialFactor * Math.exp(exponent), this.unit);
+    return RateConstant.of(
+        Math.max(MINIMUM_POSITIVE_RATE_CONSTANT, this.preExponentialFactor * Math.exp(exponent)),
+        this.unit);
   }
 
   public boolean equals(final Object other) {

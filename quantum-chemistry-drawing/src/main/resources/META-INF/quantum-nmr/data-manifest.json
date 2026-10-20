@@ -1,0 +1,24 @@
+[
+  {
+    "file": "proton.csv.gz",
+    "bytes": 5778060,
+    "sha256": "28231306244d797e1265f0e578c55dda33df52ad8ae300bdb76a42b3f06b28a2",
+    "rawBytes": 24574941,
+    "rawSha256": "35c9ef9c701005e9a91e2c27d77519fcaf53e8f124e71ae2822e9c24abecd21a",
+    "sourceUrl": "https://downloads.sourceforge.net/project/nmrshiftdb2/data/predictorh.jar",
+    "sourceJarSha256": "529e2c89279aaafcf63347460775693d0ff5120d17dae051e31b9e55f6d1e67d",
+    "archiveEntry": "nmrshiftdb.csv",
+    "published": "2023-10-03"
+  },
+  {
+    "file": "carbon.csv.gz",
+    "bytes": 34144537,
+    "sha256": "4bb00e7616c8b6f3a7567c6d4117770f7ca025912fee1cba3493d91ed6c366fe",
+    "rawBytes": 147284354,
+    "rawSha256": "060db9edc25efcb6e1d7b9ae7dc233d765a101572e03c2dd40b80d23b60ea257",
+    "sourceUrl": "https://downloads.sourceforge.net/project/nmrshiftdb2/data/predictorc.jar",
+    "sourceJarSha256": "e3c3365fb3ffdccd79bb1c39c457c2486e6170f88eeaca5f36c09587950a5090",
+    "archiveEntry": "nmrshiftdb.csv",
+    "published": "2023-10-03"
+  }
+]

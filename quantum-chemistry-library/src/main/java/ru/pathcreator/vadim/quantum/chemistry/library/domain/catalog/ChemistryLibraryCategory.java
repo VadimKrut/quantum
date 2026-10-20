@@ -16,6 +16,7 @@ public enum ChemistryLibraryCategory {
   GENERAL,
   SOLVENT,
   ORGANIC,
+  HETEROCYCLE,
   INORGANIC,
   QUANTUM_CHEMISTRY,
   REACTION,

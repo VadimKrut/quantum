@@ -9,26 +9,21 @@
 
 package ru.pathcreator.vadim.quantum.chemistry.domain.unit;
 
-/** Температура реакционной среды или расчётной модели с проверкой абсолютного нуля. */
+/** Температура реакционной среды или расчетной модели с проверкой абсолютного нуля. */
 public final class Temperature {
 
   private static final double ABSOLUTE_ZERO_CELSIUS = -273.15;
+  private static final double CELSIUS_TO_KELVIN_SHIFT = 273.15;
 
   private final double value;
   private final TemperatureUnit unit;
 
-  private Temperature(
-      final double value,
-      final TemperatureUnit unit
-  ) {
+  private Temperature(final double value, final TemperatureUnit unit) {
     this.value = value;
     this.unit = unit;
   }
 
-  public static Temperature of(
-      final double value,
-      final TemperatureUnit unit
-  ) {
+  public static Temperature of(final double value, final TemperatureUnit unit) {
     if (!Double.isFinite(value)) {
       throw new IllegalArgumentException("Temperature must be finite.");
     }
@@ -45,11 +40,18 @@ public final class Temperature {
   }
 
   public double value() {
-    return value;
+    return this.value;
   }
 
   public TemperatureUnit unit() {
-    return unit;
+    return this.unit;
+  }
+
+  public double kelvin() {
+    if (this.unit == TemperatureUnit.CELSIUS) {
+      return this.value + CELSIUS_TO_KELVIN_SHIFT;
+    }
+    return this.value;
   }
 
   public boolean equals(final Object other) {
@@ -60,12 +62,12 @@ public final class Temperature {
       return false;
     }
     final Temperature temperature = (Temperature) other;
-    return Double.compare(value, temperature.value) == 0 && unit == temperature.unit;
+    return Double.compare(this.value, temperature.value) == 0 && this.unit == temperature.unit;
   }
 
   public int hashCode() {
-    int result = Double.hashCode(value);
-    result = 31 * result + unit.hashCode();
+    int result = Double.hashCode(this.value);
+    result = 31 * result + this.unit.hashCode();
     return result;
   }
 }

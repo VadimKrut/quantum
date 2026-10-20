@@ -48,8 +48,7 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
   }
 
   public ChemistryLibraryFileRepository(
-      final Path directory,
-      final ChemistryStorageFileRepository storageRepository) {
+      final Path directory, final ChemistryStorageFileRepository storageRepository) {
     if (directory == null) {
       throw new IllegalArgumentException("Chemistry library directory must not be null.");
     }
@@ -58,6 +57,82 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
     }
     this.directory = directory;
     this.storageRepository = storageRepository;
+  }
+
+  public record Issue(Path path, String message) {}
+
+  public record Scan(List<ChemistryLibraryEntry> entries, List<Issue> issues) {
+    public Scan {
+      entries = List.copyOf(entries);
+      issues = List.copyOf(issues);
+    }
+  }
+
+  /** Isolates damaged entries; callers must display issues instead of presenting an empty library. */
+  public Scan scan() {
+    final var entries = new ArrayList<ChemistryLibraryEntry>();
+    final var issues = new ArrayList<Issue>();
+    final var ids = new java.util.HashSet<String>();
+    if (Files.notExists(this.directory)) {
+      return new Scan(entries, issues);
+    }
+    if (Files.isSymbolicLink(this.directory)) {
+      return new Scan(
+          entries,
+          List.of(new Issue(this.directory, "Папка библиотеки является символической ссылкой.")));
+    }
+    try (final var paths = Files.newDirectoryStream(this.directory)) {
+      final var files = new ArrayList<Path>();
+      int visited = 0;
+      for (final Path path : paths) {
+        if (++visited > 10000) {
+          issues.add(
+              new Issue(
+                  this.directory,
+                  "Достигнут предел 10 000 элементов папки; показана только часть библиотеки."));
+          break;
+        }
+        if (qchemFile(path)) {
+          files.add(path);
+        }
+      }
+      files.sort(Comparator.naturalOrder());
+      long totalBytes = 0;
+      for (final Path file : files) {
+        if (Thread.currentThread().isInterrupted()) {
+          throw new java.util.concurrent.CancellationException();
+        }
+        try {
+          if (!Files.isRegularFile(file, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw new IllegalArgumentException(
+                "Запись должна быть обычным файлом, без символической ссылки.");
+          }
+          final long size = Files.size(file);
+          if (size > 16L * 1024 * 1024) {
+            throw new IllegalArgumentException("Запись превышает предел 16 МиБ.");
+          }
+          if (totalBytes + size > 64L * 1024 * 1024) {
+            issues.add(
+                new Issue(
+                    this.directory,
+                    "Достигнут предел чтения 64 МиБ; показана только часть библиотеки."));
+            break;
+          }
+          totalBytes += size;
+          final var entry = this.load(file);
+          if (!ids.add(entry.id())) {
+            throw new IllegalArgumentException("Повтор идентификатора записи: " + entry.id());
+          }
+          entries.add(entry);
+        } catch (final IOException | RuntimeException exception) {
+          issues.add(new Issue(file, exception.getMessage()));
+        }
+      }
+    } catch (final IOException exception) {
+      issues.add(
+          new Issue(this.directory, "Не удалось прочитать папку: " + exception.getMessage()));
+    }
+    return new Scan(entries, issues);
   }
 
   public List<ChemistryLibraryEntry> loadAll() {
@@ -87,7 +162,14 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
     final ChemistryStorageResult<ChemistryStorageDocument> result =
         this.storageRepository.read(path);
     if (!result.success()) {
-      throw new IllegalStateException("Chemistry library entry cannot be read: " + path);
+      throw new IllegalStateException(
+          "Не удалось прочитать QCHEM: "
+              + result.diagnostics().stream()
+                  .map(
+                      diagnostic ->
+                          (diagnostic.line() > 0 ? "строка " + diagnostic.line() + ": " : "")
+                              + diagnostic.message())
+                  .collect(java.util.stream.Collectors.joining("; ")));
     }
     return ChemistryLibraryFileRepository.entryFromDocument(result.value());
   }
@@ -99,8 +181,7 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
     final Path path = this.directory.resolve(ChemistryLibraryFileRepository.fileName(entry.id()));
     final ChemistryStorageResult<Path> result =
         this.storageRepository.write(
-            path,
-            ChemistryLibraryFileRepository.documentWithDescriptor(entry));
+            path, ChemistryLibraryFileRepository.documentWithDescriptor(entry));
     if (!result.success()) {
       throw new IllegalStateException("Chemistry library entry cannot be saved: " + entry.id());
     }
@@ -110,7 +191,7 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
     final Map<String, String> metadata = document.metadata();
     return ChemistryLibraryEntry.of(
         metadata.getOrDefault(KEY_ID, document.projectId()),
-        document.displayName(),
+        metadata.getOrDefault("library.entry.name", document.displayName()),
         ChemistryLibraryEntryKind.valueOf(
             metadata.getOrDefault(KEY_KIND, ChemistryLibraryEntryKind.MIXED_PROJECT.name())),
         ChemistryLibraryCategory.valueOf(
@@ -118,18 +199,16 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
         ChemistryLibraryDifficulty.valueOf(
             metadata.getOrDefault(KEY_DIFFICULTY, ChemistryLibraryDifficulty.STANDARD.name())),
         metadata.getOrDefault(KEY_SUMMARY, "User chemistry library entry."),
-        ChemistryLibraryFileRepository.split(metadata.get(KEY_TAGS)),
-        ChemistryLibraryFileRepository.split(metadata.get(KEY_REFERENCES)),
+        decodeList(metadata, KEY_TAGS),
+        decodeList(metadata, KEY_REFERENCES),
         document);
   }
 
-  private static ChemistryStorageDocument documentWithDescriptor(final ChemistryLibraryEntry entry) {
+  private static ChemistryStorageDocument documentWithDescriptor(
+      final ChemistryLibraryEntry entry) {
     final ChemistryStorageDocument source = entry.document();
-    final ChemistryStorageDocument.Builder builder =
-        ChemistryStorageDocument.builder(source.projectId(), source.displayName());
-    for (final Map.Entry<String, String> metadata : source.metadata().entrySet()) {
-      builder.metadata(metadata.getKey(), metadata.getValue());
-    }
+    final ChemistryStorageDocument.Builder builder = source.toBuilder();
+    builder.metadata("library.entry.name", entry.displayName());
     builder.metadata(KEY_ID, entry.id());
     builder.metadata(KEY_KIND, entry.kind().name());
     builder.metadata(KEY_CATEGORY, entry.category().name());
@@ -137,16 +216,48 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
     builder.metadata(KEY_SUMMARY, entry.summary());
     builder.metadata(KEY_TAGS, ChemistryLibraryFileRepository.join(entry.tags()));
     builder.metadata(KEY_REFERENCES, ChemistryLibraryFileRepository.join(entry.references()));
-    for (int i = 0; i < source.molecules().size(); ++i) {
-      builder.molecule(source.molecules().get(i));
-    }
-    for (int i = 0; i < source.reactions().size(); ++i) {
-      builder.reaction(source.reactions().get(i));
-    }
-    for (int i = 0; i < source.extensions().size(); ++i) {
-      builder.extension(source.extensions().get(i));
-    }
+    builder.metadata(KEY_TAGS + ".v2", encodeList(entry.tags()));
+    builder.metadata(KEY_REFERENCES + ".v2", encodeList(entry.references()));
     return builder.build();
+  }
+
+  /** Descriptor metadata is the only part removed when opening a library notebook. */
+  public static ChemistryStorageDocument payload(final ChemistryLibraryEntry entry) {
+    final var builder = entry.document().toBuilder();
+    entry.document().metadata().keySet().stream()
+        .filter(key -> key.startsWith("library.entry."))
+        .forEach(builder::removeMetadata);
+    return builder.build();
+  }
+
+  private static String encodeList(final List<String> values) {
+    if (values.isEmpty()) {
+      return "-";
+    }
+    return values.stream()
+        .map(
+            value ->
+                java.util.Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+        .collect(java.util.stream.Collectors.joining("."));
+  }
+
+  private static List<String> decodeList(final Map<String, String> metadata, final String key) {
+    final String encoded = metadata.get(key + ".v2");
+    if (encoded == null) {
+      return split(metadata.get(key));
+    }
+    if (encoded.equals("-")) {
+      return List.of();
+    }
+    return java.util.Arrays.stream(encoded.split("\\.", -1))
+        .map(
+            value ->
+                new String(
+                    java.util.Base64.getUrlDecoder().decode(value),
+                    java.nio.charset.StandardCharsets.UTF_8))
+        .toList();
   }
 
   private static List<String> split(final String value) {
@@ -179,7 +290,7 @@ public final class ChemistryLibraryFileRepository implements ChemistryLibraryRep
   }
 
   private static boolean qchemFile(final Path path) {
-    return path.getFileName().toString().endsWith(EXTENSION);
+    return path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(EXTENSION);
   }
 
   private static String fileName(final String id) {

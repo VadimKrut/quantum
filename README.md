@@ -1,39 +1,73 @@
 # Quantum IR
 
-Quantum IR is a Java 25 multi-module project for describing, validating, simulating, persisting, importing, and exporting quantum programs through a project-owned intermediate representation.
+## Quantum IR Studio для Windows
 
-The main idea is simple: the native Quantum IR is the center of the system. External formats are adapters around it, not the core design driver. A program can be created through Java APIs, stored as native JSON, inspected, simulated locally, and exported to supported text formats.
+**[Скачать установщик 1.0.170](https://github.com/VadimKrut/quantum/releases/tag/v1.0.170)** · [Что нового и как установить](RELEASE_NOTES.md)
 
-## Project Direction
+Локальное рабочее место для химии: редактор структур, схема реакции, план и
+фактическая загрузка, методика, наблюдения, расчёт выхода и отчёт PDF/HTML.
+Java и базы для локального прогноза ЯМР включены в установщик Windows x64.
+Основная работа доступна без интернета; поиск IUPAC через PubChem выполняется
+по запросу при наличии сети.
 
-The long-term goal is to grow Quantum IR into a full development studio and programming surface for quantum software. The native IR and Java DSL are intended to be the project-owned way to describe quantum programs. External formats such as OpenQASM and Quil exist for interoperability, migration, inspection, and convenience.
+Для установки откройте MSI из релиза, завершите мастер и запустите
+**Quantum IR Studio** через меню «Пуск».
 
-Future hardware support should be implemented through dedicated internal backend adapters. A backend adapter should understand the native Quantum IR directly and translate it into the real instruction set, job model, constraints, and diagnostics of a specific quantum computer or simulator. Backend-specific rules must stay outside the core domain model.
+### Стиль Java-кода
+
+Используются отступы в два пробела и правила `.editorconfig`. Для изменённых
+Java-файлов доступна проверка google-java-format с закреплённой версией и SHA-256:
+
+```powershell
+./tools/check-java-format.ps1 -BaseRef HEAD
+./tools/check-java-format.ps1 -BaseRef HEAD -Fix
+```
+
+Для проверки коммита задайте его базу, например `-BaseRef HEAD~1`.
+Первый запуск загружает инструмент; после этого можно работать с локальным JAR
+через `-FormatterJar`. Требуется JDK 25. Команда `-Fix` меняет оформление кода.
+
+---
+
+Quantum IR is a Java 25 multi-module project for describing, validating, simulating, storing, importing, and exporting quantum programs through a project-owned intermediate representation.
+
+The native Quantum IR is the center of the system. OpenQASM, Quil, JSON, desktop tools, chemistry workflows, and future hardware adapters are integration layers around it, not the core design driver. The long-term direction is a full development studio and programming surface where backend adapters can understand Quantum IR directly and translate it into real device instructions without forcing backend-specific rules into the core domain model.
 
 ## What The Project Does
 
 - Provides a format-independent Quantum IR core.
-- Validates registers, operations, references, gate definitions, classical constructs, timing/control constructs, and metadata.
-- Supports native JSON persistence for the current IR surface.
+- Supports Java API and Java DSL workflows.
+- Validates registers, operations, references, gate definitions, classical constructs, timing/control constructs, metadata, and target compatibility.
 - Imports and exports OpenQASM 2, OpenQASM 3, and Quil.
-- Provides a public Java API facade for common workflows.
-- Provides a CLI for validation, inspection, preflight, transformation, conversion, compilation, and simulation.
-- Provides a JavaFX desktop studio focused on native IR building, visualization, diagnostics, simulation preview, and export.
-- Includes a local state-vector simulator intended for correctness checks and development workflows.
+- Stores native IR through JSON and QDSL-style library descriptors.
+- Provides a local state-vector simulator for correctness checks and development workflows.
+- Provides a CLI and JavaFX desktop studio for building, inspecting, simulating, and exporting programs.
+- Includes a Java chemistry foundation: molecule/reaction/electronic-problem models, storage, drawing models, classical planning, Gaussian integrals, RHF, MP2, FCI, fermion/qubit operators, and Quantum IR program generation.
 
 ## Modules
 
-- `quantum-core` - domain model and validation.
-- `quantum-application` - application services, diagnostics, preflight, transformation, workflows.
+- `quantum-core` - Quantum IR domain model and validation.
+- `quantum-application` - application services, diagnostics, preflight, transformation, and workflows.
 - `quantum-json` - native Quantum IR JSON reader/writer.
 - `quantum-openqasm2` - OpenQASM 2 integration adapter.
 - `quantum-openqasm3` - OpenQASM 3 integration adapter.
 - `quantum-quil` - Quil integration adapter.
 - `quantum-simulation` - local simulation engine.
 - `quantum-api` - stable public Java facade.
-- `quantum-library` - built-in algorithm library and descriptors.
+- `quantum-library` - built-in quantum algorithm library and descriptors.
 - `quantum-cli` - command-line interface.
 - `quantum-desktop` - JavaFX desktop studio.
+- `quantum-chemistry-core` - chemistry domain model: molecules, geometry, stereo, conformation, reactions, thermodynamics, spectroscopy, and electronic problems.
+- `quantum-chemistry-storage` - chemistry project/library storage.
+- `quantum-chemistry-library` - chemistry algorithm and molecule library model.
+- `quantum-chemistry-drawing` - 2D/3D drawing and editor model for chemistry UI.
+- `quantum-chemistry-classical` - classical chemistry planning and resource estimates.
+- `quantum-chemistry-fermion` - pure Java fermionic and qubit operator algebra.
+- `quantum-chemistry-integrals` - pure Java Gaussian basis and molecular integral engine.
+- `quantum-chemistry-scf` - pure Java restricted Hartree-Fock solver.
+- `quantum-chemistry-posthf` - pure Java post-Hartree-Fock correlation models.
+- `quantum-chemistry-quantum` - chemistry Hamiltonian to Quantum IR program generation.
+- `quantum-chemistry-workflow` - high-level chemistry workflow orchestration.
 
 ## Requirements
 
@@ -74,7 +108,14 @@ This app image is a complete application directory; do not copy only the launche
 Platform installers are generated with `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm`, or `dist-macos-dmg` on the corresponding operating system. Windows installer profiles require the WiX Toolset available to `jpackage`.
 
 Pushes to `master` run the desktop distribution workflow. The workflow reads the root Maven version, publishes artifacts under the release tag `v<version>`, and refreshes the release assets when the Maven version has not changed. Increasing the root Maven version creates a new release tag and a new release.
+
 Project release versions use `major.minor` numbers without leading zeroes, for example `1.0`, `1.1`, or `2.0`.
+
+## Chemistry Reference Checks
+
+The project chemistry runtime is Java-first. It does not require Python or external OpenFermion/PySCF workers for normal execution.
+
+PySCF and OpenFermion are still useful as external reference tools when validating numerical chemistry results. Current Java chemistry tests compare the H2/STO-3G RHF, MP2, and FCI path and selected carbon/STO-3G p-shell integral values against known PySCF values, while the production pipeline remains Java-only.
 
 ## Maven Packages
 
@@ -97,7 +138,7 @@ GitHub Packages publishes the Maven modules separately, so a downstream project 
 </dependencies>
 ```
 
-Other published modules use the same group and version, for example `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil`, and `quantum-library`.
+Other published modules use the same group and version, for example `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil`, `quantum-library`, and the `quantum-chemistry-*` modules.
 
 If Maven asks for credentials when reading GitHub Packages, configure a `github` server in the consumer project's Maven `settings.xml` with a GitHub token that can read packages.
 
@@ -117,46 +158,51 @@ This project is licensed under the Mozilla Public License 2.0.
 
 ## First Version Notice
 
-This is the first public version. Some behavior, diagnostics, documentation, UI details, or integration edge cases may still contain inaccuracies. If you find a bug, an incorrect result, unclear behavior, or a missing case, please open an issue and describe how to reproduce it. I will review it and fix the project.
+This is the first public version. Some behavior, diagnostics, documentation, UI details, chemistry workflows, backend setup paths, or integration edge cases may still contain inaccuracies. If you find a bug, an incorrect result, unclear behavior, or a missing case, please open an issue and describe how to reproduce it. I will review it and fix the project.
 
 ---
 
 # Quantum IR
 
-Quantum IR - это Java 25 multi-module проект для описания, валидации, симуляции, сохранения, импорта и экспорта квантовых программ через собственное промежуточное представление проекта.
+Quantum IR - это Java 25 multi-module проект для описания, валидации, симуляции, хранения, импорта и экспорта квантовых программ через собственное промежуточное представление проекта.
 
-Главная идея простая: родной Quantum IR является центром системы. Внешние форматы являются адаптерами вокруг него, а не основой архитектуры. Программу можно создать через Java API, сохранить в родной JSON, проинспектировать, локально просимулировать и экспортировать в поддерживаемые текстовые форматы.
-
-## Направление Проекта
-
-Долгосрочная цель - вырастить Quantum IR в полноценную студию разработки и программную поверхность для квантового ПО. Родной IR и Java DSL должны быть собственным способом проекта описывать квантовые программы. Внешние форматы вроде OpenQASM и Quil нужны для совместимости, миграции, инспекции и удобства.
-
-Будущая поддержка реального оборудования должна строиться через отдельные внутренние backend adapters. Такой adapter должен напрямую понимать родной Quantum IR и переводить его в реальные инструкции, job model, ограничения и диагностику конкретного квантового компьютера или симулятора. Специфичные правила backend не должны попадать в core domain model.
+Родной Quantum IR находится в центре системы. OpenQASM, Quil, JSON, desktop-инструменты, chemistry workflows и будущие hardware adapters являются слоями интеграции вокруг него, а не основой архитектуры. Долгосрочная цель - полноценная студия разработки и программная поверхность, где backend adapters смогут напрямую понимать Quantum IR и переводить его в реальные инструкции устройств без протаскивания правил конкретного backend в core domain model.
 
 ## Что Делает Проект
 
 - Предоставляет независимое от внешних форматов ядро Quantum IR.
-- Валидирует регистры, операции, ссылки, определения гейтов, классические конструкции, timing/control конструкции и metadata.
-- Поддерживает native JSON persistence для текущей поверхности IR.
+- Поддерживает Java API и Java DSL workflows.
+- Валидирует регистры, операции, ссылки, определения gates, classical constructs, timing/control constructs, metadata и target compatibility.
 - Импортирует и экспортирует OpenQASM 2, OpenQASM 3 и Quil.
-- Предоставляет публичный Java API facade для типовых workflow.
-- Предоставляет CLI для validation, inspection, preflight, transformation, conversion, compilation и simulation.
-- Предоставляет JavaFX desktop studio для построения родного IR, визуализации, диагностики, simulation preview и export.
-- Включает локальный state-vector simulator для проверки корректности и разработки.
+- Хранит родной IR через JSON и QDSL-style library descriptors.
+- Предоставляет локальный state-vector simulator для проверки корректности и development workflows.
+- Предоставляет CLI и JavaFX desktop studio для построения, инспекции, симуляции и экспорта программ.
+- Включает Java chemistry foundation: модели молекул, реакций, electronic problems, storage, drawing models, classical planning, Gaussian integrals, RHF, MP2, FCI, fermion/qubit operators и генерацию Quantum IR программ.
 
 ## Модули
 
-- `quantum-core` - доменная модель и валидация.
-- `quantum-application` - application services, diagnostics, preflight, transformation, workflows.
+- `quantum-core` - доменная модель Quantum IR и валидация.
+- `quantum-application` - application services, diagnostics, preflight, transformation и workflows.
 - `quantum-json` - reader/writer родного Quantum IR JSON.
 - `quantum-openqasm2` - integration adapter для OpenQASM 2.
 - `quantum-openqasm3` - integration adapter для OpenQASM 3.
 - `quantum-quil` - integration adapter для Quil.
 - `quantum-simulation` - локальный simulation engine.
 - `quantum-api` - стабильный публичный Java facade.
-- `quantum-library` - встроенная библиотека алгоритмов и описаний.
+- `quantum-library` - встроенная библиотека квантовых алгоритмов и descriptors.
 - `quantum-cli` - command-line interface.
 - `quantum-desktop` - JavaFX desktop studio.
+- `quantum-chemistry-core` - chemistry domain model: molecules, geometry, stereo, conformation, reactions, thermodynamics, spectroscopy и electronic problems.
+- `quantum-chemistry-storage` - storage для chemistry projects и libraries.
+- `quantum-chemistry-library` - модель библиотеки chemistry algorithms и molecules.
+- `quantum-chemistry-drawing` - 2D/3D drawing и editor model для chemistry UI.
+- `quantum-chemistry-classical` - classical chemistry planning и resource estimates.
+- `quantum-chemistry-fermion` - pure Java fermionic и qubit operator algebra.
+- `quantum-chemistry-integrals` - pure Java Gaussian basis и molecular integral engine.
+- `quantum-chemistry-scf` - pure Java restricted Hartree-Fock solver.
+- `quantum-chemistry-posthf` - pure Java post-Hartree-Fock correlation models.
+- `quantum-chemistry-quantum` - генерация Quantum IR программ из chemistry Hamiltonian.
+- `quantum-chemistry-workflow` - high-level chemistry workflow orchestration.
 
 ## Требования
 
@@ -192,12 +238,19 @@ mvn -pl quantum-desktop -am clean verify -Pdist-app-image -DskipTests
 ```
 
 Собранное приложение будет находиться в `quantum-desktop/target/dist/`.
-App image - это полная папка приложения. Не копируйте из неё только launcher executable, потому что он зависит от соседних папок `runtime` и `app`.
+App image - это полная папка приложения. Не копируйте из нее только launcher executable, потому что он зависит от соседних папок `runtime` и `app`.
 
 Платформенные установщики собираются профилями `dist-windows-exe`, `dist-windows-msi`, `dist-linux-deb`, `dist-linux-rpm` или `dist-macos-dmg` на соответствующей операционной системе. Windows installer profiles требуют WiX Toolset, доступный для `jpackage`.
 
-Push в `master` запускает desktop distribution workflow. Workflow читает версию из root Maven, публикует артефакты в release tag `v<version>` и обновляет release assets, если Maven version не изменилась. Увеличение root Maven version создаёт новый release tag и новый release.
+Push в `master` запускает desktop distribution workflow. Workflow читает версию из root Maven, публикует артефакты в release tag `v<version>` и обновляет release assets, если Maven version не изменилась. Увеличение root Maven version создает новый release tag и новый release.
+
 Версии релизов проекта задаются числами в формате `major.minor` без ведущих нулей, например `1.0`, `1.1` или `2.0`.
+
+## Chemistry Reference Checks
+
+Chemistry runtime в проекте строится по Java-first подходу. Для нормального выполнения ему не нужен Python или external OpenFermion/PySCF worker.
+
+PySCF и OpenFermion остаются полезными как внешние reference tools для проверки численных chemistry результатов. Текущие Java chemistry tests сверяют H2/STO-3G RHF, MP2 и FCI путь, а также выбранные carbon/STO-3G p-shell integral values с известными PySCF значениями, но production pipeline остается Java-only.
 
 ## Maven Packages
 
@@ -220,7 +273,7 @@ GitHub Packages публикует Maven-модули отдельно, поэт
 </dependencies>
 ```
 
-Остальные опубликованные модули используют тот же group и version, например `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil` и `quantum-library`.
+Остальные опубликованные модули используют тот же group и version, например `quantum-core`, `quantum-simulation`, `quantum-json`, `quantum-openqasm2`, `quantum-openqasm3`, `quantum-quil`, `quantum-library` и `quantum-chemistry-*`.
 
 Если Maven при чтении GitHub Packages запросит доступ, настройте server с id `github` в Maven `settings.xml` проекта-потребителя и укажите GitHub token с правом чтения packages.
 
@@ -232,12 +285,166 @@ GitHub Packages публикует Maven-модули отдельно, поэт
 - OpenQASM 3
 - Quil
 
-Доменная модель не должна копировать один конкретный внешний язык. У каждой интеграции есть свои правила import/export, diagnostics, capability checks и lowering behavior.
+Доменная модель не должна зеркалить один конкретный внешний язык. У каждой интеграции есть свои import/export rules, diagnostics, capability checks и lowering behavior.
+
+## Локальный химический опыт в Studio
+
+История сохранений открывается страницей рабочего места с текущими и прежними количествами/ролями, фильтром изменений, подробным описанием и QCHEM версии. Список и выбранная версия читаются в фоне. Перед восстановлением повторно проверяются снимок, вложения и неизменность текущего опыта. Поздние записи журнала и вложения сохраняются, склад не откатывается. Восстановление меняет редактор; запись файла выполняется отдельно. Ошибки QCHEM показывают код, сообщение и строку.
+
+Схема стадии распределяет место между исходниками и продуктами, переключаясь на вертикальную компоновку в узкой панели. Форма стадии начинается с участников: рисунки, поиск, фильтр включённых, явные команды выбора исходников/продуктов и заполнения только пустых коэффициентов единицей. Условия и среда находятся в отдельных вкладках. Enter на структуре открывает 2D, Ctrl+Enter — количества; перестановка и удаление стадии находятся в меню «Ещё». Пустые коэффициенты сохраняются как неизвестные, роли в разных стадиях и одинаковые структуры с разными ID не объединяются.
+
+Прогноз стадии и просмотр сохранённого прогноза открываются внутри рабочего места. Вкладка «Проверка входа» показывает сводку известных ограничений исходных структур; полная диагностика и исходный QCHEM остаются доступны. Сводка относится к альтернативным правилам, а не к общему рецепту загрузки. Структуры продуктов показаны на контрастном фоне, числовые веса перенесены в подсказки. Выбранный вариант создаёт отдельную плановую стадию без фактических количеств и расхода; изменение входа блокирует применение старого результата.
+
+Подготовка 3D, запуск расчёта и просмотр вычислительного вложения открываются страницами рабочего места. Координаты готовятся в фоне; их применение отдельно подтверждается кнопкой. Для расчётов доступны состав/дескрипторы, энергия HF/STO-3G и приближённая релаксация с прежними ограничениями ядра. До запуска показаны ограничения ввода; новый запуск очищает предыдущий отчёт. Просмотр геометрии сворачивает параметры, чтобы освободить место модели. Остановка сохраняет отменённый статус без применимой геометрии. Вложение показывает отчёт, вход, выход и исходный QCHEM без повторного запуска; изменение исходной структуры блокирует применение старого результата. Тёмная тема исправлена для панели 3D, камеры и расчётных страниц.
+
+В общем проходе 56 уплотнены сведения опыта, ввод новой записи журнала перенесён наверх (Ctrl+Enter), поиск журнала/вложений/библиотеки/партий использует общую нормализацию е/ё и пробелов. Вложения открываются кнопкой, Enter или двойным щелчком. Библиотека структур и планов открывается страницей рабочего места: вставка независимой структуры и создание нового плана без фактов прежнего опыта доступны рядом с предпросмотром; на малом экране подробности прокручиваются. Склад показывает четыре основных столбца с переносом длинных названий, дополнительные столбцы раскрываются отдельно. Полные пути и технические ID доступны в подсказках.
+
+В комплект также включена страница стереохимии: опорные атомы выбираются по рисунку, масштаб меняется колесом или кнопками, средняя кнопка перемещает рисунок. Номера атомов включаются по желанию. Несохранённый ввод защищён при уходе со страницы и сохраняется в аварийном черновике; изменённая исходная структура блокирует старый ввод. Это явное назначение пользователем, без автоматического CIP. Рендер, обработчики выбора и сохранение проверены без создания рабочего окна; физические жесты не проверялись.
+
+Препаративный отчёт различает отсутствие опорного исходника, планового/фактического количества, нулевую загрузку, неподтверждённые свойства изменённого графа и отсутствие коэффициента стадии. Причина отказа пересчёта выводится прямо в отчёте, без раскрытия подробностей.
+
+Панель «Папки» показывает непосредственные подпапки и найденные опыты из вложенного дерева. Enter или двойной щелчок открывает запись; ↑ поднимает на уровень выше. «+ Папка» создаёт папку внутри текущей и сразу переходит в неё; ошибки имени показываются в панели. Для нового несохранённого опыта FileChooser предлагает текущую папку, для уже открытого сохраняет его каталог. Поиск читает названия, формулы, заметки, условия, журнал и имена вложений, нормализуя регистр, Unicode-пробелы, индексы цифр и ё/е только в поисковой строке. Исходные данные не переписываются. Индексация ограничена 10000 элементами дерева, глубиной 24, 16 МиБ на файл и 128 МиБ прочитанных данных; скрытые папки, история и хранилища вложений пропускаются. Ошибки и достижение предела явно обозначают неполный индекс; ввод запроса не скрывает состояние сканирования или отказ. Результат отменённого сканирования не заменяет новую папку.
+
+
+В отчёте «Выход и расчёт» основная таблица показывает компонент, роль, введённое количество, ммоль и эквиваленты. Длинные названия переносятся; «Все столбцы» раскрывает коэффициент, теоретические ммоль/мг и выход с горизонтальной прокруткой. Двойной щелчок, Enter или F2 открывают количество выбранного компонента. Контекстная команда «Принять за 1 эквивалент» доступна только исходникам и меняет основание отчёта, не загрузку опыта. Числа сортируются по полному BigDecimal; «≈» отмечает округление, точное значение доступно в подсказке. Введённые количества разных размерностей не сортируются как сопоставимые числа. Карточки загрузки и выхода используют цвета текущей темы.
+
+
+Windows-сборка прохода 92: [ZIP со встроенной Java](target/pass92-distribution-5w28ewpt/Quantum-IR-Studio-Windows-pass92.zip). Подготовка всей стадии из партий, массовая подстановка плана, резервирование, частичное снятие и расход, физические/занятые/свободные остатки, просмотр переноса расхода в факт, восстановление без повторного списания. Структуры крупно и адаптивные карточки. Добавлены два явно смоделированных опыта «Весенний синтез» с общими партиями. Проверены настоящее окно и перенесённая поставка. [Проверка и ограничения](target/pass92-verification.json). Полного паритета с крупными системами пока нет.
+
+Windows-сборка прохода 91: [ZIP со встроенной Java](target/pass91-distribution-h88z6vuj/Quantum-IR-Studio-Windows-pass91.zip). Импорт и экспорт целой реакции в RXN V2000/V3000 и реакционном SMILES, просмотр схемы и редактирование названий, роли агентов, атомные карты в ядре/QCHEM 8, крупный просмотр с масштабом и перетаскиванием. Прежний каталог образцов, ЯМР и примеры сохранены. Проверены настоящее окно, системное сохранение RXN и перенесённая поставка. [Проверка и ограничения](target/pass91-verification.json). Полного паритета с крупными системами пока нет.
+
+Windows-сборка прохода 89: [ZIP со встроенной Java](target/pass89-distribution-ak2q49pl/Quantum-IR-Studio-Windows-pass89.zip). Bruker 1D FID/спектр и CSV, обработка и интегралы, управление графиком, исходные точки в QCHEM 7 и отчёте. Включён явно синтетический учебный FID. [Проверка и ограничения](target/pass89-verification.json). Полного паритета с крупными системами пока нет.
+
+Windows-сборка прохода 88: [ZIP со встроенной Java](target/pass88-distribution-neb9fxs3/Quantum-IR-Studio-Windows-pass88.zip). Образцы, фракции, объединение и аликвоты; остатки и история хранения; связи с ЯМР/МС/ТСХ; QCHEM 6 и отчёт. Включён отдельный учебный пример со смоделированными данными. [Проверка и ограничения](target/pass88-verification.json).
+
+Windows-сборка прохода 87: [ZIP со встроенной Java](target/pass87-distribution-c2ugxpuo/Quantum-IR-Studio-Windows-pass87.zip). Импорт и экспорт MOL/SDF/SMILES, просмотр наборов, роли веществ, единая отмена и восстановление ввода. [Проверка и ограничения](target/pass87-verification.json).
+
+Windows-сборка прохода 86: [ZIP со встроенной Java и 24 литературными опытами](target/pass86-distribution-4fg5my__/Quantum-IR-Studio-Windows-pass86.zip). Карточка вещества: IUPAC, синонимы, идентификаторы, PubChem, источник и проверка актуальности структуры; 97 подтверждённых карточек компонентов в примерах. [Проверка и ограничения](target/pass86-verification.json). Computer Use остаётся остановлен по просьбе пользователя.
+
+Windows-сборка прохода 85: [ZIP со встроенной Java и 24 литературными опытами](target/pass85-distribution-pt7geky6/Quantum-IR-Studio-Windows-pass85.zip). Отчёт по опыту с предпросмотром, PDF/HTML, схемами, количествами и аналитикой. [Проверка и ограничения](target/pass85-verification.json). Computer Use остаётся остановлен по просьбе пользователя.
+
+Windows-сборка прохода 84: [ZIP со встроенной Java и 24 литературными опытами](target/pass84-distribution-gkewn9wx/Quantum-IR-Studio-Windows-pass84.zip). Добавлены ЯМР, МС и ТСХ, назначения сигналов на структуру, точные массы и ppm, Rf, история исправлений и QCHEM 5. [Проверка и ограничения](target/pass84-verification.json). Настоящее окно проверено до последней доработки сохранения; дальнейший Computer Use остановлен по просьбе пользователя.
+
+Windows-сборка прохода 83: [ZIP со встроенной Java и 24 литературными опытами](target/pass83-distribution-_8qzgx0o/Quantum-IR-Studio-Windows-pass83.zip). Добавлен структурный поиск по проекту: совпадение графа, подструктура и сходство; запрос из текущей молекулы или выделения; миниатюры, подсветка фрагмента, открытие опыта и сравнение найденных стадий. Поиск работает на существующем ядре через CDK 2.12, не изменяет документы; отмена и пропуски видимы. Проверены 18 маршрутов / 1303 утверждений и ещё 279 после распаковки. [Отчёт 83](target/pass83-verification.json). Нативный оконный запуск и полный паритет с коммерческими системами не заявлены.
+
+Предыдущая Windows-сборка прохода 82: [ZIP со встроенной Java и 24 литературными опытами](target/pass82-distribution-bpg9o8w5/Quantum-IR-Studio-Windows-pass82.zip). Добавлена серия до 48 вариантов: загрузки, единицы, эквиваленты, температура, время и описание условий; пересчёт существующим ядром; отдельные QCHEM-планы без прежних фактов; проверенное сохранение в новую папку, отмена и восстановление сырого черновика. Команда «Папки» → «Серия из шаблона». Проверены 15 маршрутов / 1050 проверок и ещё четыре маршрута / 197 проверок после распаковки. [Отчёт 82](target/pass82-verification.json). Нативный оконный запуск и полный паритет с коммерческими системами не заявлены.
+
+Предыдущая Windows-сборка прохода 81: [ZIP со встроенной Java и 24 литературными опытами](target/pass81-distribution-6vzrau4j/Quantum-IR-Studio-Windows-pass81.zip). Добавлены обзор сохранённых опытов, поиск и фильтры, сравнение до четырёх стадий, карточки структур, отдельные план/факт и расчёт выхода относительно явно выбранного исходника через существующее ядро. Откройте «Папки» → «Обзор и сравнение». Проверены 12 сценариев на встроенном runtime и три сценария после распаковки в другом каталоге; реальный оконный запуск не проверялся. [Отчёт 81](target/pass81-verification.json), [сравнение с профессиональными системами](research/chemistry-workbench-research-2026-10-16.md#23-сравнение-с-профессиональными-системами-и-проход-81). Полного паритета с крупными системами пока нет.
+
+Предыдущий локальный Windows-комплект прохода 77: [ZIP со встроенной Java и 24 литературными опытами](target/pass77-distribution-nl0rkea_/Quantum-IR-Studio-Windows-pass77.zip). Распакуйте целиком и следуйте файлу «Начать здесь.txt». Обзор структур адаптируется к размеру рабочего места, а ручной масштаб сохраняется при переключении панелей и 2D + 3D. «Вписать» возвращает автоматический обзор. Исправлены устаревшие привязки схемы реакции при переходе между опытами. Проверены общий интерфейс Studio и сквозные химические маршруты. [MSI 1.0.77](target/pass77-distribution-nl0rkea_/installer-v77/Quantum%20IR%20Studio-1.0.77.msi), содержимое сверено без установки. [Результаты и ограничения проверки](target/pass77-verification.json).
+
+Дополнительный [аудит приёмки 78](target/pass78-verification.json): общий Maven reactor — 1460 тестов без ошибок, 5 пропущены; тест с настоящим окном исключён. Содержимое JAR совпадает со сборкой 77. Установка и запуск на отдельной машине, macOS, системный DPI и физический тачпад остаются непроверенными.
+
+
+Вкладка «Химия» работает с молекулами существующего Java-ядра. Основной визуальный ориентир редактора — MolView: большой лист, компактные инструменты слева, элементы справа, переключение 2D/3D и совместный вид «2D + 3D». Названия включаются отдельно. Папки, записи и свойства открываются по кнопке; таблица компонентов раскрывается снизу. Журнал и учёт не занимают холст постоянно.
+
+В 2D используются скелетные формулы: обычные связанные атомы углерода не подписываются, гетероатомы, заряды, изотопы и радикалы остаются видимыми. Это способ отображения; дополнительные атомы водорода в ядро не добавляются. Пяти- и шестичленные кольца и шестичленное кольцо с чередующимися связями доступны в палитре. Нажатие на пустой лист создаёт компонент, на атом — присоединяет кольцо одинарной связью, на связь — создаёт конденсированное кольцо с общей связью. Общая связь сохраняет свой порядок; новые связи сопряжённого кольца учитывают уже занятые узловые атомы. Вставка отменяется одной операцией. Существующие атомы, их свойства и стадийные ссылки сохраняются; новая пространственная геометрия не выдумывается. Протягивание создаёт связь с предварительным показом, длиной 44 единицы рисунка и привязкой угла 30°. Клавиши 1/2/3 выбирают одинарную/двойную/тройную связь, V — выделение. Масштаб меняет только представление; доступны кнопки, вписывание и Ctrl + колесо мыши. Нажатие инструментом связи на существующую связь меняет её порядок, «Разрыв» удаляет нажатую связь, а Delete при выбранной связи сохраняет её атомы. Наведение подсвечивает цель. Палитра элементов и клавиши C/H/N/O/P/S/F/I, L (Cl), B (Br) меняют выбранный атом и включают размещение элемента. Правая кнопка открывает свойства атома/связи, заряд и начертания. Клин, штриховой клин и волнистая линия относятся к рисунку и не назначают R/S или E/Z. При смене порядка связи несовместимое начертание сбрасывается.
+
+«Стерео» над холстом, «Правка → Стереохимия» и контекстное меню открывают явные стереозаписи ядра. Доступны тетраэдрические, двойносвязные, аксиальные, спиральные и плоскостные записи с допустимыми для типа дескрипторами и явными опорными атомами. R/S, E/Z и неизвестная конфигурация отображаются на рисунке; UNKNOWN отличается от отсутствующей записи. Одна операция применения/удаления отменяется целиком. Дубликаты центра, повторные/отсутствующие опорные атомы и неверная связь отклоняются. Для нового тетраэдрического назначения нужны четыре явных соседа с одинарными связями, включая H, если он необходим.
+
+Назначение вводит пользователь: автоматические приоритеты CIP, доказательство стереогенности, согласование с клиньями и перестройка 3D не реализованы. Изменение графа, изотопа или электронного состояния сохраняет существующие назначения, но добавляет отметку повторной проверки. Она сохраняется в QCHEM, показывается в свойствах и диагностике ядра и отмечается звёздочкой на стереоподписи. Переименование и перемещение рисунка её не вызывают. Подтверждение существующих записей снимает отметку; при изменённых полях формы эта команда отключена, чтобы не потерять неподтверждённые правки.
+
+Команды «Правка» поворачивают или отражают выбранный компонент целиком в 2D. Химический граф, дескрипторы и реальные 3D-координаты не меняются; при отражении сплошной и штриховой клин меняются местами для сохранения пространственной ориентации рисунка. «Перестроить 2D» сохраняет начертания, направления связей, ручные поля и 3D-данные, но просит проверить новую раскладку со стереозаписями: генератор раскладки не является алгоритмом стереохимического изображения. Копирование целого компонента сохраняет стереохимию. Частичный фрагмент явно помечается и не наследует стереоданные целой молекулы.
+
+
+Соединение атомов двух 2D-черновиков объединяет их в один граф с новой молекулярной идентичностью. Если только один компонент имеет количества, подтверждение, свойства или ссылки на стадии, сохраняется именно этот компонент независимо от направления связи. Свободный фрагмент должен иметь ту же роль и не иметь этих данных. Идентификаторы атомов сохраняемого компонента, его количества и стадии остаются прежними; атомы присоединяемого фрагмента получают новые ID. Другие экземпляры исходной молекулы не меняются. Одна отмена восстанавливает оба компонента, запись действия остаётся в журнале. Свойства пересчёта после изменения графа требуют проверки; старые масса/плотность не применяются к новой структуре автоматически. Два самостоятельных компонента с данными не объединяются. Сохранены ограничения соединения: без заданных 3D-координат, стереохимии, конформации, оптического вращения, специальных симметрии/спина, источника/местоположения метаданных молекулы и ручных полей. Это редактирование рисунка, не прогноз химической реакции. «Проверить» показывает диагностику ядра; замечания не запрещают сохранение черновика.
+
+Выделение рамкой, Shift-добавление, связный фрагмент, перенос и удаление нескольких атомов/компонентов объединены с undo/redo. Ctrl/Cmd+A/C/V работают с выделением и нативным QCHEM в буфере обмена. Частичная копия отмечается как новый фрагмент, без переноса свойств целой исходной молекулы. «Правка» содержит таблицу атомов/связей, дублирование и перестроение 2D. Таблица применяет проверенный граф одной операцией. У каждого компонента отдельно задаются роль, плановое и фактическое количество и подтверждение вещества. Пустое количество отличается от нуля; масса, объём и моли не пересчитываются без дополнительных данных.
+
+Плановые условия, заметки, наблюдения и результаты сохраняются в одном опыте. В журнале исправления ссылаются на исходную запись; отмена редактирования и восстановление версии не удаляют журнал. «Повторить опыт» создаёт новый идентификатор и переносит план без фактических количеств, журнала и вложений. Черновик может не иметь продуктов: он не подменяет полноценную `Reaction` или вычислительный `ChemistryExperiment`.
+
+Опыт хранится в QCHEM: нативные молекулы, раздел `laboratory-experiment` и отдельные блоки раскладки. Стадии реакции используют QCHEM 4; количества, журнал и вложения — QCHEM 3; простые лабораторные документы QCHEM 2 и обычные документы QCHEM 1 поддерживаются хранилищем. Сохранение проверяет обратное чтение, обнаруживает внешнее изменение файла, создаёт `.bak` и версии в соседней папке `.qchem.history`, затем атомарно заменяет документ. Параллельные сохранения из окон Studio защищены файловой блокировкой. Файловая система должна поддерживать атомарную замену. Ctrl/Cmd+S сохраняет опыт; Shift+Ctrl/Cmd+S открывает «Сохранить как».
+
+Вложения хранятся рядом с документом в `.qchem.assets` под SHA-256 и проверяются при копировании. Меню «Файл» экспортирует и импортирует `.qchempack` с документом и вложениями; обычный `.qchem` сам по себе не содержит двоичные файлы. Вкладка «Файлы» показывает текст, изображения PNG/JPEG и отчёты QCHEM. Другие форматы сохраняются как исходные вложения. История версий открывается из меню «Файл»; восстановление сначала меняет редактор, затем требует обычного сохранения.
+
+«Файл → Пакет папки проекта» переносит выбранную папку целиком в `.qchemproject`: опыты, `materials.qchem`, библиотеку, историю, вложения, расчётные файлы, исходные измерения и пустые подпапки. Перед записью показаны список файлов, поиск, количество и общий размер; открытый изменённый опыт сначала сохраняется. Пакет записывается вне исходной папки. Проверяются контрольные суммы и обнаруженные изменения исходных файлов; ошибка или отмена не заменяет прежний пакет.
+
+«Восстановить проект из пакета» создаёт новую папку после проверки всех размеров и контрольных сумм. ID опытов/партий и проведённые операции сохраняются побайтно, расход не проводится повторно. При переключении проекта предлагается сохранить несохранённый опыт, затем открывается пустой редактор; нужный восстановленный опыт выбирается через «Папки». Отмена переключения оставляет прежний редактор, восстановленная папка остаётся доступна на диске. Поиск перестраивается из QCHEM, включая формулы, названия стадий и материалы среды.
+
+Пакет папки поддерживает до 100 000 файлов/папок, 2 ГиБ на файл и 10 ГиБ данных. Символические ссылки, junction, специальные файлы и конфликтующие при переносе имена отклоняются. Внешние файлы вне выбранной папки сами не подтягиваются; перед переносом они должны быть сохранены внутри проекта. Перенос не проверяет химическую корректность документа и не восстанавливает отсутствующие исходные файлы. Операции работают в фоне; закрытие окна во время работы требует дождаться завершения или остановки.
+
+
+«Папка опытов» включает вложенные папки. Индексирование идёт в фоне; поиск учитывает названия, компоненты, заметки, журнал и имена вложений. Повреждённые документы отмечаются в списке. «Библиотека» использует `ChemistryLibraryService`, встроенные записи и пользовательские QCHEM в `.chemistry-library` выбранной папки. В ней есть предпросмотр, фильтры структур/шаблонов/встроенных записей, поиск по названию, описанию и меткам, формы названия, описания, синонимов и источников. Пользовательская структура сохраняет исходные 2D-координаты, начертания связей, стереоданные и 3D; вставка создаёт независимый компонент без количеств. «Сохранить опыт как шаблон» сохраняет плановые количества, свойства реагентов с источниками, стадии, коэффициенты и условия. «Новый опыт из шаблона» создаёт новую идентичность опыта; фактические количества, признаки наблюдения, журнал, заметки и вложения исходного опыта не копируются. Исходный файл и складские движения не изменяются. Описание шаблона остаётся в библиотеке, не становится наблюдением нового опыта. В меню «Файл» доступно ручное редактирование QCHEM с проверкой ядром перед применением.
+
+Чтение библиотеки выполняется в фоне. Повреждённые записи, повторные идентификаторы, неподдержанные рисунки и ошибки папки видны пользователю; пригодные записи остаются доступными. Сканирование ограничено 10 000 элементами папки, 16 МиБ на файл и 64 МиБ суммарного чтения с явным предупреждением о неполноте; символические ссылки не обходятся. Сохранение проверяет полный native-документ после записи и публикует файл атомарно. Импорт всей произвольной схемы реакции пока не подключён: обычная библиотечная схема позволяет выбрать отдельную структуру, а новый многостадийный опыт создаётся из лабораторного шаблона.
+
+«Сохранить фрагмент» в библиотеке сохраняет весь выбранный компонент с 1–64 явными точками присоединения. Каждая точка задаёт существующий атом, свою подпись и порядок добавляемой связи; несколько точек позволяют использовать фрагмент разными сторонами. Атомы и водороды не заменяются автоматически. «Присоединить фрагмент» показывает будущий граф, выбор точки и направления, диагностику ядра и предупреждение о новом наложении атомов/связей. Начальное направление выбирается по свободному углу вокруг выбранного атома. Применение меняет один компонент, сохраняет его план/факт и участие в стадиях, отменяется одним undo; свойства реагента с прежней подписью графа остаются видны, но считаются устаревшими. Исходная библиотечная запись не расходуется и может использоваться снова.
+
+Этот путь присоединения использует существующий `MoleculeDraftJoin` и пока доступен для 2D-черновиков без заданных 3D-координат, стереоданных, конформации и специальных свойств. Неподдержанный случай не очищает данные ради соединения. Фрагмент с такими данными всё ещё можно сохранить в библиотеку и вставить отдельной структурой. Данное присоединение является редактированием графа, не моделью реакции и не списанием реагента.
+
+Вкладка «Реакция» хранит упорядоченные стадии со ссылками на компоненты ядра. Для каждой стадии задаются свои роли, явные целочисленные стехиометрические коэффициенты, условия и прямая либо равновесная стрелка. Компонент может быть продуктом одной стадии и исходником следующей. Неизвестный продукт и неуказанный коэффициент остаются пустыми; схема не создаёт фактический продукт или расход. Стадии редактируются, переставляются и удаляются с отменой; удаление используемого компонента требует сначала изменить состав стадии. Проверка баланса использует существующий `Reaction` и явно заданные атомы/заряд, не прогнозирует протекание реакции. Миниатюры и основной редактор используют общий отрисовщик; щелчок по структуре возвращает её в редактор.
+
+Для незавершённого опыта работает фоновый авточерновик с проверенными вложениями: снимок запрашивается раз в пять секунд и записывается атомарно в `~/.quantum/laboratory-recovery`. Строка состояния показывает время успешной записи; основное сохранение по-прежнему выполняется явно. В черновике отдельно остаётся введённый текст основных панелей, в том числе незаконченные координаты, количества и ещё не записанное наблюдение. После сбоя или через «Документ → Восстановить черновик» его можно открыть как несохранённый опыт, не перезаписывая исходный файл. Работавшие окна защищены отдельными блокировками. Исходный черновик удаляется только после успешного восстановления в редакторе; повреждённый остаётся доступным для разбора. При обычном закрытии временные файлы этого сеанса очищаются.
+
+В каждой стадии доступно «Количества и выход»: отдельные режимы плана и факта, ммоль, эквиваленты относительно выбранного исходника, лимитирующие исходники, теоретическое количество продуктов и арифметический выход. Поля компонента открываются из таблицы расчёта либо двойным щелчком в «Компоненты · план и факт». Изменение факта не уничтожает план, отмена возвращает одну операцию редактирования. Количества относятся к компоненту целиком; если в разных стадиях используются разные порции одного вещества, создайте отдельные компоненты.
+
+Пересчёт использует явно заданные свойства материала: молярную массу (г/моль), плотность (г/мл), массовую долю (%) либо молярную концентрацию выбранного вещества (моль/л). Массовая доля не подставляется как 100 %. Для раствора с заданной молярной концентрацией используется n = cV без повторного умножения на массовую долю. Молярную массу можно явно взять из суммы масс атомов ядра; неявные H не добавляются, полноту состава проверяет пользователь. Источник и условия свойств сохраняются вместе с ними. Изменение химической структуры, изотопа, заряда или стереоданных делает свойства устаревшими до повторного подтверждения; название и координаты не меняют их применимость. Источник без числовых значений также сохраняется.
+
+По умолчанию препаративная теория рассчитывается относительно выбранного исходника и коэффициентов стадии: это предел 100 %, а не прогноз превращения или подтверждение полного баланса. В режиме «Требовать полный атомный баланс» нужны количества и коэффициенты всех исходников, а также баланс явных атомов, заряда и изотопных массовых чисел. Процент фактического выхода требует наблюдённого продукта, его количества и достаточных данных фактической загрузки для выбранного режима. Выход выше 100 % не обрезается: показывается диагностика. Равновесная стадия даёт только стехиометрический предел. Расчёт использует DECIMAL128; компактные экранные значения округляются, копирование и запись в журнал сохраняют точные значения и основания. Просмотр и пересчёт не проводят складских операций.
+
+Кнопки «Фактическая загрузка…» и «Внести выделенное количество…» открывают формы выбранного исходника и конкретного продукта. Применение изменения факта переводит отчёт в фактический режим; отмена ввода и неизменённое применение сохраняют выбор режима. Карточка продукта объясняет, каких данных не хватает. Несколько продуктов имеют независимые карточки и количества, подробности и длинные объяснения доступны прокруткой.
+
+Свойства сохраняются в нативной секции QCHEM `component-properties-v1`; старые документы без неё сохраняют неизвестные свойства. Читатели без поддержки новой секции должны отклонять её как неизвестную, а не терять значения. Сохранение, повторное открытие, перенос пакетом и восстановление черновика проверены с этими полями.
+
+В формах количеств, свойств и загрузки реакции длинные числа показаны с восемью значащими цифрами; полное значение доступно в подсказке и сохраняется при применении формы. Новое введённое число заменяет исходное. Отмена ввода в поле возвращает исходное значение с полной точностью; повтор ввода возвращает изменение. Восстановление черновика сохраняет точные значения. В загрузке это относится также к опорному исходнику, эквивалентам и ручным количествам после смены единиц. Копируемая таблица загрузки содержит полные числовые значения. Поле ручного количества появляется при включении «Вручную»; неактивные эквиваленты не участвуют в расчёте. Масштабирование растворителей включается отдельно сверху формы, ручное количество имеет приоритет. Выбранная единица растворителя применяется и при выключенном масштабировании, без изменения физического количества. Черновик загрузки проверяется по исходным структурам, количествам, свойствам и составу стадии. При изменении этих данных старый ввод открывается только для просмотра и копирования отдельных значений; применение поверх текущего плана запрещено. После явного «Отменить ввод» форма загружает актуальные исходники. Черновики прежних версий без данных для сопоставления также доступны для просмотра. Новые фактические наблюдения и записи журнала сохраняются при применении плана и сами по себе не создают конфликт загрузки. Смена единиц внутри одной размерности пересчитывает количество; для перехода между массой и объёмом используются заданные свойства материала в форме загрузки.
+
+«Материалы» ведёт отдельный `materials.qchem` в выбранной папке. Материал, партия и операция — модели существующего ядра. Смесь, раствор, полимер и неидентифицированный материал могут не иметь единственной структуры. Приход, получение продукта, расход, возврат и корректировка проводятся явно и сразу сохраняются. Возврат ссылается на исходный расход; превышение остатка или доступного возврата отклоняется. Форма показывает остаток после операции, а для возврата предлагает только расходы с невозвращённым количеством. Сохранение опыта и отмена рисунка не списывают материал.
+
+В форме «Расход в опыт» можно выбрать компонент и нажать «Из плана» или «Из факта». Подстановка доступна при подтверждённом совпадении графов структуры и одинаковой размерности количества; единица пересчитывается точно. Поля остаются редактируемыми, складская операция проводится отдельно. Чистота и концентрация партии при подстановке не пересчитываются. Выбранный компонент и точное количество сохраняются в незавершённом вводе. Остатки на экране округлены для чтения с отметкой «≈», полное значение доступно в подсказке; файл учёта и арифметика остаются точными.
+
+Цены не используются в формах, таблицах и экспорте. Старые поля оценки в QCHEM читаются и сохраняются для совместимости. Учёт защищён от устаревшей записи из другого окна; проведённую историю нельзя переписать. Исправления выполняются возвратом, корректировкой или новой партией. Повтор одного события идемпотентен.
+
+«Материалы → Движения и остатки» читает папку и подпапки в фоне. Фильтры: проект, опыт, материал, партия и календарный период. Группировки: проект, опыт, материал, партия и месяц. Движения включают приход, взятое количество, возврат, чистый расход в опыты и корректировки. Вторая вкладка показывает остатки каждой партии на начало и конец периода. Фильтр опыта действует только на движения: складской остаток партии учитывает все опыты. Без начальной даты начальный остаток равен нулю. Поздний возврат относится к дате возврата, не переписывая ранний период.
+
+Масса, объём и количество вещества разделены; единицы нормализуются в г, мл и ммоль только внутри своей размерности. CSV UTF-8 доступен для сводки, исходных операций и остатков. Он хранит точные десятичные количества, идентификаторы, фильтры, часовой пояс и диагностику. Каждая строка сводки раскрывает исходные операции. Пустые данные не экспортируются. Пределы сканирования: 10000 элементов дерева, глубина 24, QCHEM до 16 МиБ; скрытые каталоги, история и вложения пропускаются. Ошибки и достижение предела помечают сводку неполной; повреждённый файл не считается пустым учётом.
+
+
+
+Вкладка «3D · Геометрия» показывает ортографическую шаростержневую проекцию координат ядра и синхронизирует выбор атома с 2D. Мышь вращает модель; камера и масштаб не меняют координаты. Координаты и их единица редактируются в свойствах атома. Начальная 3D-раскладка и релаксация запускаются отдельно через публичный `QuantumChemistry`; простое рисование в 2D не создаёт конформацию. Начальная раскладка ограничена 256 атомами и явно не считается оптимизированной. Релаксация использует приближённую силовую модель, до 128 атомов и 1–4096 итераций; она не является квантовым расчётом энергии. Неподдерживаемые стерео/конформационные ограничения отклоняются. Последняя итерация при недостигнутой сходимости помечается и применяется только явно. Исходная и полученная геометрии сохраняются отдельными снимками; устаревший результат нельзя применить к изменённой структуре.
+
+«Правка → Явные водороды» предлагает количества H для обычных нейтральных атомов с одинарными, двойными и тройными связями. До применения доступны ручная корректировка, предпросмотр формулы и массы; заряженные, радикальные и неоднозначные случаи отмечены отдельно. Команда добавляет реальные атомы в существующий граф и отменяется одним шагом. Она не удаляет существующие H, не назначает 3D-координаты и не подтверждает правильность химической гипотезы. После изменения состава ранее подтверждённые свойства материала требуют проверки.
+
+Кнопка «C–H» переключает полный и компактный рисунок. Обычные H при углероде можно скрыть без изменения формулы, файла или расчёта. При перемещении, копировании и удалении C в компактном виде его скрытые H обрабатываются вместе с ним. Изотопные H, заряженные/радикальные H и H на стереосвязях остаются видны. Явно выделенный H также показывается.
+
+В форме стадии можно задать давление и материалы среды без точной молекулярной структуры, например PEG4000. Имя, роль и многострочное примечание сохраняются через существующие условия реакции; такой материал не подменяется выдуманной молекулой и не включается в атомный баланс. Приход, массы, объёмы, расход, возврат и остатки ведутся в «Материалах»; запись названия в условиях сама по себе не списывает партию.
+
+«Расчёт» также вызывает анализ состава/дескрипторов и локальную энергию HF/STO-3G до 24 явно заданных атомов с координатами. Водороды, молекулярный заряд и спиновая мультиплетность задаются явно; название не заменяет структуру.
+
+Расчёт выполняется в фоновом потоке. Снимок молекулы, параметры запроса, статус, покрытие, численные значения и диагностика сохраняются в `.calculations` рядом с опытом и прикладываются к нему как QCHEM. Отмена запрашивает остановку; окно ждёт завершения текущего шага ядра и не объявляет поздний результат успешным. После аварийного завершения приложения файл со статусом `RUNNING` остаётся входным снимком, а не подтверждённым результатом. Визуальные правки и восстановление документа не переписывают вход предыдущего расчёта.
+
+В просмотре 3D доступны «Шары и связи» и «Стержни», подписи элементов, масштаб колесом, вращение перетаскиванием и сброс камеры. Одинарные, двойные и тройные связи различаются; ароматическое начертание содержит прерывистую линию. «Измерить» последовательно выбирает 2/3/4 атома для расстояния, угла и знакового торсиона; измерения используют координаты ядра в Å, а не проекцию на экран. Совпадающие и коллинеарные точки дают явное сообщение вместо неопределённого числа. Камера и измерительное выделение не меняют документ.
+
+Начальная геометрия учитывает замыкание колец, общие рёбра и раздельные компоненты. Для напряжённой первоначальной раскладки используется пространственное вложение графа с последующим согласованием длин всех связей и устранением близких контактов. Работа ограничена числом проходов; при неприемлемом остаточном искажении подготовка завершается сообщением, исходная молекула сохраняется. Это геометрическая заготовка: насыщенное кольцо может оставаться плоским, энергия, конформация, стереоизомер и водороды не подбираются автоматически. Пригодные исходные координаты остаются неизменными.
+
+У стадии доступен «Прогноз продуктов»: существующий `QuantumChemistry.predictOrganicReaction` получает исходные молекулы, явные коэффициенты, условия и выбранную область. Прогноз выполняется в фоне для суммарно не более 128 явных атомов исходников. Остановка отбрасывает кандидатов после завершения текущего шага ядра. В QCHEM сохраняются входная стадия, её компоненты и раскладки, все графы продуктов с независимыми идентификаторами, веса, модельные оценки, объяснения и диагностический отчёт. Неопределённая уверенность видна отдельно от успешного выполнения workflow. Вес не выдаётся за экспериментальную вероятность, условный выход модели — за измеренный выход.
+
+Выбранный кандидат добавляется отдельной плановой стадией с новыми компонентами без количеств и подтверждения; исходная стадия, фактические данные и склад сохраняются. Добавление отменяется одной командой, а отчёт и журнал остаются. Изменение исходников/условий или результат другого запроса запрещают применение. Повторный запуск создаёт новый неизменяемый результат. Миниатюры стадий и кандидатов показывают скелетные формулы, скрывая только обычные терминальные H при C; изотопы, заряженные/радикальные H, водороды при гетероатомах и специальные начертания остаются видимыми. Полный молекулярный граф сохраняется. Автоматическая 2D-раскладка использует общий графовый механизм ядра, учитывает кольца и размещает тяжёлые атомы до водородов; для структур более 500 атомов сохраняется ограниченная по времени круговая начальная раскладка.
+
+Автоматически построенные продукты проверяются по запасу явно заданных атомов с учётом коэффициентов исходников: правило не может добавить отсутствующий элемент или превысить его количество. Если реагент поставляет атомы продукту, его структура должна входить в исходники стадии с явным коэффициентом. Название катализатора или условие нагрева не заменяет такой источник. Неполные варианты остаются в отчёте как «Гипотезы без построенного продукта» с объяснением; отчёт сохраняется в QCHEM. Эта проверка состава не доказывает механизм, полный баланс побочных продуктов или экспериментальный выход.
+
+Для обычной межмолекулярной реакции Пассерини поддержано формальное построение α-ацилоксиамида из трёх отдельных явных исходников: альдегида/кетона, карбоновой кислоты с O–H и изоцианида R–N⁺≡C⁻. Все атомы трёх графов входят в продукт; перкислота и нитрил не подменяют нужные компоненты. Поддерживаются нейтральные замкнутооболочечные графы с указанным зарядовым представлением изоцианида. Новая стереоконфигурация, геометрия, обмен протонов/изотопов, механизм катализа, селективность и экспериментальный выход не рассчитываются. Это ограниченная структурная модель, а не поддержка всех многокомпонентных реакций.
+
+Для обычной четырёхкомпонентной реакции Уги поддержана формальная сборка α-ациламиноамида и воды из четырёх отдельных явных графов: альдегида/кетона, первичного органического амина R–NH₂, карбоновой кислоты с O–H и изоцианида R–N⁺≡C⁻. Атомы и изотопы исходников сохраняются в сумме двух продуктов. Вторичные амины, аммиак, амиды, нитрилы вместо изоцианида, перкислоты вместо кислоты, неявные водороды и внутримолекулярные варианты этим правилом не поддержаны. Формальное отображение атомов не моделирует обмен кислорода/протонов; экспериментальный выход, новая конфигурация, геометрия, селективность и осуществимость реакции не предсказываются. Добавление результата создаёт плановую стадию с продуктом и водой без фактических количеств.
+
+Автоматическая 2D-раскладка обычных молекул использует локальный адаптер CDK 2.12 через порт MoleculeLayoutProvider. Адаптер работает с отдельной копией графа и возвращает только координаты рисунка в исходном порядке атомов. Химическая модель, QCHEM, количества и расчёты остаются в существующем ядре. Обычные терминальные явные H временно исключаются только из рисуемого скелета и получают координаты после него; число H не выводится из валентности. Изотопы и заряды сохраняются. При неподдержанном типе связи, превышении ограничений или ошибке адаптера остаётся прежняя раскладка ядра; ошибка адаптера записывается в журнал процесса. CIP, клинья и соответствие стереозаписи рисунку автоматически не назначаются. «Перестроить 2D выбранной структуры» сохраняет ручные стили и требует проверки существующей стереозаписи, как раньше.
+
+Связи сохраняют единый масштаб относительно букв; подгонка предпросмотра масштабирует весь рисунок вместе с подписями. Сторона подписи H учитывает соседние обозначения. Перестроение выбранного компонента можно отменить одним действием; открытие старого QCHEM само не меняет сохранённый рисунок. Лицензии, уведомления и исходные архивы 15 добавленных библиотек находятся внутри JAR в META-INF/quantum-third-party; Maven включает их при сборке.
+
+Автоматическое размещение 2D-структур дополнено ограниченной очисткой пересечений: ветви поворачиваются вокруг связей-мостов, включая концевой двусвязный кислород, если это улучшает читаемость. Меняются только координаты рисунка; химический граф, изотопы, сохранённые стереодескрипторы и 3D-координаты остаются прежними. Очистка ограничена 160 тяжёлыми атомами, 200 связями между ними и 4096 оценками. Сложные кольцевые системы ещё могут выглядеть деформированными; отсутствие пересечений не означает стандартную профессиональную раскладку. Уже сохранённые ручные раскладки сами не перерисовываются.
+
+Распознавание ароматических признаков использует производный анализ ядра, не переписывая сохранённые связи. Поддержаны полностью размеченные ароматические циклы и локальные пяти-/шестичленные кольца с шестью π-электронами в записи с чередующимися связями. Кольцевой ароматический N не считается аминной группой, а ароматические связи исключены из обычных алкеновых преобразований. Общая ароматичность конденсированных систем этой локальной моделью не выводится; электронные модели сохраняют собственные ограничения. Простая одноатомная замена уходящей группы применяется только к концевому атому на одинарной связи.
+
+Сохранённый прогноз повторно открывается через «Файлы → Просмотреть вложение», в том числе после перезапуска и переноса QCHEMPACK. Просмотр восстанавливает графы и коэффициенты продуктов без повторного запуска ядра; доступны все кандидаты, сводка исходной стадии, диагностика, исходный QCHEM и сохранённые основания/оценки/описания механизмов. Успешный или частичный прогноз применяется только к совпадающему снимку той же стадии того же опыта. Изменённые исходники и стадии показывают явное предупреждение и блокируют применение, сохраняя просмотр. Продукты добавляются отдельной плановой стадией с пустыми фактическими количествами; одна отмена убирает весь вариант, но сохраняет журнал и вложение. Статусы ошибки и остановки не применяются. Проверяются версия адаптера, принадлежность запроса, порядок кандидатов, графы продуктов, коэффициенты и соответствие статусов. Неподдержанный снимок остаётся доступен как исходный файл. Уверенность сохраняется отдельным полем; старые снимки без этого поля показывают «не сохранена». Интерактивный просмотр ограничен вложениями до 32 МиБ; более крупные можно извлечь отдельно.
+
+Работа над полным рабочим местом продолжается. Соединение двух самостоятельных компонентов с данными не поддержано; свободный 2D-фрагмент можно присоединить к одному заполненному компоненту в описанных выше границах. Стереодескрипторы редактируются явно; автоматический CIP и автоматическое согласование стереозаписи с рисунком/3D не реализованы. Автоматической номенклатуры по произвольной структуре нет. Начальная 3D-раскладка графа может быть грубой; её качество не приравнивается к определённой конформации. Импорт произвольного QCHEM с неизвестными разделами прямо в лабораторный редактор отклоняется, чтобы избежать потери данных. Количественные прогнозы продуктов не подменяются вымышленными значениями. Редактор отключается параметром JVM `-Dquantum.chemistry.enabled=false`. Во вкладке «Химия» стандартные сочетания открывают опыт (Ctrl+O), создают новый (Ctrl+N), сохраняют (Ctrl+S) и сохраняют как (Ctrl+Shift+S); на macOS используется Command. Открытие и новый опыт сначала предлагают сохранить несохранённые изменения.
 
 ## Лицензия
 
-Проект распространяется под лицензией Mozilla Public License 2.0.
+Проект распространяется под Mozilla Public License 2.0.
 
-## Предупреждение О Первой Версии
+## Замечание О Первой Версии
 
-Это первая публичная версия. В поведении, диагностике, документации, UI или edge cases интеграций могут оставаться неточности. Если вы нашли ошибку, некорректный результат, непонятное поведение или неподдержанный случай, пожалуйста, создайте задачу и опишите, как это воспроизвести. Я всё проверю и поправлю проект.
+Это первая публичная версия. В поведении, diagnostics, документации, UI, chemistry workflows, backend setup paths или edge cases интеграций могут оставаться неточности. Если вы нашли ошибку, некорректный результат, непонятное поведение или пропущенный случай, откройте issue и опишите, как это воспроизвести. Я посмотрю и исправлю проект.
+
+
+В проходе 61 основное сохранение закреплено справа даже в узком окне, управление масштабом переносится одной группой. Совместный вид 2D/3D располагает модели вертикально в высоком узком пространстве, а в низком широком — рядом; выбранная структура повторно вписывается при изменении размеров. Настройки 3D сворачиваются, а быстрый поворот и сброс вида остаются доступны. При возврате к широкому окну восстанавливается горизонтальный разделитель. Все операции представления сохраняют химический граф и расчётные координаты.

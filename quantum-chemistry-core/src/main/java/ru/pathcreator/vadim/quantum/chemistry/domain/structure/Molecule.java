@@ -23,6 +23,7 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.experiment.ChemistrySubject
 import ru.pathcreator.vadim.quantum.chemistry.domain.experiment.ChemistrySubjectKind;
 import ru.pathcreator.vadim.quantum.chemistry.domain.formula.MolecularFormula;
 import ru.pathcreator.vadim.quantum.chemistry.domain.graph.MolecularGraph;
+import ru.pathcreator.vadim.quantum.chemistry.domain.graph.MolecularAromaticity;
 import ru.pathcreator.vadim.quantum.chemistry.domain.graph.MolecularGraphAnalyzer;
 import ru.pathcreator.vadim.quantum.chemistry.domain.metadata.ChemistryMetadata;
 import ru.pathcreator.vadim.quantum.chemistry.domain.stereo.OpticalRotation;
@@ -48,6 +49,9 @@ public final class Molecule implements ChemistrySubject {
   private final OpticalRotation opticalRotation;
   private final MolecularSymmetry symmetry;
   private final ChemistryMetadata metadata;
+  // Derived from immutable atoms/bonds; excluded from value equality and storage.
+  private volatile MolecularGraph graph;
+  private volatile MolecularAromaticity aromaticity;
 
   private Molecule(
       final MoleculeId id,
@@ -289,11 +293,35 @@ public final class Molecule implements ChemistrySubject {
   }
 
   public MolecularGraph graph() {
-    return MolecularGraphAnalyzer.analyze(this);
+    MolecularGraph result = this.graph;
+    if (result == null) {
+      synchronized (this) {
+        result = this.graph;
+        if (result == null) {
+          result = MolecularGraphAnalyzer.analyze(this);
+          this.graph = result;
+        }
+      }
+    }
+    return result;
   }
 
   public MolecularValence valence() {
     return MolecularValenceAnalyzer.analyze(this);
+  }
+
+  public MolecularAromaticity aromaticity() {
+    MolecularAromaticity result = this.aromaticity;
+    if (result == null) {
+      synchronized (this) {
+        result = this.aromaticity;
+        if (result == null) {
+          result = MolecularAromaticity.analyze(this);
+          this.aromaticity = result;
+        }
+      }
+    }
+    return result;
   }
 
   public int atomCount() {
@@ -333,10 +361,7 @@ public final class Molecule implements ChemistrySubject {
     return atoms;
   }
 
-  private static List<Bond> requireBonds(
-      final List<Bond> bonds,
-      final List<Atom> atoms
-  ) {
+  private static List<Bond> requireBonds(final List<Bond> bonds, final List<Atom> atoms) {
     int i;
     if (bonds == null) {
       return List.of();
@@ -397,9 +422,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void validateStereocenterAgainstBonds(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+      final Stereocenter center, final List<Bond> bonds) {
     switch (center.kind()) {
       case TETRAHEDRAL_ATOM:
         {
@@ -429,9 +452,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void validateTetrahedralStereocenter(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+      final Stereocenter center, final List<Bond> bonds) {
     List<AtomId> referenceAtomIds = center.referenceAtomIds();
     for (int i = 0; i < referenceAtomIds.size(); ++i) {
       if (Molecule.hasBond(bonds, center.primaryAtomId(), referenceAtomIds.get(i))) continue;
@@ -440,10 +461,7 @@ public final class Molecule implements ChemistrySubject {
     }
   }
 
-  private static void validateAxialStereocenter(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+  private static void validateAxialStereocenter(final Stereocenter center, final List<Bond> bonds) {
     if (!Molecule.connectedByBonds(bonds, center.primaryAtomId(), center.secondaryAtomId())) {
       throw new IllegalArgumentException(
           "Axial stereocenter axis atoms must belong to one bonded component.");
@@ -459,9 +477,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void validateHelicalStereocenter(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+      final Stereocenter center, final List<Bond> bonds) {
     AtomId previousAtomId = center.primaryAtomId();
     List<AtomId> referenceAtomIds = center.referenceAtomIds();
     for (int i = 0; i < referenceAtomIds.size(); ++i) {
@@ -479,9 +495,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void validatePlanarStereocenter(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+      final Stereocenter center, final List<Bond> bonds) {
     final List<AtomId> referenceAtomIds = center.referenceAtomIds();
     for (int i = 0; i < referenceAtomIds.size(); ++i) {
       if (Molecule.hasBond(bonds, center.primaryAtomId(), referenceAtomIds.get(i))) continue;
@@ -491,9 +505,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void validateDoubleBondStereocenter(
-      final Stereocenter center,
-      final List<Bond> bonds
-  ) {
+      final Stereocenter center, final List<Bond> bonds) {
     if (!Molecule.hasBondOfType(
         bonds, center.primaryAtomId(), center.secondaryAtomId(), BondType.DOUBLE)) {
       throw new IllegalArgumentException(
@@ -510,10 +522,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static boolean hasBond(
-      final List<Bond> bonds,
-      final AtomId firstAtomId,
-      final AtomId secondAtomId
-  ) {
+      final List<Bond> bonds, final AtomId firstAtomId, final AtomId secondAtomId) {
     for (int i = 0; i < bonds.size(); ++i) {
       if (!bonds.get(i).connects(firstAtomId, secondAtomId)) continue;
       return true;
@@ -522,7 +531,10 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static boolean hasBondOfType(
-      final List<Bond> bonds, final AtomId firstAtomId, final AtomId secondAtomId, final BondType type) {
+      final List<Bond> bonds,
+      final AtomId firstAtomId,
+      final AtomId secondAtomId,
+      final BondType type) {
     for (int i = 0; i < bonds.size(); ++i) {
       Bond bond = bonds.get(i);
       if (!bond.connects(firstAtomId, secondAtomId) || bond.type() != type) continue;
@@ -557,7 +569,10 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void addBondedNeighbors(
-      final List<Bond> bonds, final AtomId atomId, final Set<AtomId> visited, final Set<AtomId> frontier) {
+      final List<Bond> bonds,
+      final AtomId atomId,
+      final Set<AtomId> visited,
+      final Set<AtomId> frontier) {
     for (int i = 0; i < bonds.size(); ++i) {
       final Bond bond = bonds.get(i);
       if (bond.firstAtomId().equals(atomId)) {
@@ -570,10 +585,7 @@ public final class Molecule implements ChemistrySubject {
   }
 
   private static void addFrontierAtom(
-      final AtomId atomId,
-      final Set<AtomId> visited,
-      final Set<AtomId> frontier
-  ) {
+      final AtomId atomId, final Set<AtomId> visited, final Set<AtomId> frontier) {
     if (!visited.contains(atomId)) {
       frontier.add(atomId);
     }
@@ -606,10 +618,7 @@ public final class Molecule implements ChemistrySubject {
     return conformation;
   }
 
-  private static boolean hasTorsionBondPath(
-      final List<Bond> bonds,
-      final TorsionAngle angle
-  ) {
+  private static boolean hasTorsionBondPath(final List<Bond> bonds, final TorsionAngle angle) {
     return Molecule.hasBond(bonds, angle.firstAtomId(), angle.secondAtomId())
         && Molecule.hasBond(bonds, angle.secondAtomId(), angle.thirdAtomId())
         && Molecule.hasBond(bonds, angle.thirdAtomId(), angle.fourthAtomId());

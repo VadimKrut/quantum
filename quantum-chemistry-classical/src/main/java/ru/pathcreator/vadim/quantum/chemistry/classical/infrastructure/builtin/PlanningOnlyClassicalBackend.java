@@ -32,20 +32,18 @@ public final class PlanningOnlyClassicalBackend implements ClassicalBackend {
   private final ClassicalBackendProfile profile;
 
   public PlanningOnlyClassicalBackend() {
-    this(
-        new ClassicalChemistryService(),
-        BuiltInClassicalBackendProfiles.universalPlanning());
+    this(new ClassicalChemistryService(), BuiltInClassicalBackendProfiles.universalPlanning());
   }
 
   public PlanningOnlyClassicalBackend(
-      final ClassicalChemistryService service,
-      final ClassicalBackendProfile profile
-  ) {
+      final ClassicalChemistryService service, final ClassicalBackendProfile profile) {
     if (service == null) {
-      throw new IllegalArgumentException("Planning-only classical backend service must not be null.");
+      throw new IllegalArgumentException(
+          "Planning-only classical backend service must not be null.");
     }
     if (profile == null) {
-      throw new IllegalArgumentException("Planning-only classical backend profile must not be null.");
+      throw new IllegalArgumentException(
+          "Planning-only classical backend profile must not be null.");
     }
     this.service = service;
     this.profile = profile;
@@ -75,9 +73,8 @@ public final class PlanningOnlyClassicalBackend implements ClassicalBackend {
             List.of(
                 ClassicalDiagnostic.info(
                     ClassicalDiagnosticCode.PLAN_READY,
-                    ClassicalDiagnosticTarget.of(
-                        "profile",
-                        this.profile.id()),
-                    "Planning-only backend produced a validated execution plan."))));
+                    ClassicalDiagnosticTarget.of("profile", this.profile.id()),
+                    "Planning-only backend produced a validated execution plan."))),
+        this.service.analyzeCoverage(plan.request(), this.profile));
   }
 }

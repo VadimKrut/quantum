@@ -149,6 +149,19 @@ final class ChemistryCoreKineticsTest {
   }
 
   @Test
+  void arrheniusAndEyringDoNotUnderflowToInvalidZeroRateAtExtremeBarrier() {
+    final EnergyValue extremeBarrier = EnergyValue.of(1.0E9, EnergyUnit.KILOJOULE_PER_MOLE);
+    final ArrheniusParameters arrhenius =
+        ArrheniusParameters.of(1.0E12, RateConstantUnit.PER_SECOND, extremeBarrier);
+    final EyringParameters eyring =
+        EyringParameters.of(
+            extremeBarrier, EntropyValue.of(-50.0, EntropyUnit.JOULE_PER_MOLE_KELVIN));
+
+    Assertions.assertEquals(1.0E-300, arrhenius.rateConstantAt(STANDARD_TEMPERATURE).value(), 0.0);
+    Assertions.assertEquals(1.0E-300, eyring.rateConstantAt(STANDARD_TEMPERATURE).value(), 0.0);
+  }
+
+  @Test
   void kineticConvertersNormalizeConcentrationsAndRates() {
     Assertions.assertEquals(
         (double) 0.001,

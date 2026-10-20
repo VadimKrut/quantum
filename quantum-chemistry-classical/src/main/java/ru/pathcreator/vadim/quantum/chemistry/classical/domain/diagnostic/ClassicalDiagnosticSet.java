@@ -81,4 +81,8 @@ public final class ClassicalDiagnosticSet {
     result = ChemistryHash.include(result, this.diagnostics);
     return result;
   }
+
+  public String toString() {
+    return this.diagnostics.toString();
+  }
 }

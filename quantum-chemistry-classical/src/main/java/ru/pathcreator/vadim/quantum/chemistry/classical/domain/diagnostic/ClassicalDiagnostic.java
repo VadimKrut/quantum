@@ -27,8 +27,7 @@ public final class ClassicalDiagnostic {
       final ClassicalDiagnosticSeverity severity,
       final ClassicalDiagnosticCode code,
       final ClassicalDiagnosticTarget target,
-      final String message
-  ) {
+      final String message) {
     this.severity = severity;
     this.code = code;
     this.target = target;
@@ -38,45 +37,29 @@ public final class ClassicalDiagnostic {
   public static ClassicalDiagnostic info(
       final ClassicalDiagnosticCode code,
       final ClassicalDiagnosticTarget target,
-      final String message
-  ) {
-    return ClassicalDiagnostic.of(
-        ClassicalDiagnosticSeverity.INFO,
-        code,
-        target,
-        message);
+      final String message) {
+    return ClassicalDiagnostic.of(ClassicalDiagnosticSeverity.INFO, code, target, message);
   }
 
   public static ClassicalDiagnostic warning(
       final ClassicalDiagnosticCode code,
       final ClassicalDiagnosticTarget target,
-      final String message
-  ) {
-    return ClassicalDiagnostic.of(
-        ClassicalDiagnosticSeverity.WARNING,
-        code,
-        target,
-        message);
+      final String message) {
+    return ClassicalDiagnostic.of(ClassicalDiagnosticSeverity.WARNING, code, target, message);
   }
 
   public static ClassicalDiagnostic error(
       final ClassicalDiagnosticCode code,
       final ClassicalDiagnosticTarget target,
-      final String message
-  ) {
-    return ClassicalDiagnostic.of(
-        ClassicalDiagnosticSeverity.ERROR,
-        code,
-        target,
-        message);
+      final String message) {
+    return ClassicalDiagnostic.of(ClassicalDiagnosticSeverity.ERROR, code, target, message);
   }
 
   public static ClassicalDiagnostic of(
       final ClassicalDiagnosticSeverity severity,
       final ClassicalDiagnosticCode code,
       final ClassicalDiagnosticTarget target,
-      final String message
-  ) {
+      final String message) {
     if (severity == null) {
       throw new IllegalArgumentException("Classical diagnostic severity must not be null.");
     }
@@ -89,9 +72,7 @@ public final class ClassicalDiagnostic {
         severity,
         code,
         checkedTarget,
-        TextValue.requireText(
-            message,
-            "Classical diagnostic message"));
+        TextValue.requireText(message, "Classical diagnostic message"));
   }
 
   public ClassicalDiagnosticSeverity severity() {
@@ -135,5 +116,9 @@ public final class ClassicalDiagnostic {
     result = ChemistryHash.include(result, this.target);
     result = ChemistryHash.include(result, this.message);
     return result;
+  }
+
+  public String toString() {
+    return this.severity + " " + this.code + " " + this.target + ": " + this.message;
   }
 }

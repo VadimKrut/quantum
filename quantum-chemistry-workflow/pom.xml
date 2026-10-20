@@ -43,12 +43,12 @@
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
-            <artifactId>quantum-chemistry-quantum</artifactId>
+            <artifactId>quantum-chemistry-fermion</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.pathcreator.vadim</groupId>
-            <artifactId>quantum-chemistry-openfermion</artifactId>
+            <artifactId>quantum-chemistry-quantum</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

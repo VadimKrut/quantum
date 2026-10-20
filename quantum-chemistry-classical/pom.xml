@@ -21,5 +21,30 @@
             <artifactId>quantum-chemistry-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-integrals</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-scf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-posthf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-fermion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.pathcreator.vadim</groupId>
+            <artifactId>quantum-chemistry-quantum</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

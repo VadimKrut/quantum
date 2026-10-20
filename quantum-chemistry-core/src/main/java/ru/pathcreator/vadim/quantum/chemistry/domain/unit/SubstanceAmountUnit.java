@@ -10,8 +10,11 @@
 package ru.pathcreator.vadim.quantum.chemistry.domain.unit;
 
 public enum SubstanceAmountUnit {
-
   MOLE,
   MILLIMOLE,
-  MICROMOLE;
+  MICROMOLE,
+  KILOGRAM,
+  GRAM,
+  MILLIGRAM,
+  MICROGRAM;
 }

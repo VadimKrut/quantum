@@ -3,10 +3,20 @@
 **/target/
 /build/
 /out/
+/tmp/
+/output/
+
+### Local experiment data and working notes ###
+/examples/
+/research/
 
 ### Local verification helpers ###
 docs/
 /tools/
+!/tools/
+/tools/*
+!/tools/build-windows-release.ps1
+!/tools/check-java-format.ps1
 /.venv-qasm/
 **/__pycache__/
 *.py[cod]

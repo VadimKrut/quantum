@@ -9,6 +9,8 @@
 
 package ru.pathcreator.vadim.quantum.chemistry.domain.mechanism;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import ru.pathcreator.vadim.quantum.chemistry.domain.common.IdentifierValue;
 import ru.pathcreator.vadim.quantum.chemistry.domain.structure.MoleculeId;
@@ -21,18 +23,21 @@ public final class MechanismEnergyPoint {
   private final ReactionCoordinateValue coordinate;
   private final EnergyValue relativeEnergy;
   private final MoleculeId representativeMoleculeId;
+  private final List<MoleculeId> representativeMoleculeIds;
 
   private MechanismEnergyPoint(
       final String id,
       final MechanismPointKind kind,
       final ReactionCoordinateValue coordinate,
       final EnergyValue relativeEnergy,
-      final MoleculeId representativeMoleculeId) {
+      final List<MoleculeId> representativeMoleculeIds) {
     this.id = id;
     this.kind = kind;
     this.coordinate = coordinate;
     this.relativeEnergy = relativeEnergy;
-    this.representativeMoleculeId = representativeMoleculeId;
+    this.representativeMoleculeIds = representativeMoleculeIds;
+    this.representativeMoleculeId =
+        representativeMoleculeIds.isEmpty() ? null : representativeMoleculeIds.get(0);
   }
 
   public static MechanismEnergyPoint of(
@@ -41,6 +46,20 @@ public final class MechanismEnergyPoint {
       final ReactionCoordinateValue coordinate,
       final EnergyValue relativeEnergy,
       final MoleculeId representativeMoleculeId) {
+    return MechanismEnergyPoint.ofMany(
+        id,
+        kind,
+        coordinate,
+        relativeEnergy,
+        representativeMoleculeId == null ? List.of() : List.of(representativeMoleculeId));
+  }
+
+  public static MechanismEnergyPoint ofMany(
+      final String id,
+      final MechanismPointKind kind,
+      final ReactionCoordinateValue coordinate,
+      final EnergyValue relativeEnergy,
+      final List<MoleculeId> representativeMoleculeIds) {
     final String checkedId = IdentifierValue.requireIdentifier(id, "Mechanism energy point id");
     if (kind == null) {
       throw new IllegalArgumentException("Mechanism energy point kind must not be null.");
@@ -52,8 +71,22 @@ public final class MechanismEnergyPoint {
       throw new IllegalArgumentException(
           "Mechanism energy point relative energy must not be null.");
     }
+    if (representativeMoleculeIds == null) {
+      throw new IllegalArgumentException(
+          "Mechanism energy point representative molecule ids must not be null.");
+    }
+    final ArrayList<MoleculeId> checkedRepresentativeMoleculeIds =
+        new ArrayList<MoleculeId>(representativeMoleculeIds.size());
+    for (int i = 0; i < representativeMoleculeIds.size(); ++i) {
+      final MoleculeId moleculeId = representativeMoleculeIds.get(i);
+      if (moleculeId == null) {
+        throw new IllegalArgumentException(
+            "Mechanism energy point representative molecule id must not be null.");
+      }
+      checkedRepresentativeMoleculeIds.add(moleculeId);
+    }
     return new MechanismEnergyPoint(
-        checkedId, kind, coordinate, relativeEnergy, representativeMoleculeId);
+        checkedId, kind, coordinate, relativeEnergy, List.copyOf(checkedRepresentativeMoleculeIds));
   }
 
   public String id() {
@@ -76,8 +109,12 @@ public final class MechanismEnergyPoint {
     return this.representativeMoleculeId;
   }
 
+  public List<MoleculeId> representativeMoleculeIds() {
+    return this.representativeMoleculeIds;
+  }
+
   public boolean hasRepresentativeMolecule() {
-    return this.representativeMoleculeId != null;
+    return !this.representativeMoleculeIds.isEmpty();
   }
 
   public boolean transitionState() {
@@ -96,13 +133,13 @@ public final class MechanismEnergyPoint {
         && this.kind == point.kind
         && Objects.equals(this.coordinate, point.coordinate)
         && Objects.equals(this.relativeEnergy, point.relativeEnergy)
-        && Objects.equals(this.representativeMoleculeId, point.representativeMoleculeId);
+        && Objects.equals(this.representativeMoleculeIds, point.representativeMoleculeIds);
   }
 
   public int hashCode() {
     return Objects.hash(
         new Object[] {
-          this.id, this.kind, this.coordinate, this.relativeEnergy, this.representativeMoleculeId
+          this.id, this.kind, this.coordinate, this.relativeEnergy, this.representativeMoleculeIds
         });
   }
 }

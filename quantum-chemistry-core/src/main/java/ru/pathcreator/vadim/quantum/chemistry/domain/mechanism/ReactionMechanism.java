@@ -17,20 +17,25 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.reaction.ReactionSide;
 import ru.pathcreator.vadim.quantum.chemistry.domain.thermodynamics.ThermodynamicUnitConverter;
 import ru.pathcreator.vadim.quantum.chemistry.domain.unit.EnergyValue;
 
-/** Описывает согласованную цепочку elementary steps для общей сбалансированной реакции. */
+/**
+ * Описывает согласованную цепочку elementary steps для общей сбалансированной реакции.
+ */
 public final class ReactionMechanism {
 
   private final String id;
+  private final ReactionMechanismFamily family;
   private final Reaction overallReaction;
   private final List<ElementaryReactionStep> steps;
   private final List<MechanismEnergyPoint> energyProfile;
 
   private ReactionMechanism(
       final String id,
+      final ReactionMechanismFamily family,
       final Reaction overallReaction,
       final List<ElementaryReactionStep> steps,
       final List<MechanismEnergyPoint> energyProfile) {
     this.id = id;
+    this.family = family;
     this.overallReaction = overallReaction;
     this.steps = steps;
     this.energyProfile = energyProfile;
@@ -41,7 +46,20 @@ public final class ReactionMechanism {
       final Reaction overallReaction,
       final List<ElementaryReactionStep> steps,
       final List<MechanismEnergyPoint> energyProfile) {
+    return ReactionMechanism.of(
+        id, ReactionMechanismFamily.UNKNOWN, overallReaction, steps, energyProfile);
+  }
+
+  public static ReactionMechanism of(
+      final String id,
+      final ReactionMechanismFamily family,
+      final Reaction overallReaction,
+      final List<ElementaryReactionStep> steps,
+      final List<MechanismEnergyPoint> energyProfile) {
     final String checkedId = IdentifierValue.requireIdentifier(id, "Reaction mechanism id");
+    if (family == null) {
+      throw new IllegalArgumentException("Reaction mechanism family must not be null.");
+    }
     if (overallReaction == null) {
       throw new IllegalArgumentException("Reaction mechanism overall reaction must not be null.");
     }
@@ -52,11 +70,16 @@ public final class ReactionMechanism {
         List.copyOf(ReactionMechanism.requireSteps(overallReaction, steps));
     final List<MechanismEnergyPoint> checkedEnergyProfile =
         List.copyOf(ReactionMechanism.requireEnergyProfile(energyProfile));
-    return new ReactionMechanism(checkedId, overallReaction, checkedSteps, checkedEnergyProfile);
+    return new ReactionMechanism(
+        checkedId, family, overallReaction, checkedSteps, checkedEnergyProfile);
   }
 
   public String id() {
     return this.id;
+  }
+
+  public ReactionMechanismFamily family() {
+    return this.family;
   }
 
   public Reaction overallReaction() {
@@ -73,6 +96,14 @@ public final class ReactionMechanism {
 
   public boolean hasEnergyProfile() {
     return !energyProfile.isEmpty();
+  }
+
+  public int eventCount() {
+    int count = 0;
+    for (int i = 0; i < this.steps.size(); ++i) {
+      count += this.steps.get(i).events().size();
+    }
+    return count;
   }
 
   public int transitionStateCount() {
@@ -177,10 +208,7 @@ public final class ReactionMechanism {
     return energyProfile;
   }
 
-  private static void requireUniqueSortedIds(
-      final String[] ids,
-      final String subjectName
-  ) {
+  private static void requireUniqueSortedIds(final String[] ids, final String subjectName) {
     final String[] sortedIds = ids.clone();
     java.util.Arrays.sort(sortedIds);
     for (int i = 1; i < sortedIds.length; ++i) {
@@ -200,12 +228,13 @@ public final class ReactionMechanism {
     }
     final ReactionMechanism mechanism = (ReactionMechanism) other;
     return Objects.equals(id, mechanism.id)
+        && family == mechanism.family
         && Objects.equals(overallReaction, mechanism.overallReaction)
         && Objects.equals(steps, mechanism.steps)
         && Objects.equals(energyProfile, mechanism.energyProfile);
   }
 
   public int hashCode() {
-    return Objects.hash(id, overallReaction, steps, energyProfile);
+    return Objects.hash(id, family, overallReaction, steps, energyProfile);
   }
 }

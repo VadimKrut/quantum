@@ -14,6 +14,11 @@ import java.util.Objects;
 
 public final class Stereochemistry {
 
+  /** Ordered tetrahedral parity supplied by an exchange adapter; this is not a CIP descriptor. */
+  public static final String ORDERED_PARITY_ATTRIBUTE =
+      "laboratory.stereochemistry.ordered-parity.v1";
+
+  public static final String REVIEW_ATTRIBUTE = "laboratory.stereochemistry.review";
   public static final Stereochemistry EMPTY = new Stereochemistry(List.of());
   private final List<Stereocenter> centers;
 

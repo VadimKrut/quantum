@@ -10,7 +10,8 @@
 package ru.pathcreator.vadim.quantum.chemistry.domain.reaction;
 
 public enum ReactionComponentRole {
-
+  REACTANT,
+  PRODUCT,
   SOLVENT,
   CATALYST,
   ADDITIVE,

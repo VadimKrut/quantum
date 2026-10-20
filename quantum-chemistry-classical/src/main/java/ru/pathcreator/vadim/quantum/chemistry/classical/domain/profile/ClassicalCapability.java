@@ -10,10 +10,9 @@
 package ru.pathcreator.vadim.quantum.chemistry.classical.domain.profile;
 
 /**
- * Техническая возможность классического backend.
+ * Техническая возможность классического вычислительного backend.
  */
 public enum ClassicalCapability {
-
   MOLECULE_INPUT,
   REACTION_INPUT,
   THREE_DIMENSIONAL_GEOMETRY,
@@ -25,10 +24,18 @@ public enum ClassicalCapability {
   SPECTROSCOPY,
   DESCRIPTOR_ANALYSIS,
   CONFORMER_SEARCH,
+  ORGANIC_REACTION_PREDICTION,
   REACTION_PATH,
   TRANSITION_STATE_SEARCH,
   ACTIVE_SPACE,
+  ACTIVE_SPACE_SELECTION,
+  ORBITAL_OPTIMIZATION,
+  POST_HF_CORRELATION,
   ELECTRONIC_HAMILTONIAN,
+  QUANTUM_PROGRAM_PREPARATION,
+  QUANTUM_VQE_OPTIMIZATION,
+  SELF_CONSISTENT_DENSITY_FUNCTIONAL_THEORY,
+  RELATIVISTIC_EFFECTS,
   SOLVENT_MODEL,
   PERIODIC_BOUNDARY_CONDITIONS,
   REMOTE_EXECUTION,

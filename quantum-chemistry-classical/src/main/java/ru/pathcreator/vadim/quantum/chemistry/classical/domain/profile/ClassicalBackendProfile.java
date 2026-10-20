@@ -36,6 +36,7 @@ public final class ClassicalBackendProfile {
   private final long maxAtoms;
   private final long maxBonds;
   private final long maxElectrons;
+  private final long maxParticipants;
   private final long maxActiveOrbitals;
 
   private ClassicalBackendProfile(
@@ -51,8 +52,8 @@ public final class ClassicalBackendProfile {
       final long maxAtoms,
       final long maxBonds,
       final long maxElectrons,
-      final long maxActiveOrbitals
-  ) {
+      final long maxParticipants,
+      final long maxActiveOrbitals) {
     this.id = id;
     this.displayName = displayName;
     this.version = version;
@@ -65,6 +66,7 @@ public final class ClassicalBackendProfile {
     this.maxAtoms = maxAtoms;
     this.maxBonds = maxBonds;
     this.maxElectrons = maxElectrons;
+    this.maxParticipants = maxParticipants;
     this.maxActiveOrbitals = maxActiveOrbitals;
   }
 
@@ -81,34 +83,31 @@ public final class ClassicalBackendProfile {
       final long maxAtoms,
       final long maxBonds,
       final long maxElectrons,
-      final long maxActiveOrbitals
-  ) {
+      final long maxParticipants,
+      final long maxActiveOrbitals) {
     if (executionMode == null) {
       throw new IllegalArgumentException("Classical backend execution mode must not be null.");
     }
     ClassicalBackendProfile.requirePositiveLimit(maxAtoms, "max atoms");
     ClassicalBackendProfile.requirePositiveLimit(maxBonds, "max bonds");
     ClassicalBackendProfile.requirePositiveLimit(maxElectrons, "max electrons");
+    ClassicalBackendProfile.requirePositiveLimit(maxParticipants, "max participants");
     ClassicalBackendProfile.requirePositiveLimit(maxActiveOrbitals, "max active orbitals");
     return new ClassicalBackendProfile(
-        IdentifierValue.requireIdentifier(
-            id,
-            "Classical backend profile id"),
-        TextValue.requireText(
-            displayName,
-            "Classical backend profile display name"),
-        TextValue.requireText(
-            version,
-            "Classical backend profile version"),
+        IdentifierValue.requireIdentifier(id, "Classical backend profile id"),
+        TextValue.requireText(displayName, "Classical backend profile display name"),
+        TextValue.requireText(version, "Classical backend profile version"),
         executionMode,
         List.copyOf(ClassicalBackendProfile.requireList(supportedSubjectKinds, "subject kinds")),
-        List.copyOf(ClassicalBackendProfile.requireList(supportedCalculationKinds, "calculation kinds")),
+        List.copyOf(
+            ClassicalBackendProfile.requireList(supportedCalculationKinds, "calculation kinds")),
         List.copyOf(ClassicalBackendProfile.requireList(supportedMethodTypes, "method types")),
         List.copyOf(ClassicalBackendProfile.requireBasisSets(supportedBasisSets)),
         List.copyOf(ClassicalBackendProfile.requireList(capabilities, "capabilities")),
         maxAtoms,
         maxBonds,
         maxElectrons,
+        maxParticipants,
         maxActiveOrbitals);
   }
 
@@ -160,6 +159,10 @@ public final class ClassicalBackendProfile {
     return this.maxElectrons;
   }
 
+  public long maxParticipants() {
+    return this.maxParticipants;
+  }
+
   public long maxActiveOrbitals() {
     return this.maxActiveOrbitals;
   }
@@ -184,21 +187,16 @@ public final class ClassicalBackendProfile {
     return this.capabilities.contains(capability);
   }
 
-  private static void requirePositiveLimit(
-      final long value,
-      final String name
-  ) {
+  private static void requirePositiveLimit(final long value, final String name) {
     if (value <= 0L) {
       throw new IllegalArgumentException("Classical backend " + name + " must be positive.");
     }
   }
 
-  private static <T> List<T> requireList(
-      final List<T> values,
-      final String subjectName
-  ) {
+  private static <T> List<T> requireList(final List<T> values, final String subjectName) {
     if (values == null || values.isEmpty()) {
-      throw new IllegalArgumentException("Classical backend " + subjectName + " must not be empty.");
+      throw new IllegalArgumentException(
+          "Classical backend " + subjectName + " must not be empty.");
     }
     for (int i = 0; i < values.size(); ++i) {
       if (values.get(i) != null) {
@@ -215,9 +213,7 @@ public final class ClassicalBackendProfile {
       return List.of();
     }
     for (int i = 0; i < basisSets.size(); ++i) {
-      TextValue.requireText(
-          basisSets.get(i),
-          "Classical backend basis set");
+      TextValue.requireText(basisSets.get(i), "Classical backend basis set");
     }
     return basisSets;
   }
@@ -233,6 +229,7 @@ public final class ClassicalBackendProfile {
     return this.maxAtoms == profile.maxAtoms
         && this.maxBonds == profile.maxBonds
         && this.maxElectrons == profile.maxElectrons
+        && this.maxParticipants == profile.maxParticipants
         && this.maxActiveOrbitals == profile.maxActiveOrbitals
         && Objects.equals(this.id, profile.id)
         && Objects.equals(this.displayName, profile.displayName)
@@ -259,6 +256,7 @@ public final class ClassicalBackendProfile {
     result = ChemistryHash.include(result, this.maxAtoms);
     result = ChemistryHash.include(result, this.maxBonds);
     result = ChemistryHash.include(result, this.maxElectrons);
+    result = ChemistryHash.include(result, this.maxParticipants);
     result = ChemistryHash.include(result, this.maxActiveOrbitals);
     return result;
   }

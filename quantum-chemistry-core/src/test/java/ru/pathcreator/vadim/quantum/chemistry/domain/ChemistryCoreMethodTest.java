@@ -27,10 +27,17 @@ import ru.pathcreator.vadim.quantum.chemistry.domain.geometry.Coordinate3D;
 import ru.pathcreator.vadim.quantum.chemistry.domain.geometry.LengthUnit;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ActiveSpace;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ActiveSpaceResourceEstimate;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisAtomDefinition;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisPrimitive;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisSetDefinition;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisSet;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisSetName;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisShell;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.BasisShellAngularMomentum;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.CombinatorialCount;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ConvergenceCriteria;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.DensityFunctionalDefinition;
+import ru.pathcreator.vadim.quantum.chemistry.domain.method.DensityFunctionalFamily;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ElectronicStructureMethod;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ElectronicStructureMethodName;
 import ru.pathcreator.vadim.quantum.chemistry.domain.method.ElectronicStructureMethodType;
@@ -100,8 +107,7 @@ final class ChemistryCoreMethodTest {
         (int) name.hashCode(),
         (int) ElectronicStructureMethodName.of((String) "UCCSD(T)").hashCode());
     Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> ElectronicStructureMethodName.of((String) "   "));
+        IllegalArgumentException.class, () -> ElectronicStructureMethodName.of((String) "   "));
   }
 
   @Test
@@ -124,10 +130,171 @@ final class ChemistryCoreMethodTest {
         (Object) ElectronicStructureSpinTreatment.UNSPECIFIED,
         (Object) task.method().spinTreatment());
     Assertions.assertEquals((Object) "B3LYP", (Object) task.method().name().value());
+    Assertions.assertTrue(task.method().hasDensityFunctionalDefinition());
+    Assertions.assertEquals(
+        (Object) DensityFunctionalFamily.HYBRID_GGA,
+        (Object) task.method().densityFunctionalDefinition().family());
+    Assertions.assertEquals(
+        (double) 0.20,
+        (double) task.method().densityFunctionalDefinition().exactExchangeFraction(),
+        (double) 1.0E-12);
     Assertions.assertEquals((Object) criteria, (Object) task.convergenceCriteria());
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> ConvergenceCriteria.of((double) 0.0, (double) 1.0E-9, (int) 100));
+  }
+
+  @Test
+  void densityFunctionalDefinitionStoresStructuredApproximationData() {
+    final DensityFunctionalDefinition pbe0 = DensityFunctionalDefinition.resolve("PBE0");
+    final DensityFunctionalDefinition custom =
+        DensityFunctionalDefinition.of(
+            "Custom-Hybrid",
+            DensityFunctionalFamily.HYBRID_META_GGA,
+            0.37,
+            0.08,
+            true,
+            true,
+            "Custom hybrid meta-GGA with dispersion");
+    final ElectronicStructureMethod method = ElectronicStructureMethod.densityFunctional(custom);
+
+    Assertions.assertEquals((Object) DensityFunctionalFamily.HYBRID_GGA, (Object) pbe0.family());
+    Assertions.assertEquals((double) 0.25, (double) pbe0.exactExchangeFraction(), (double) 1.0E-12);
+    Assertions.assertEquals((Object) "Custom-Hybrid", (Object) method.name().value());
+    Assertions.assertEquals((Object) custom, (Object) method.densityFunctionalDefinition());
+    Assertions.assertTrue((boolean) custom.gradientCorrected());
+    Assertions.assertTrue((boolean) custom.dispersionCorrected());
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            DensityFunctionalDefinition.of(
+                "Bad functional",
+                DensityFunctionalFamily.HYBRID_GGA,
+                1.2,
+                0.0,
+                true,
+                false,
+                "Invalid exact exchange"));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            DensityFunctionalDefinition.of(
+                "Bad double hybrid",
+                DensityFunctionalFamily.DOUBLE_HYBRID,
+                0.5,
+                -0.1,
+                true,
+                false,
+                "Invalid perturbative correlation"));
+  }
+
+  @Test
+  void structuredBasisSetStoresHighAngularMomentumShellsAndCountsFunctions() {
+    final BasisSetDefinition definition =
+        BasisSetDefinition.of(
+            List.of(
+                BasisAtomDefinition.of(
+                    ElementSymbol.of("Fe"),
+                    List.of(
+                        BasisShell.of(
+                            BasisShellAngularMomentum.S, List.of(BasisPrimitive.of(226.0, 0.15))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.P, List.of(BasisPrimitive.of(38.0, 0.22))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.D, List.of(BasisPrimitive.of(7.5, 0.41))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.F, List.of(BasisPrimitive.of(1.8, 0.32))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.G, List.of(BasisPrimitive.of(0.6, 0.18))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.H, List.of(BasisPrimitive.of(0.4, 0.12))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.I, List.of(BasisPrimitive.of(0.3, 0.08))),
+                        BasisShell.of(
+                            BasisShellAngularMomentum.K, List.of(BasisPrimitive.of(0.2, 0.05)))))));
+    final BasisSet basisSet =
+        BasisSet.structured(BasisSetName.of("custom-fe-s-p-d-f-g"), definition);
+
+    Assertions.assertTrue(basisSet.hasStructuredDefinition());
+    Assertions.assertEquals(1, basisSet.definition().atomDefinitionCount());
+    Assertions.assertEquals(8, basisSet.definition().shellCount());
+    Assertions.assertEquals(8, basisSet.definition().primitiveCount());
+    Assertions.assertEquals(120, basisSet.definition().cartesianFunctionCount());
+    Assertions.assertTrue(basisSet.definition().supports(ElementSymbol.of("Fe")));
+  }
+
+  @Test
+  void structuredBasisSetRejectsDuplicateElementsEmptyShellsAndInvalidPrimitives() {
+    final BasisAtomDefinition hydrogenBasis =
+        BasisAtomDefinition.of(
+            ElementSymbol.of("H"),
+            List.of(
+                BasisShell.of(
+                    BasisShellAngularMomentum.S,
+                    List.of(BasisPrimitive.of(3.42525091, 0.15432897)))));
+
+    Assertions.assertThrows(IllegalArgumentException.class, () -> BasisPrimitive.of(0.0, 1.0));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> BasisShell.of(BasisShellAngularMomentum.S, List.of()));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> BasisSetDefinition.of(List.of(hydrogenBasis, hydrogenBasis)));
+  }
+
+  @Test
+  void validatorChecksStructuredBasisCoverageForMoleculeAndReaction() {
+    final BasisSet hydrogenOnlyBasis =
+        BasisSet.structured(
+            BasisSetName.of("hydrogen-only"),
+            BasisSetDefinition.of(
+                List.of(
+                    BasisAtomDefinition.of(
+                        ElementSymbol.of("H"),
+                        List.of(
+                            BasisShell.of(
+                                BasisShellAngularMomentum.S,
+                                List.of(BasisPrimitive.of(3.42525091, 0.15432897))))))));
+    final ElectronicStructureMethod unrestrictedMethod =
+        ElectronicStructureMethod.HARTREE_FOCK.withSpinTreatment(
+            ElectronicStructureSpinTreatment.UNRESTRICTED);
+    final ChemistryTask moleculeTask =
+        ChemistryTask.of(
+            ChemistryTaskType.GROUND_STATE_ENERGY,
+            hydrogenOnlyBasis,
+            ActiveSpace.of(1, 1),
+            unrestrictedMethod,
+            ConvergenceCriteria.DEFAULT);
+    final ChemistryExperiment coveredExperiment =
+        ChemistryExperiment.of(
+            ChemistryExperimentId.of("experiment.structured_basis_h"),
+            ChemistryCoreMethodTest.hydrogenAtom(),
+            moleculeTask,
+            ChemistryExecutionMode.CLASSICAL_AND_QUANTUM);
+    final ChemistryExperiment missingElementExperiment =
+        ChemistryExperiment.of(
+            ChemistryExperimentId.of("experiment.structured_basis_missing_cl"),
+            ChemistryCoreMethodTest.identityReaction(ChemistryCoreMethodTest.hydrogenChloride()),
+            ChemistryTask.of(
+                ChemistryTaskType.REACTION_ENERGY,
+                hydrogenOnlyBasis,
+                ActiveSpace.of(1, 1),
+                unrestrictedMethod,
+                ConvergenceCriteria.DEFAULT),
+            ChemistryExecutionMode.CLASSICAL_AND_QUANTUM);
+
+    final ChemistryValidationResult coveredResult =
+        new ChemistryCoreValidator().validateExperiment(coveredExperiment);
+    final ChemistryValidationResult missingElementResult =
+        new ChemistryCoreValidator().validateExperiment(missingElementExperiment);
+
+    Assertions.assertTrue(coveredResult.valid());
+    Assertions.assertFalse(missingElementResult.valid());
+    Assertions.assertTrue(
+        ChemistryCoreMethodTest.contains(
+            missingElementResult.diagnostics(),
+            ChemistryDiagnosticCode.TASK_BASIS_SET_INCOMPATIBLE_WITH_SUBJECT,
+            ChemistryDiagnosticSeverity.ERROR));
   }
 
   @Test
@@ -259,7 +426,8 @@ final class ChemistryCoreMethodTest {
             (ChemistrySubject) reaction,
             (ChemistryTask) task,
             (ChemistryExecutionMode) ChemistryExecutionMode.CLASSICAL_AND_QUANTUM);
-    final ChemistryValidationResult result = new ChemistryCoreValidator().validateExperiment(experiment);
+    final ChemistryValidationResult result =
+        new ChemistryCoreValidator().validateExperiment(experiment);
     Assertions.assertFalse((boolean) result.valid());
     Assertions.assertTrue(
         (boolean)
@@ -286,6 +454,18 @@ final class ChemistryCoreMethodTest {
         List.of(),
         (MolecularCharge) MolecularCharge.NEUTRAL,
         (SpinMultiplicity) SpinMultiplicity.of((int) 2));
+  }
+
+  private static Molecule hydrogenChloride() {
+    return Molecule.of(
+        MoleculeId.of("hydrogen.chloride"),
+        "Hydrogen chloride",
+        List.of(
+            ChemistryCoreMethodTest.atom("h", "H", 0.0),
+            ChemistryCoreMethodTest.atom("cl", "Cl", 1.27)),
+        List.of(),
+        MolecularCharge.NEUTRAL,
+        SpinMultiplicity.SINGLET);
   }
 
   private static Reaction identityReaction(final Molecule molecule) {

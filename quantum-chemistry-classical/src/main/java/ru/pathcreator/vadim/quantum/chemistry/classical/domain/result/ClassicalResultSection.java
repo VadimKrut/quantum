@@ -27,8 +27,7 @@ public final class ClassicalResultSection {
   private ClassicalResultSection(
       final ClassicalCalculationKind kind,
       final String title,
-      final List<ClassicalResultValue> values
-  ) {
+      final List<ClassicalResultValue> values) {
     this.kind = kind;
     this.title = title;
     this.values = values;
@@ -37,16 +36,13 @@ public final class ClassicalResultSection {
   public static ClassicalResultSection of(
       final ClassicalCalculationKind kind,
       final String title,
-      final List<ClassicalResultValue> values
-  ) {
+      final List<ClassicalResultValue> values) {
     if (kind == null) {
       throw new IllegalArgumentException("Classical result section kind must not be null.");
     }
     return new ClassicalResultSection(
         kind,
-        TextValue.requireText(
-            title,
-            "Classical result section title"),
+        TextValue.requireText(title, "Classical result section title"),
         List.copyOf(ClassicalResultSection.requireValues(values)));
   }
 
@@ -62,9 +58,46 @@ public final class ClassicalResultSection {
     return this.values;
   }
 
-  private static List<ClassicalResultValue> requireValues(
-      final List<ClassicalResultValue> values
-  ) {
+  public int valueCount() {
+    return this.values.size();
+  }
+
+  public boolean hasValue(final String name) {
+    return this.valueOrNull(name) != null;
+  }
+
+  public ClassicalResultValue requireValue(final String name) {
+    final ClassicalResultValue value = this.valueOrNull(name);
+    if (value == null) {
+      throw new IllegalArgumentException("Classical result value not found: " + name + ".");
+    }
+    return value;
+  }
+
+  public ClassicalResultValue valueOrNull(final String name) {
+    final String checkedName = TextValue.requireText(name, "Classical result value lookup name");
+    for (int i = 0; i < this.values.size(); ++i) {
+      final ClassicalResultValue value = this.values.get(i);
+      if (value.name().equals(checkedName)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  public String requireFirstValue(final String name) {
+    return this.requireValue(name).firstValue();
+  }
+
+  public List<String> requireValues(final String name) {
+    return this.requireValue(name).values();
+  }
+
+  public double requireScalar(final String name) {
+    return this.requireValue(name).scalarValue();
+  }
+
+  private static List<ClassicalResultValue> requireValues(final List<ClassicalResultValue> values) {
     if (values == null) {
       return List.of();
     }
