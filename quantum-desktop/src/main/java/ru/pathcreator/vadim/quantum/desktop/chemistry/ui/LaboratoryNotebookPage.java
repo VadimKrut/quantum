@@ -1172,6 +1172,7 @@ final class LaboratoryNotebookPage extends LaboratoryComputationPage {
     frame.setMinSize(120, 120);
     frame.setPrefSize(170, 120);
     frame.setMaxSize(170, 120);
+    Tooltip.install(frame, new Tooltip(drawing.molecule().displayName()));
     canvas.widthProperty().bind(frame.widthProperty());
     final Runnable paint =
         () -> {

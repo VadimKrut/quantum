@@ -2,7 +2,7 @@
 
 ## Quantum IR Studio для Windows
 
-**[Скачать установщик 1.0.170](https://github.com/VadimKrut/quantum/releases/tag/v1.0.170)** · [Что нового и как установить](RELEASE_NOTES.md)
+**[Скачать установщик 1.0.171](https://github.com/VadimKrut/quantum/releases/tag/v1.0.171)** · [Что нового и как установить](RELEASE_NOTES.md)
 
 Локальное рабочее место для химии: редактор структур, схема реакции, план и
 фактическая загрузка, методика, наблюдения, расчёт выхода и отчёт PDF/HTML.

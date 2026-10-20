@@ -464,11 +464,6 @@ public final class LaboratoryNotebookEvidence {
               + ANALYSIS_LIMIT
               + " актуальных анализов; предыдущие версии сохранены в опыте.");
     final var next = nextAction(nextRunning, nextPlanned, samples, analyses);
-    final var component =
-        e.components().stream()
-            .filter(c -> c.role() == ReactionComponentRole.PRODUCT)
-            .findFirst()
-            .orElse(e.components().isEmpty() ? null : e.components().getFirst());
     return new Summary(
         e.id(),
         e.title(),
@@ -480,7 +475,24 @@ public final class LaboratoryNotebookEvidence {
         outcomes,
         next,
         warnings,
-        component == null ? null : drawing.layouts().get(component.id()));
+        preview(drawing));
+  }
+
+  private static MoleculeDrawing preview(final LaboratoryDrawing drawing) {
+    final var experiment = drawing.experiment();
+    // Stage roles are authoritative and may differ from a component's default role.
+    for (final var stage : experiment.stages().reversed()) {
+      for (final var participant : stage.participants()) {
+        if (participant.role() == ReactionComponentRole.PRODUCT)
+          return drawing.layouts().get(participant.componentId());
+      }
+    }
+    final var component =
+        experiment.components().stream()
+            .filter(c -> c.role() == ReactionComponentRole.PRODUCT)
+            .findFirst()
+            .orElse(experiment.components().isEmpty() ? null : experiment.components().getFirst());
+    return component == null ? null : drawing.layouts().get(component.id());
   }
 
   private static NextAction nextAction(
