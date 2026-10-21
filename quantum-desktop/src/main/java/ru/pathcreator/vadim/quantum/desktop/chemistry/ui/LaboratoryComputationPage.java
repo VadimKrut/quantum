@@ -20,7 +20,9 @@ abstract class LaboratoryComputationPage extends BorderPane {
   protected boolean disposed;
   private final Runnable close;
   private final Label heading = new Label();
+  private final Label context = new Label();
   private final String pageTitle;
+  private final FlowPane headerActions = new FlowPane(8, 8);
   private final Button back = new Button("← К опыту");
 
   LaboratoryComputationPage(final String title, final Runnable close) {
@@ -37,13 +39,34 @@ abstract class LaboratoryComputationPage extends BorderPane {
     this.progress.setPrefSize(22, 22);
     this.progress.setVisible(false);
     this.progress.setManaged(false);
-    final FlowPane top = new FlowPane(12, 8, back, heading, this.progress);
-    top.getStyleClass().add("laboratory-navigation-header");
-    top.setPadding(new javafx.geometry.Insets(12, 12, 10, 12));
-    this.setTop(top);
+    this.context.getStyleClass().add("laboratory-page-context");
+    this.context.setWrapText(true);
+    this.context.setMinWidth(0);
+    this.context.visibleProperty().bind(this.context.textProperty().isNotEmpty());
+    this.context.managedProperty().bind(this.context.visibleProperty());
+    final VBox titles = new VBox(3, this.context, this.heading);
+    titles.setMinWidth(0);
+    HBox.setHgrow(titles, Priority.ALWAYS);
+    this.back.setMinWidth(Region.USE_PREF_SIZE);
+    final HBox top = new HBox(14, back, titles, this.progress);
+    top.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+    this.headerActions
+        .managedProperty()
+        .bind(javafx.beans.binding.Bindings.isNotEmpty(this.headerActions.getChildren()));
+    this.headerActions.visibleProperty().bind(this.headerActions.managedProperty());
+    final VBox header = new VBox(10, top, this.headerActions);
+    header.getStyleClass().add("laboratory-navigation-header");
+    this.setTop(header);
     this.status.setId("chemistry-computation-status");
     this.status.setWrapText(true);
     this.status.setMinHeight(Region.USE_PREF_SIZE);
+    this.status.getStyleClass().add("laboratory-page-status");
+    this.status.visibleProperty().bind(this.status.textProperty().isNotEmpty());
+    this.status.managedProperty().bind(this.status.visibleProperty());
+  }
+
+  protected final void addHeaderAction(final javafx.scene.Node action) {
+    this.headerActions.getChildren().add(action);
   }
 
   protected void busy(final boolean value) {
@@ -53,7 +76,8 @@ abstract class LaboratoryComputationPage extends BorderPane {
   }
 
   final void navigationContext(final String context, final String caption) {
-    this.heading.setText(context + " › " + this.pageTitle);
+    this.context.setText(context);
+    this.heading.setText(this.pageTitle);
     this.backCaption(caption);
   }
 

@@ -32,6 +32,25 @@ final class LaboratoryWelcomePage extends LaboratoryComputationPage {
   private final Label recoveryText = note("");
   private Thread reader;
 
+  void offerTutorial(final Runnable open, final Runnable dismiss) {
+    final Label heading = text("Первый раз в Studio?", "tutorial-offer-title");
+    final Label description =
+        text(
+            "Создайте три учебных опыта с подсказками и стрелками. Можно прервать и продолжить позже.",
+            "welcome-hint");
+    final Button start = action("Пройти обучение →", "tutorial", open);
+    start.getStyleClass().add("laboratory-primary-action");
+    final Button hide = new Button("Больше не предлагать");
+    hide.setOnAction(
+        e -> {
+          dismiss.run();
+          this.setBottom(null);
+        });
+    final VBox card = new VBox(8, heading, description, new FlowPane(10, 8, start, hide));
+    card.getStyleClass().add("tutorial-offer");
+    this.setBottom(card);
+  }
+
   LaboratoryWelcomePage(
       final LaboratoryNotebookRepository repository,
       final List<Path> recent,

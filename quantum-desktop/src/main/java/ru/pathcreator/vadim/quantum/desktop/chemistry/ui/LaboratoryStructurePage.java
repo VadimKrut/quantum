@@ -62,11 +62,16 @@ abstract class LaboratoryStructurePage extends BorderPane {
             });
     back.setId("chemistry-structure-back");
     back.getStyleClass().add("laboratory-navigation-back");
-    final Label heading =
-        note("Проекты › " + editor.document().experiment().title() + " › " + title);
+    final Label context = note("Опыт · " + editor.document().experiment().title());
+    context.getStyleClass().add("laboratory-page-context");
+    final Label heading = note(title);
     heading.getStyleClass().add("laboratory-navigation-title");
-    heading.maxWidthProperty().bind(this.widthProperty().subtract(40));
-    final FlowPane top = new FlowPane(12, 8, back, heading);
+    final VBox titles = new VBox(3, context, heading);
+    titles.setMinWidth(0);
+    HBox.setHgrow(titles, Priority.ALWAYS);
+    back.setMinWidth(Region.USE_PREF_SIZE);
+    final HBox top = new HBox(14, back, titles);
+    top.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
     top.getStyleClass().add("laboratory-navigation-header");
     this.setTop(top);
     this.error.setId("chemistry-structure-error");

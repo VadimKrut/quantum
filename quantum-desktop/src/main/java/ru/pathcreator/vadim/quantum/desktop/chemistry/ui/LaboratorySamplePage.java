@@ -1348,7 +1348,15 @@ final class LaboratorySamplePage extends LaboratoryComputationPage {
     if (sample.kind() != Kind.ISOLATED
         || sample.events().getFirst().quantity() == null
         || sample.events().getFirst().quantity().value().signum() <= 0
-        || component.role() != ReactionComponentRole.PRODUCT
+        || !(sample.stageId() == null
+            ? component.role() == ReactionComponentRole.PRODUCT
+            : this.expected.experiment().stages().stream()
+                .filter(stage -> stage.id().equals(sample.stageId()))
+                .flatMap(stage -> stage.participants().stream())
+                .anyMatch(
+                    participant ->
+                        participant.componentId().equals(component.id())
+                            && participant.role() == ReactionComponentRole.PRODUCT))
         || !LaboratoryMaterialProperties.signature(component.molecule())
             .equals(LaboratoryMaterialProperties.signature(sample.molecule()))) {
       throw new IllegalArgumentException(

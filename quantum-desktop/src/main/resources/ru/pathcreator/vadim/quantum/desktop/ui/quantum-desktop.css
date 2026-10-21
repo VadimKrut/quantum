@@ -1514,6 +1514,79 @@
 #chemistry-workspace .menu-button.laboratory-primary-action > .label { -fx-text-fill: white; }
 #chemistry-workspace .menu-button.laboratory-primary-action > .arrow-button > .arrow { -fx-background-color: white; }
 
+/* Local workbench refresh: readable hierarchy and focused library workflows. */
+#chemistry-workspace .laboratory-navigation-header {
+    -fx-background-color: -app-surface;
+    -fx-padding: 16 20;
+    -fx-border-color: transparent transparent -app-border transparent;
+}
+#chemistry-workspace .laboratory-navigation-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+#chemistry-workspace .laboratory-page-context {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-muted;
+}
+#chemistry-workspace .laboratory-section-title,
+.laboratory-action-picker .laboratory-action-heading {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+#chemistry-workspace .laboratory-computation-page .button,
+#chemistry-workspace #chemistry-library-page .button {
+    -fx-min-height: 32;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+}
+#chemistry-workspace .laboratory-page-status {
+    -fx-padding: 8 12;
+    -fx-background-color: -app-surface-muted;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent transparent transparent -app-accent;
+    -fx-border-width: 0 0 0 3;
+    -fx-text-fill: -app-text;
+}
+#chemistry-workspace .laboratory-page-footer {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border transparent transparent transparent;
+}
+#chemistry-workspace .laboratory-library-own {
+    -fx-padding: 22;
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 12;
+}
+#chemistry-workspace .laboratory-library-detail {
+    -fx-padding: 16;
+    -fx-background-color: -app-surface;
+}
+#chemistry-workspace #chemistry-library-split {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+#chemistry-workspace #chemistry-library-entries .list-cell {
+    -fx-padding: 12;
+    -fx-cell-size: -1;
+}
+#chemistry-workspace #chemistry-library-search,
+.laboratory-action-picker #chemistry-actions-search {
+    -fx-font-size: 14px;
+    -fx-padding: 10 12;
+}
+.laboratory-action-picker .list-view {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+.laboratory-action-picker .list-cell { -fx-padding: 5 8; }
+.laboratory-action-picker .button { -fx-min-height: 32; }
+
 /* Workspace111: the global quantum header stays dark in the light theme. */
 .workbench-header .laboratory-workspace-selector > .label { -fx-text-fill: -app-header-text; }
 .workbench-header .laboratory-workspace-selector > .arrow-button > .arrow { -fx-background-color: -app-header-muted; }
@@ -1660,3 +1733,36 @@
 #chemistry-nmr-model .nmr-model-mixture { -fx-text-fill: #7c3ec8; }
 .theme-dark #chemistry-nmr-model .nmr-model-pure { -fx-text-fill: #80b9ff; }
 .theme-dark #chemistry-nmr-model .nmr-model-mixture { -fx-text-fill: #d2a2ff; }
+
+/* Guided learning uses the same palette as the workbench. */
+.tutorial-root { -fx-background-color: -app-bg; -fx-font-family: "Segoe UI", "Arial"; -fx-font-size: 13px; }
+.tutorial-root .label { -fx-text-fill: -app-text; }
+.tutorial-root .button, .tutorial-root .toggle-button { -fx-padding: 9 14; -fx-background-color: -app-surface; -fx-text-fill: -app-text; -fx-border-color: -app-border; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand; }
+.tutorial-root .button:hover { -fx-background-color: -app-accent-soft; }
+.tutorial-root .laboratory-primary-action { -fx-background-color: #2563eb; -fx-border-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; }
+.tutorial-root .laboratory-primary-action:hover { -fx-background-color: #1d4ed8; }
+.tutorial-root .tutorial-toolbar { -fx-background-color: -app-surface; -fx-border-color: transparent transparent -app-border transparent; }
+.tutorial-root .tutorial-eyebrow { -fx-text-fill: -app-accent; -fx-font-size: 11px; -fx-font-weight: bold; }
+.tutorial-root .tutorial-hero-title { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: -app-text; }
+.tutorial-root .tutorial-intro { -fx-font-size: 16px; -fx-line-spacing: 4px; -fx-text-fill: -app-muted; }
+.tutorial-root .tutorial-description { -fx-font-size: 14px; -fx-line-spacing: 4px; -fx-text-fill: -app-muted; }
+.tutorial-root .tutorial-step-title { -fx-font-size: 23px; -fx-font-weight: bold; }
+.tutorial-root .tutorial-section-title, .tutorial-offer-title { -fx-font-size: 17px; -fx-font-weight: bold; }
+.tutorial-root .tutorial-pill { -fx-background-color: -app-accent-soft; -fx-text-fill: -app-accent; -fx-padding: 8 11; -fx-background-radius: 20; -fx-font-size: 12px; -fx-font-weight: bold; }
+.tutorial-root .tutorial-welcome-card, .tutorial-root .tutorial-guide-card { -fx-background-color: -app-surface; -fx-border-color: -app-border; -fx-border-radius: 16; -fx-background-radius: 16; }
+.tutorial-root .tutorial-guide-card { -fx-padding: 20; }
+.tutorial-root .tutorial-coach { -fx-background-color: -app-surface; -fx-border-color: -app-border transparent transparent -app-border; }
+.tutorial-root .tutorial-coach-scroll, .tutorial-root .tutorial-coach-scroll > .viewport { -fx-background-color: -app-surface; -fx-padding: 0; }
+.tutorial-root .tutorial-state { -fx-text-fill: -app-success-text; -fx-font-size: 12px; }
+.tutorial-root .tutorial-error { -fx-text-fill: -app-danger-text; -fx-background-color: -app-danger-soft; -fx-padding: 10; -fx-background-radius: 6; }
+.tutorial-root .tutorial-danger { -fx-text-fill: -app-danger-text; -fx-background-color: -app-danger-soft; }
+.tutorial-root .tutorial-path { -fx-text-fill: -app-muted; -fx-font-size: 12px; -fx-padding: 12; -fx-background-color: -app-surface-muted; -fx-background-radius: 8; }
+.tutorial-root .progress-bar > .bar { -fx-background-color: -app-accent; -fx-background-radius: 5; -fx-padding: 3; }
+.tutorial-root .progress-bar > .track { -fx-background-color: -app-accent-soft; -fx-background-radius: 5; }
+#chemistry-workspace .tutorial-offer { -fx-background-color: -app-accent-soft; -fx-padding: 18 28; -fx-border-color: -app-border transparent transparent transparent; }
+
+.tutorial-root .tutorial-coach-panel, .tutorial-root .tutorial-coach-actions { -fx-background-color: -app-surface; }
+.tutorial-root .tutorial-coach-actions { -fx-border-color: -app-border; -fx-border-width: 1 0 0 0; }
+
+.tutorial-root .tutorial-progress-track { -fx-background-color: -app-accent-soft; -fx-background-radius: 5; }
+.tutorial-root .tutorial-progress-fill { -fx-background-color: -app-accent; -fx-background-radius: 5; }

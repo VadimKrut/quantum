@@ -209,6 +209,8 @@
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
                                         <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
+                                        <argument>--java-options</argument>
                                         <argument>-Dsun.stdout.encoding=UTF-8</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dsun.stderr.encoding=UTF-8</argument>
@@ -268,8 +270,12 @@
                                         <argument>--win-shortcut</argument>
                                         <argument>--win-dir-chooser</argument>
                                         <argument>--win-per-user-install</argument>
+                                        <argument>--win-upgrade-uuid</argument>
+                                        <argument>d6bc9912-fde3-59cd-a5ee-5ba989833c9c</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -326,8 +332,12 @@
                                         <argument>--win-shortcut</argument>
                                         <argument>--win-dir-chooser</argument>
                                         <argument>--win-per-user-install</argument>
+                                        <argument>--win-upgrade-uuid</argument>
+                                        <argument>d6bc9912-fde3-59cd-a5ee-5ba989833c9c</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -383,6 +393,8 @@
                                         <argument>--linux-shortcut</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -438,6 +450,8 @@
                                         <argument>--linux-shortcut</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -490,6 +504,8 @@
                                         <argument>${desktop.icon.macos}</argument>
                                         <argument>--java-options</argument>
                                         <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dquantum.studio.version=${desktop.jpackage.app.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

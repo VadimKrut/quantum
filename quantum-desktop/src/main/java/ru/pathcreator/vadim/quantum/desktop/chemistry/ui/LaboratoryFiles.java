@@ -21,8 +21,7 @@ import ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure.LaboratoryF
 final class LaboratoryFiles {
 
   private final LaboratoryFileRepository repository = new LaboratoryFileRepository();
-  private final ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
-          .LaboratorySessionPreferences
+  private ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure.LaboratorySessionPreferences
       session =
           new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
               .LaboratorySessionPreferences();
@@ -170,6 +169,12 @@ final class LaboratoryFiles {
     this.saved = saved;
     this.previewed = previewed;
     this.pending = pending;
+  }
+
+  void tutorialSession(final Path directory) {
+    this.session =
+        new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
+            .LaboratorySessionPreferences(directory.resolve("session.properties"));
   }
 
   void owner(final Window window) {

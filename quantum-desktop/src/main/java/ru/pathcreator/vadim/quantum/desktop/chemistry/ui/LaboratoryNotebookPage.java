@@ -419,6 +419,10 @@ final class LaboratoryNotebookPage extends LaboratoryComputationPage {
     this.renderCards(false);
   }
 
+  Snapshot tutorialSnapshot() {
+    return this.snapshot;
+  }
+
   void planSource(final Supplier<LaboratoryDrawing> source) {
     this.planSource = source;
     final String current = this.template.getValue();

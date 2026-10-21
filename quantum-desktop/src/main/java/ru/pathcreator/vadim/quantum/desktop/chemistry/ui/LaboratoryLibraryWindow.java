@@ -18,7 +18,6 @@ import javafx.concurrent.Task;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
 import ru.pathcreator.vadim.quantum.chemistry.domain.structure.Molecule;
@@ -40,12 +39,28 @@ final class LaboratoryLibraryWindow {
   private final ListView<ChemistryLibraryEntry> entries = new ListView<>();
   private final ComboBox<Molecule> molecules = new ComboBox<>();
   private final ComboBox<String> scope = new ComboBox<>();
+  private final ComboBox<ru.pathcreator.vadim.quantum.chemistry.domain.notebook.LaboratoryComponent>
+      source = new ComboBox<>();
+  private final ComboBox<String> destination = new ComboBox<>();
+  private final Path personalFolder;
+
+  LaboratoryLibraryWindow() {
+    this(Path.of(System.getProperty("user.home"), "Documents", "Quantum IR Studio"));
+  }
+
+  LaboratoryLibraryWindow(final Path personalFolder) {
+    this.personalFolder = personalFolder;
+  }
+
   private final TextArea description = area(6);
   private final TextArea warnings = area(3);
   private final TextField search = new TextField();
   private final Label status = new Label();
   private final Label previewStatus = new Label();
   private final Label count = new Label();
+  private final Label entryTitle = new Label(), entryKind = new Label();
+  private final TabPane tabs = new TabPane();
+  private final LaboratoryStructurePreview ownPreview = new LaboratoryStructurePreview();
   private final Canvas preview = new Canvas(420, 220);
   private final Button saveStructure = new Button("Сохранить структуру…");
   private final Button saveTemplate = new Button("Сохранить опыт как шаблон…");
@@ -62,6 +77,7 @@ final class LaboratoryLibraryWindow {
   private ru.pathcreator.vadim.quantum.chemistry.domain.structure.AtomId targetAtom;
   private Path folder;
   private MoleculeDrawing sourceStructure;
+  private MoleculeDrawing attachmentStructure;
   private LaboratoryDrawing current;
   private LaboratoryLibraryEntryPage entryPage;
   private LaboratoryFragmentPage fragmentPage;
@@ -84,7 +100,56 @@ final class LaboratoryLibraryWindow {
     this.targetAtom = targetAtom;
     this.folder = folder;
     this.sourceStructure = selected;
+    this.attachmentStructure = selected;
     this.current = current;
+    this.source.setId("chemistry-library-source");
+    this.source.setMaxWidth(Double.MAX_VALUE);
+    this.source.setConverter(
+        new StringConverter<>() {
+          public String toString(
+              ru.pathcreator.vadim.quantum.chemistry.domain.notebook.LaboratoryComponent
+                  component) {
+            return component == null
+                ? "Выберите вещество из опыта"
+                : (source.getItems().indexOf(component) + 1)
+                    + " · "
+                    + component.molecule().displayName();
+          }
+
+          public ru.pathcreator.vadim.quantum.chemistry.domain.notebook.LaboratoryComponent
+              fromString(String text) {
+            return null;
+          }
+        });
+    this.source.getItems().setAll(current == null ? List.of() : current.experiment().components());
+    this.source
+        .getSelectionModel()
+        .select(
+            this.source.getItems().stream()
+                .filter(c -> selected != null && current.layouts().get(c.id()).equals(selected))
+                .findFirst()
+                .orElse(
+                    this.source.getItems().isEmpty() ? null : this.source.getItems().getFirst()));
+    this.sourceStructure =
+        this.source.getValue() == null ? null : current.layouts().get(this.source.getValue().id());
+    this.source
+        .valueProperty()
+        .addListener(
+            (o, a, b) -> {
+              this.sourceStructure = b == null ? null : this.current.layouts().get(b.id());
+              if (this.sourceStructure != null) this.ownPreview.show(this.sourceStructure, null);
+              // Fragment attachment still refers to the atom selected in the drawing editor.
+              this.updateSaving();
+            });
+    this.destination.setId("chemistry-library-destination");
+    this.destination.getItems().setAll("Моя библиотека · для всех проектов");
+    if (folder != null
+        && !folder
+            .toAbsolutePath()
+            .normalize()
+            .equals(this.personalFolder.toAbsolutePath().normalize()))
+      this.destination.getItems().add("Только этот проект");
+    this.destination.getSelectionModel().selectFirst();
     this.page.setMinSize(0, 0);
 
     this.search.setId("chemistry-library-search");
@@ -122,13 +187,29 @@ final class LaboratoryLibraryWindow {
     this.molecules.setConverter(
         new StringConverter<>() {
           public String toString(final Molecule value) {
-            return value == null ? "Нет структуры" : value.displayName();
+            return value == null
+                ? "Нет структуры"
+                : value.displayName() == null || value.displayName().isBlank()
+                    ? "Структура " + (molecules.getItems().indexOf(value) + 1)
+                    : value.displayName();
           }
 
           public Molecule fromString(final String text) {
             throw new UnsupportedOperationException();
           }
         });
+    this.molecules.setButtonCell(
+        new ListCell<>() {
+          @Override
+          protected void updateItem(final Molecule item, final boolean empty) {
+            super.updateItem(item, empty);
+            setText(empty || item == null ? null : molecules.getConverter().toString(item));
+          }
+        });
+    this.molecules
+        .visibleProperty()
+        .bind(javafx.beans.binding.Bindings.size(this.molecules.getItems()).greaterThan(1));
+    this.molecules.managedProperty().bind(this.molecules.visibleProperty());
     this.warnings.setVisible(false);
     this.warnings.setManaged(false);
     this.status.setWrapText(true);
@@ -140,7 +221,7 @@ final class LaboratoryLibraryWindow {
     this.insertButton.setId("chemistry-library-insert");
     this.templateButton.setId("chemistry-library-template");
     this.attachButton.setId("chemistry-library-attach");
-    final Button back = new Button("← К структурам");
+    final Button back = new Button("← К опыту");
     back.setId("chemistry-library-back");
     back.getStyleClass().add("laboratory-navigation-back");
     back.setOnAction(event -> this.finish());
@@ -192,7 +273,7 @@ final class LaboratoryLibraryWindow {
                 this.store.attachmentPoints(this.entries.getSelectionModel().getSelectedItem());
             this.fragmentPage =
                 new LaboratoryFragmentPage(
-                    this.sourceStructure,
+                    this.attachmentStructure,
                     this.targetAtom,
                     this.selectedDrawing,
                     points,
@@ -221,23 +302,39 @@ final class LaboratoryLibraryWindow {
     this.reload.setOnAction(event -> this.load(null));
     this.updateSaving();
     this.search.setMinWidth(120);
-    final HBox searchBar = new HBox(8, this.search, this.scope, this.reload);
-    HBox.setHgrow(this.search, Priority.ALWAYS);
+    final FlowPane searchFilters = new FlowPane(8, 8, this.scope, this.reload, this.count);
+    final VBox searchBar = new VBox(8, this.search, searchFilters);
     this.previewStatus.setWrapText(true);
     this.previewStatus.setMinHeight(Region.USE_PREF_SIZE);
     this.previewStatus.setId("chemistry-library-preview-status");
+    this.entryTitle.getStyleClass().add("laboratory-section-title");
+    this.entryTitle.setWrapText(true);
+    this.entryKind.getStyleClass().add("laboratory-page-context");
+    final TitledPane metadata = new TitledPane("Описание, синонимы и источники", this.description);
+    metadata.setExpanded(false);
+    metadata.setAnimated(false);
     final VBox details =
-        new VBox(8, this.molecules, this.preview, this.previewStatus, this.description);
-    details.setMinWidth(260);
+        new VBox(
+            10,
+            this.entryTitle,
+            this.entryKind,
+            this.molecules,
+            this.preview,
+            this.previewStatus,
+            metadata);
+    details.getStyleClass().add("laboratory-library-detail");
+    details.setMinWidth(0);
     this.description.setMinWidth(0);
     this.molecules.setMinWidth(0);
-    this.entries.setMinWidth(200);
-    this.preview.widthProperty().bind(details.widthProperty());
+    this.entries.setMinWidth(0);
+    this.preview
+        .widthProperty()
+        .bind(javafx.beans.binding.Bindings.max(1, details.widthProperty().subtract(32)));
     this.preview.widthProperty().addListener((o, a, b) -> this.draw());
     VBox.setVgrow(this.description, Priority.ALWAYS);
     final ScrollPane previewScroll = new ScrollPane(details);
     previewScroll.setFitToWidth(true);
-    previewScroll.setMinWidth(260);
+    previewScroll.setMinWidth(0);
     previewScroll.setMinHeight(0);
     previewScroll.setId("chemistry-library-details-scroll");
     details.setMinHeight(Region.USE_PREF_SIZE);
@@ -248,11 +345,30 @@ final class LaboratoryLibraryWindow {
             javafx.beans.binding.Bindings.createDoubleBinding(
                 () ->
                     Math.max(
-                        140, Math.min(220, previewScroll.getViewportBounds().getHeight() - 58)),
+                        110, Math.min(220, previewScroll.getViewportBounds().getHeight() - 150)),
                 previewScroll.viewportBoundsProperty()));
     this.preview.heightProperty().addListener((o, a, b) -> this.draw());
-    final SplitPane panes = new SplitPane(this.entries, previewScroll);
-    panes.setDividerPositions(0.43);
+    LaboratoryPreviewTheme.track(this.preview, this::draw);
+    final VBox results = new VBox(10, searchBar, this.entries);
+    results.setMinWidth(0);
+    VBox.setVgrow(this.entries, Priority.ALWAYS);
+    final SplitPane panes = new SplitPane(results, previewScroll);
+    panes.setId("chemistry-library-split");
+    panes.setDividerPositions(0.38);
+    this.page
+        .widthProperty()
+        .addListener(
+            (o, a, b) -> {
+              final var direction =
+                  b.doubleValue() < 860
+                      ? javafx.geometry.Orientation.VERTICAL
+                      : javafx.geometry.Orientation.HORIZONTAL;
+              if (panes.getOrientation() != direction) {
+                panes.setOrientation(direction);
+                panes.setDividerPositions(
+                    direction == javafx.geometry.Orientation.VERTICAL ? .42 : .38);
+              }
+            });
     final Label hint =
         new Label(
             "Структура добавляется без количеств. Шаблон создаёт новый план со стадиями и количествами; факты, журнал, заметки и вложения прежнего опыта не переносятся.");
@@ -261,48 +377,110 @@ final class LaboratoryLibraryWindow {
     final Label location =
         new Label(
             this.folder == null
-                ? "Папка библиотеки ещё не выбрана"
-                : "Библиотека проекта: " + this.folder.getFileName());
+                ? "Личная библиотека · доступна во всех проектах"
+                : "Личная библиотека и записи текущего проекта");
+    location.getStyleClass().add("laboratory-page-context");
     location.setId("chemistry-library-folder");
     if (this.folder != null) {
       location.setTooltip(new Tooltip(this.folder.toAbsolutePath().normalize().toString()));
     }
     location.setWrapText(true);
     location.setMinHeight(Region.USE_PREF_SIZE);
-    final VBox content =
+    final Label sourceHint =
+        new Label(
+            this.source.getItems().isEmpty()
+                ? "В опыте пока нет веществ. Вернитесь к опыту и нарисуйте или импортируйте структуру."
+                : "Выберите своё вещество из опыта и сохраните его под нужным названием.");
+    sourceHint.setWrapText(true);
+    this.saveStructure.setText("Далее: название и сохранение →");
+    this.saveStructure.getStyleClass().add("laboratory-primary-action");
+    this.insertButton.setText("Вставить выбранное в опыт");
+    this.insertButton.getStyleClass().add("laboratory-primary-action");
+    final Label ownHeading = new Label("Сохранить своё вещество");
+    ownHeading.getStyleClass().add("laboratory-section-title");
+    final Label destinationHint =
+        new Label(
+            "Личная библиотека будет доступна из любого опыта. Сохранение не меняет исходную структуру.");
+    destinationHint.setWrapText(true);
+    destinationHint.getStyleClass().add("laboratory-page-context");
+    this.ownPreview.hint("Предпросмотр выбранного вещества");
+    this.ownPreview.setMaxHeight(210);
+    this.ownPreview.setPrefHeight(210);
+    this.ownPreview.setMinHeight(160);
+    if (this.sourceStructure != null) this.ownPreview.show(this.sourceStructure, null);
+    final VBox own =
         new VBox(
-            10,
-            location,
-            searchBar,
-            this.count,
-            panes,
-            new FlowPane(8, 8, this.saveStructure, this.saveFragment, this.saveTemplate),
-            hint,
-            this.warnings,
-            this.status);
+            12,
+            ownHeading,
+            sourceHint,
+            new Label("1. Вещество из текущего опыта"),
+            this.source,
+            this.ownPreview,
+            new Label("2. Где хранить"),
+            this.destination,
+            destinationHint);
+    own.setMaxWidth(760);
+    own.setMinWidth(0);
+    own.getStyleClass().add("laboratory-library-own");
+    final TitledPane advanced =
+        new TitledPane(
+            "Фрагменты и шаблоны опыта", new FlowPane(8, 8, this.saveFragment, this.saveTemplate));
+    advanced.setExpanded(false);
+    advanced.setAnimated(false);
+    own.getChildren().add(advanced);
+    final VBox content = new VBox(10, location, panes);
     VBox.setVgrow(panes, Priority.ALWAYS);
     content.setPadding(new javafx.geometry.Insets(16));
     content.setMinWidth(0);
-    panes.setMinHeight(240);
-    final Label heading =
-        new Label(
-            (current == null ? "" : "Проекты › " + current.experiment().title() + " › ")
-                + "Библиотека структур");
+    panes.setMinHeight(0);
+    final StackPane ownSheet = new StackPane(own);
+    ownSheet.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+    ownSheet.setPadding(new javafx.geometry.Insets(18));
+    final ScrollPane ownScroll = new ScrollPane(ownSheet);
+    ownScroll.setFitToWidth(true);
+    ownScroll.setMinSize(0, 0);
+    this.tabs.setId("chemistry-library-tabs");
+    this.tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    this.tabs
+        .getTabs()
+        .setAll(new Tab("Найти и вставить", content), new Tab("Добавить своё вещество", ownScroll));
+    final Label heading = new Label("Библиотека веществ");
     heading.setWrapText(true);
     heading.getStyleClass().add("laboratory-navigation-title");
     final FlowPane header = new FlowPane(12, 8, back, heading);
     header.getStyleClass().add("laboratory-navigation-header");
     final FlowPane actions =
         new FlowPane(10, 8, this.insertButton, this.attachButton, this.templateButton);
-    actions.setPadding(new javafx.geometry.Insets(12, 16, 14, 16));
+    actions
+        .visibleProperty()
+        .bind(this.tabs.getSelectionModel().selectedIndexProperty().isEqualTo(0));
+    actions.managedProperty().bind(actions.visibleProperty());
+    final FlowPane ownActions = new FlowPane(10, 8, this.saveStructure);
+    ownActions
+        .visibleProperty()
+        .bind(this.tabs.getSelectionModel().selectedIndexProperty().isEqualTo(1));
+    ownActions.managedProperty().bind(ownActions.visibleProperty());
+    final VBox footer = new VBox(8, this.warnings, this.status, actions, ownActions);
+    footer.setPadding(new javafx.geometry.Insets(10, 16, 14, 16));
+    footer.getStyleClass().add("laboratory-page-footer");
+    this.status.getStyleClass().add("laboratory-page-status");
+    this.status.visibleProperty().bind(this.status.textProperty().isNotEmpty());
+    this.status.managedProperty().bind(this.status.visibleProperty());
+    this.insertButton.setTooltip(
+        new Tooltip("Вставить структуру в текущий опыт без количеств и прежних измерений."));
+    this.templateButton.setTooltip(new Tooltip(hint.getText()));
     this.browserTop = header;
-    this.browserCenter = content;
-    this.browserBottom = actions;
+    this.browserCenter = this.tabs;
+    this.browserBottom = footer;
     this.page.setTop(header);
-    this.page.setCenter(content);
-    this.page.setBottom(actions);
+    this.page.setCenter(this.tabs);
+    this.page.setBottom(footer);
     this.load(null);
     return this.page;
+  }
+
+  boolean tutorialBusy() {
+    return this.saving || this.loading != null && !this.loading.isDone();
   }
 
   boolean canClose() {
@@ -349,9 +527,14 @@ final class LaboratoryLibraryWindow {
                     .map(ChemistryLibraryEntry::id)
                     .collect(java.util.stream.Collectors.toSet());
             final var messages = new java.util.ArrayList<String>();
-            if (folder != null) {
+            final var folders = new java.util.LinkedHashSet<Path>();
+            folders.add(personalFolder.toAbsolutePath().normalize());
+            if (folder != null) folders.add(folder.toAbsolutePath().normalize());
+            final var seen = new java.util.HashSet<>(ids);
+            for (final var libraryFolder : folders) {
               final var scanned =
-                  new ChemistryLibraryFileRepository(folder.resolve(".chemistry-library")).scan();
+                  new ChemistryLibraryFileRepository(libraryFolder.resolve(".chemistry-library"))
+                      .scan();
               scanned
                   .issues()
                   .forEach(
@@ -360,7 +543,7 @@ final class LaboratoryLibraryWindow {
                 if (ids.contains(entry.id())) {
                   messages.add(
                       entry.displayName() + ": идентификатор совпадает со встроенной записью.");
-                } else {
+                } else if (seen.add(entry.id())) {
                   list.add(entry);
                 }
               }
@@ -396,9 +579,7 @@ final class LaboratoryLibraryWindow {
           }
           this.status.setText(
               selectId == null
-                  ? (this.folder == null
-                      ? "Выберите папку опытов для пользовательской библиотеки."
-                      : "Библиотека прочитана.")
+                  ? "Библиотека загружена. Выберите запись или откройте «Добавить своё вещество»."
                   : "Запись сохранена и повторно прочитана.");
         });
     task.setOnFailed(
@@ -456,6 +637,18 @@ final class LaboratoryLibraryWindow {
   }
 
   private void select(final ChemistryLibraryEntry entry) {
+    this.entryTitle.setText(entry == null ? "Выберите запись в списке" : entry.displayName());
+    this.entryKind.setText(
+        entry == null
+            ? "Поиск по названию и синонимам"
+            : kind(entry)
+                + (builtInIds.contains(entry.id()) ? " · Встроенная" : " · Пользовательская"));
+    this.attachButton.setVisible(
+        entry != null && entry.kind() == ChemistryLibraryEntryKind.FRAGMENT);
+    this.attachButton.setManaged(this.attachButton.isVisible());
+    this.templateButton.setVisible(
+        entry != null && entry.kind() == ChemistryLibraryEntryKind.WORKFLOW_TEMPLATE);
+    this.templateButton.setManaged(this.templateButton.isVisible());
     this.attachButton.setDisable(true);
     this.molecules.getItems().setAll(entry == null ? List.of() : entry.document().molecules());
     this.molecules.getSelectionModel().selectFirst();
@@ -500,7 +693,7 @@ final class LaboratoryLibraryWindow {
                         .collect(java.util.stream.Collectors.joining("; "))));
         this.attachButton.setDisable(
             this.targetAtom == null
-                || this.sourceStructure == null
+                || this.attachmentStructure == null
                 || this.selectedDrawing == null
                 || points.isEmpty());
       } catch (final RuntimeException exception) {
@@ -514,8 +707,7 @@ final class LaboratoryLibraryWindow {
     this.insertButton.setDisable(true);
     this.previewStatus.setText("");
     final var graphics = this.preview.getGraphicsContext2D();
-    graphics.setFill(Color.WHITE);
-    graphics.fillRect(0, 0, this.preview.getWidth(), this.preview.getHeight());
+    LaboratoryPreviewTheme.clear(graphics);
     final var entry = this.entries.getSelectionModel().getSelectedItem();
     final var molecule = this.molecules.getValue();
     if (entry == null || molecule == null) {
@@ -540,7 +732,7 @@ final class LaboratoryLibraryWindow {
             this.preview.getWidth() / 2 - (minX + maxX) * scale / 2,
             this.preview.getHeight() / 2 - (minY + maxY) * scale / 2);
         graphics.scale(scale, scale);
-        LaboratoryCanvas.paintPreview(graphics, this.selectedDrawing);
+        LaboratoryPreviewTheme.paint(graphics, this.selectedDrawing);
       } finally {
         graphics.restore();
       }
@@ -573,6 +765,11 @@ final class LaboratoryLibraryWindow {
     if (this.saving) {
       return;
     }
+    if (!"template".equals(kind) && this.sourceStructure == null) {
+      this.status.setText("Выберите вещество из текущего опыта в списке вверху.");
+      this.source.requestFocus();
+      return;
+    }
     this.entryPage =
         new LaboratoryLibraryEntryPage(
             kind, this.sourceStructure, this.current, this::save, this::backToBrowser);
@@ -588,11 +785,31 @@ final class LaboratoryLibraryWindow {
       if (this.entryPage != null) {
         this.entryPage.draft(fields, false);
         fields.setProperty(
+            "libraryForm.sourceComponent",
+            this.source.getValue() == null ? "" : this.source.getValue().id());
+        fields.setProperty(
+            "libraryForm.destination",
+            Integer.toString(this.destination.getSelectionModel().getSelectedIndex()));
+        fields.setProperty(
             "libraryForm.folder",
             this.folder == null ? "" : this.folder.toAbsolutePath().normalize().toString());
       }
       return;
     }
+    this.source
+        .getSelectionModel()
+        .select(
+            this.source.getItems().stream()
+                .filter(c -> c.id().equals(fields.getProperty("libraryForm.sourceComponent")))
+                .findFirst()
+                .orElse(this.source.getValue()));
+    this.destination
+        .getSelectionModel()
+        .select(
+            "1".equals(fields.getProperty("libraryForm.destination"))
+                    && this.destination.getItems().size() > 1
+                ? 1
+                : 0);
     final var restored =
         new LaboratoryLibraryEntryPage(
             fields.getProperty("libraryForm.kind"),
@@ -613,6 +830,10 @@ final class LaboratoryLibraryWindow {
   }
 
   private void save(final java.util.function.Supplier<ChemistryLibraryEntry> prepare) {
+    final Path destinationFolder =
+        this.destination.getSelectionModel().getSelectedIndex() == 1
+            ? this.folder
+            : this.personalFolder;
     this.saving = true;
     this.updateSaving();
     this.status.setText("Сохранение записи…");
@@ -623,7 +844,7 @@ final class LaboratoryLibraryWindow {
         new Task<>() {
           protected ChemistryLibraryEntry call() throws Exception {
             final var entry = prepare.get();
-            store.save(folder, entry);
+            store.save(destinationFolder, entry);
             return entry;
           }
         };
@@ -633,6 +854,9 @@ final class LaboratoryLibraryWindow {
           this.updateSaving();
           if (this.active) {
             this.backToBrowser();
+            this.tabs.getSelectionModel().selectFirst();
+            this.search.clear();
+            this.scope.getSelectionModel().selectFirst();
             this.load(task.getValue().id());
           }
         });
@@ -656,11 +880,11 @@ final class LaboratoryLibraryWindow {
   }
 
   private void updateSaving() {
-    this.saveStructure.setDisable(
-        this.saving || this.folder == null || this.sourceStructure == null);
-    this.saveTemplate.setDisable(this.saving || this.folder == null);
-    this.saveFragment.setDisable(
-        this.saving || this.folder == null || this.sourceStructure == null);
+    this.saveStructure.setDisable(this.saving || this.sourceStructure == null);
+    this.saveTemplate.setDisable(this.saving || this.current == null);
+    this.saveFragment.setDisable(this.saving || this.sourceStructure == null);
+    this.source.setDisable(this.saving);
+    this.destination.setDisable(this.saving);
   }
 
   private static void launch(final Task<?> task, final String name) {

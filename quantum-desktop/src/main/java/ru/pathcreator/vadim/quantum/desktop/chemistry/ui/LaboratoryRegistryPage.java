@@ -715,7 +715,8 @@ final class LaboratoryRegistryPage extends LaboratoryComputationPage {
     if (file == null) {
       return;
     }
-    path.setText(file.getParent().toString());
+    path.setText("Папка проекта: " + file.getParent().getFileName());
+    path.setTooltip(new Tooltip(file.getParent().toString()));
     failedLoad = true;
     job(
         "Открываю реестр…",

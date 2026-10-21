@@ -44,7 +44,8 @@ try {
     '--app-version', $Version, '--vendor', 'Vadim Aleksandrovich Zaletaev',
     '--description', 'Local chemistry and synthesis workbench', '--icon', $releaseIcon,
     '--runtime-image', $releaseRuntime, '--java-options', '-Dfile.encoding=UTF-8',
-    '--java-options', '--enable-native-access=ALL-UNNAMED')
+    '--java-options', '--enable-native-access=ALL-UNNAMED',
+    '--java-options', "-Dquantum.studio.version=$Version")
   & $releaseJpackage @releaseImageArguments 2>&1 | Tee-Object -FilePath (Join-Path $releaseWork 'app-image.log')
   if ($LASTEXITCODE -ne 0) { throw "App image failed: $LASTEXITCODE" }
   $releaseImage = Join-Path $releaseImages 'Quantum IR Studio'
@@ -59,6 +60,10 @@ try {
     '--temp', (Join-Path $releaseWork 'installer-temp'), '--verbose')
   & $releaseJpackage @releaseInstallerArguments 2>&1 | Tee-Object -FilePath (Join-Path $releaseWork 'installer.log')
   if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $releaseInstaller)) { throw "Installer failed: $LASTEXITCODE" }
+  if ($PackageType -eq 'msi') {
+    & (Join-Path $PSScriptRoot 'protect-windows-installer.ps1') -MsiPath $releaseInstaller
+    if ($LASTEXITCODE -ne 0) { throw 'Installer protection failed.' }
+  }
   $releaseImageFiles = @(Get-ChildItem -LiteralPath $releaseImage -Recurse -File | ForEach-Object {
     @{ path = [IO.Path]::GetRelativePath($releaseImage, $_.FullName); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(); bytes = $_.Length }
   })

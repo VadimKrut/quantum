@@ -649,19 +649,17 @@ final class LaboratoryEvidencePage extends LaboratoryComputationPage {
     this.setCenter(this.tabs);
     this.setBottom(this.status);
     BorderPane.setMargin(this.status, new Insets(8, 16, 12, 16));
-    ((FlowPane) this.getTop())
-        .getChildren()
-        .add(
-            button(
-                "Новая запись",
-                "new",
-                () -> {
-                  if (this.running) throw new IllegalStateException("Дождитесь загрузки.");
-                  if (this.pending() && this.hasRecordInput())
-                    throw new IllegalStateException("Добавьте либо очистите текущую запись.");
-                  this.begin(this.method.getValue());
-                  this.status.setText("");
-                }));
+    this.addHeaderAction(
+        button(
+            "Новая запись",
+            "new",
+            () -> {
+              if (this.running) throw new IllegalStateException("Дождитесь загрузки.");
+              if (this.pending() && this.hasRecordInput())
+                throw new IllegalStateException("Добавьте либо очистите текущую запись.");
+              this.begin(this.method.getValue());
+              this.status.setText("");
+            }));
     this.begin(Method.CORRELATIONS);
     this.refreshHistory();
   }
@@ -914,9 +912,7 @@ final class LaboratoryEvidencePage extends LaboratoryComputationPage {
   }
 
   void saving(final java.util.function.Consumer<Boolean> save) {
-    ((FlowPane) this.getTop())
-        .getChildren()
-        .add(button("Сохранить опыт", "save", () -> save.accept(false)));
+    this.addHeaderAction(button("Сохранить опыт", "save", () -> save.accept(false)));
   }
 
   private static Tooltip identityTooltip(final Choice value) {

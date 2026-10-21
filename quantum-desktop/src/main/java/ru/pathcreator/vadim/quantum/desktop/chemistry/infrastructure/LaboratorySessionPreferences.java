@@ -16,16 +16,24 @@ import ru.pathcreator.vadim.quantum.desktop.infrastructure.DesktopLocalPreferenc
 
 /** Paths are navigation hints only; documents are always re-read by the repository. */
 public final class LaboratorySessionPreferences {
-  private final DesktopLocalPreferences values =
-      new DesktopLocalPreferences(
-          Path.of(
-              System.getProperty(
-                  "quantum.laboratory.sessionSettings",
-                  Path.of(
-                          System.getProperty("user.home"),
-                          ".quantum",
-                          "laboratory-session.properties")
-                      .toString())));
+  private final DesktopLocalPreferences values;
+
+  public LaboratorySessionPreferences() {
+    this(
+        Path.of(
+            System.getProperty(
+                "quantum.laboratory.sessionSettings",
+                Path.of(
+                        System.getProperty("user.home"),
+                        ".quantum",
+                        "laboratory-session.properties")
+                    .toString())));
+  }
+
+  public LaboratorySessionPreferences(final Path path) {
+    this.values = new DesktopLocalPreferences(path);
+  }
+
   private String invalidPath = "";
 
   public Path current() {

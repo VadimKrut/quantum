@@ -293,7 +293,7 @@ final class LaboratoryExperimentDesk extends LaboratoryComputationPage {
 
   void projectNavigation(final Runnable action) {
     this.projectReturn = Objects.requireNonNull(action, "action");
-    this.projectButton.setText("← К проектам");
+    this.projectButton.setText("← К серии опытов");
     this.title.setText("Проекты › " + this.editor.document().experiment().title());
   }
 

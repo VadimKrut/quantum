@@ -90,11 +90,6 @@ final class LaboratoryIdentityPage extends LaboratoryStructurePage {
     this.setId("chemistry-identity-page");
     this.apply.setText("Применить карточку");
     this.apply.getStyleClass().add("laboratory-primary-action");
-    ((FlowPane) this.getTop())
-        .getChildren().stream()
-            .filter(Label.class::isInstance)
-            .map(Label.class::cast)
-            .forEach(label -> label.setText("Карточка вещества"));
     this.compactSummary.setText("Структура вещества");
     this.compactSummary.setExpanded(false);
     this.compactSummary.setAnimated(false);

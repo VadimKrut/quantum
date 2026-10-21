@@ -739,7 +739,7 @@ final class LaboratoryAnalysisPage extends LaboratoryComputationPage {
   void saving(final java.util.function.Consumer<Boolean> save) {
     final Button button = this.button("Сохранить опыт", "save", () -> save.accept(false));
     button.getStyleClass().add("laboratory-save");
-    ((FlowPane) this.getTop()).getChildren().add(button);
+    this.addHeaderAction(button);
   }
 
   private static void visible(final Node node, final boolean show) {

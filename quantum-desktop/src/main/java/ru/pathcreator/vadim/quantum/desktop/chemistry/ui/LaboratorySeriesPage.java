@@ -661,7 +661,7 @@ final class LaboratorySeriesPage extends LaboratoryComputationPage {
                   duration,
                   defaults.components(),
                   defaults.features(),
-                  row.conditionsNote.get());
+                  row.conditionsNote.get().isBlank() ? null : row.conditionsNote.get());
           plans.add(
               LaboratorySeriesPlan.prepare(
                   this.source,
@@ -723,7 +723,15 @@ final class LaboratorySeriesPage extends LaboratoryComputationPage {
     }
     final var product =
         plan.drawing().experiment().components().stream()
-            .filter(c -> c.role() == ReactionComponentRole.PRODUCT)
+            .filter(
+                c ->
+                    plan.drawing().experiment().stages().stream()
+                        .filter(stage -> stage.id().equals(this.stage().id()))
+                        .flatMap(stage -> stage.participants().stream())
+                        .anyMatch(
+                            participant ->
+                                participant.componentId().equals(c.id())
+                                    && participant.role() == ReactionComponentRole.PRODUCT))
             .findFirst();
     if (product.isPresent()) {
       final var drawing = plan.drawing().layouts().get(product.get().id());

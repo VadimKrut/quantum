@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (for example 1.0.171); prepare RELEASE_NOTES.md first'
+        description: 'Release version (for example 1.0.176); prepare RELEASE_NOTES.md first'
         required: true
         type: string
 
@@ -86,6 +86,14 @@ jobs:
           echo "Release version: ${VERSION}"
           mvn -B -pl quantum-desktop -am verify -P${{ matrix.profile }} -Drevision="${VERSION}" -DskipTests
 
+      - name: Protect Windows MSI uninstall
+        if: matrix.name == 'windows-msi'
+        shell: pwsh
+        run: |
+          Get-ChildItem quantum-desktop/target/dist/*.msi | ForEach-Object {
+            ./tools/protect-windows-installer.ps1 -MsiPath $_.FullName
+          }
+
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4
         with:
@@ -141,6 +149,11 @@ jobs:
           find release-assets -type f -name "*.msi" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-windows.msi" \;
           find release-assets -type f -name "*.deb" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-linux.deb" \;
           find release-assets -type f -name "*.dmg" -exec cp "{}" "release/quantum-ir-studio-${VERSION}-macos.dmg" \;
+          # Keep this asset name stable so the public latest/download URL keeps working.
+          cp "release/quantum-ir-studio-${VERSION}-windows.msi" "release/quantum-ir-studio-windows-x64.msi"
+          git archive --format=zip --prefix="quantum-ir-studio-${VERSION}/" \
+            --output="release/quantum-ir-studio-${VERSION}-sources.zip" HEAD
+          (cd release && sha256sum *.exe *.msi *.deb *.dmg *.zip > SHA256SUMS.txt)
           ls -la release
 
       - name: Publish a new release without replacing existing assets

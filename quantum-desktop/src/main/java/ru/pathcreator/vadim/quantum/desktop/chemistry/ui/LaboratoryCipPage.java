@@ -173,7 +173,16 @@ final class LaboratoryCipPage extends LaboratoryComputationPage {
           this.result = this.task.getValue();
           this.render();
           this.apply.setDisable(this.result.labels().labels().isEmpty());
-          this.status.setText("Расчёт завершён. Просмотрите найденные дескрипторы и ограничения.");
+          final boolean empty = this.result.labels().labels().isEmpty();
+          this.labels.setPlaceholder(
+              note(
+                  empty
+                      ? "Дескрипторы R/S и E/Z не найдены для выбранного источника конфигурации."
+                      : "Вычисленные дескрипторы появятся после расчёта."));
+          this.status.setText(
+              empty
+                  ? "Расчёт завершён без дескрипторов. Проверьте наличие стереоцентров, клиновидных связей или заданной конфигурации и выбранный источник. Сохранять нечего."
+                  : "Расчёт завершён. Просмотрите найденные дескрипторы и ограничения.");
         });
     this.task.setOnFailed(
         e -> {

@@ -16,7 +16,13 @@ docs/
 !/tools/
 /tools/*
 !/tools/build-windows-release.ps1
+!/tools/protect-windows-installer.ps1
 !/tools/check-java-format.ps1
+!/tools/LaboratoryNavigationAudit.java
+!/tools/LaboratoryActionAudit.java
+!/tools/LaboratoryTutorialAudit.java
+!/tools/StudioUpdateAudit.java
+!/tools/check-studio-local.ps1
 /.venv-qasm/
 **/__pycache__/
 *.py[cod]

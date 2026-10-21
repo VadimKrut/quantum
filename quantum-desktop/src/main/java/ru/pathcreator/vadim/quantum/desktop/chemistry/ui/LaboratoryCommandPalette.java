@@ -49,23 +49,34 @@ final class LaboratoryCommandPalette {
     }
     dialog.setResizable(true);
     LaboratoryDialogStyle.apply(dialog, owner);
+    dialog.getDialogPane().getStyleClass().add("laboratory-action-picker");
     final TextField search = new TextField();
     search.setPromptText("Найти действие: масса, проба, очистка, спектр, повтор…");
     search.setId("chemistry-actions-search");
     final CheckBox favorites = new CheckBox("Только избранные");
     favorites.setId("chemistry-actions-favorites");
+    final ComboBox<String> section = new ComboBox<>();
+    section.setId("chemistry-actions-section");
+    section.getItems().add("Все разделы");
+    commands.stream().map(Command::section).distinct().forEach(section.getItems()::add);
+    section.getSelectionModel().selectFirst();
+    section.setMaxWidth(Double.MAX_VALUE);
+    final Label count = new Label();
+    count.setId("chemistry-actions-count");
     final ListView<Command> list = new ListView<>();
     list.setId("chemistry-actions-list");
     list.setPrefHeight(380);
-    final Label hint = new Label();
-    hint.setWrapText(true);
     final Runnable refresh =
         () -> {
           final Command selected = list.getSelectionModel().getSelectedItem();
-          final String query = search.getText().strip().toLowerCase(Locale.ROOT);
+          final String query = normalized(search.getText());
           list.getItems()
               .setAll(
                   commands.stream()
+                      .filter(
+                          c ->
+                              section.getSelectionModel().getSelectedIndex() == 0
+                                  || c.section().equals(section.getValue()))
                       .filter(
                           c ->
                               !favorites.isSelected()
@@ -75,8 +86,7 @@ final class LaboratoryCommandPalette {
                               Arrays.stream(query.split("\\s+"))
                                   .allMatch(
                                       word ->
-                                          (c.name() + " " + c.section() + " " + c.hint())
-                                              .toLowerCase(Locale.ROOT)
+                                          normalized(c.name() + " " + c.section() + " " + c.hint())
                                               .contains(word)))
                       .sorted(
                           Comparator.<Command, Boolean>comparing(
@@ -89,6 +99,7 @@ final class LaboratoryCommandPalette {
           } else {
             list.getSelectionModel().selectFirst();
           }
+          count.setText("Действий: " + list.getItems().size() + " из " + commands.size());
         };
     list.setCellFactory(
         view ->
@@ -142,17 +153,28 @@ final class LaboratoryCommandPalette {
                 this.star.setText(preferences.flag("favorite." + item.id(), false) ? "★" : "☆");
                 this.star.setId("action-favorite-" + item.id());
                 this.name.setText(item.name());
-                this.group.setText(item.section());
+                this.group.setText(item.section() + " · " + item.hint());
                 if (this.getGraphic() != this.row) {
                   this.setGraphic(this.row);
                 }
               }
             });
-    list.setPlaceholder(
-        new Label("Подходящих действий нет. Измените запрос или выключите фильтр избранных."));
-    list.getSelectionModel()
-        .selectedItemProperty()
-        .addListener((o, a, b) -> hint.setText(b == null ? "" : b.hint()));
+    final Button reset = new Button("Сбросить поиск и фильтры");
+    reset.setId("chemistry-actions-reset");
+    reset.setOnAction(
+        e -> {
+          search.clear();
+          favorites.setSelected(false);
+          section.getSelectionModel().selectFirst();
+          search.requestFocus();
+        });
+    final Label empty =
+        new Label("Ничего не найдено. Попробуйте другое слово или сбросьте фильтры.");
+    empty.setWrapText(true);
+    final VBox emptyState = new VBox(12, empty, reset);
+    emptyState.setAlignment(javafx.geometry.Pos.CENTER);
+    emptyState.setMaxWidth(390);
+    list.setPlaceholder(emptyState);
     final ButtonType execute = new ButtonType("Открыть", ButtonBar.ButtonData.OK_DONE);
     dialog
         .getDialogPane()
@@ -167,11 +189,22 @@ final class LaboratoryCommandPalette {
         .bind(list.getSelectionModel().selectedItemProperty().isNull());
     search.textProperty().addListener(o -> refresh.run());
     favorites.selectedProperty().addListener(o -> refresh.run());
+    section.valueProperty().addListener(o -> refresh.run());
     search.setOnKeyPressed(
         e -> {
           if (e.getCode() == KeyCode.DOWN) {
             list.requestFocus();
             list.getSelectionModel().selectFirst();
+            e.consume();
+          }
+        });
+    list.setOnKeyPressed(
+        e -> {
+          if (e.getCode() == KeyCode.ENTER
+              && !buttonTarget(e.getTarget())
+              && list.getSelectionModel().getSelectedItem() != null) {
+            dialog.setResult(list.getSelectionModel().getSelectedItem());
+            dialog.close();
             e.consume();
           }
         });
@@ -184,13 +217,24 @@ final class LaboratoryCommandPalette {
             dialog.close();
           }
         });
-    final VBox body = new VBox(12, search, favorites, list, hint);
-    body.setPadding(new Insets(12));
-    body.setPrefWidth(620);
+    final Label intro = new Label("Что нужно сделать?");
+    intro.getStyleClass().add("laboratory-action-heading");
+    final FlowPane filters = new FlowPane(12, 8, section, favorites, count);
+    final Label keys =
+        new Label("↓ — перейти к списку   ·   Enter — открыть   ·   ☆ — добавить в избранное");
+    keys.setWrapText(true);
+    keys.getStyleClass().add("panel-hint");
+    final VBox body = new VBox(12, intro, search, filters, list, keys);
+    body.setPadding(new Insets(18));
+    body.setPrefWidth(720);
     VBox.setVgrow(list, Priority.ALWAYS);
     dialog.getDialogPane().setContent(body);
     refresh.run();
     dialog.setOnShown(e -> Platform.runLater(search::requestFocus));
     return dialog;
+  }
+
+  private static String normalized(String value) {
+    return value.strip().toLowerCase(Locale.ROOT).replace('ё', 'е');
   }
 }

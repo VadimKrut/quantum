@@ -47,14 +47,15 @@ import ru.pathcreator.vadim.quantum.desktop.ui.extension.DesktopWorkspaceExtensi
 
 public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
 
-  private final ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
-          .LaboratoryViewPreferences
+  private ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure.LaboratoryViewPreferences
       viewPreferences =
           new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
               .LaboratoryViewPreferences();
   private final javafx.animation.PauseTransition viewSave =
       new javafx.animation.PauseTransition(javafx.util.Duration.millis(400));
   private boolean viewReady;
+  private ru.pathcreator.vadim.quantum.desktop.update.StudioUpdateController updates =
+      new ru.pathcreator.vadim.quantum.desktop.update.StudioUpdateController(this.viewPreferences);
   private boolean viewDirty;
   private boolean fitPending;
   private String focusPending;
@@ -64,6 +65,11 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
   private final MoleculeSketchService sketch = new MoleculeSketchService();
   private final LaboratorySelection selection = new LaboratorySelection(this.editor);
   private final BorderPane root = new BorderPane();
+  private final javafx.scene.layout.StackPane presentation =
+      new javafx.scene.layout.StackPane(this.root);
+  private final Path tutorialRoot;
+  private LaboratoryTutorialPage tutorial;
+
   private final Label status = new Label();
   private final Label documentTitle = new Label("Новый опыт");
   private LaboratoryStartPane startPane;
@@ -159,8 +165,7 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
   private String tool = "Выбор";
   private Window owner;
   private Path folder;
-  private final ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
-          .LaboratoryNotebookRepository
+  private ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure.LaboratoryNotebookRepository
       notebookRepository =
           new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
               .LaboratoryNotebookRepository();
@@ -210,6 +215,23 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
   }
 
   public LaboratoryWorkspace() {
+    this(null);
+  }
+
+  LaboratoryWorkspace(final Path tutorialRoot) {
+    this.tutorialRoot = tutorialRoot;
+    if (tutorialRoot != null) {
+      this.viewPreferences =
+          new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
+              .LaboratoryViewPreferences(tutorialRoot.resolve("view.properties"));
+      this.updates =
+          new ru.pathcreator.vadim.quantum.desktop.update.StudioUpdateController(
+              this.viewPreferences);
+      this.notebookRepository =
+          new ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
+              .LaboratoryNotebookRepository(tutorialRoot.resolve("Projects"));
+      this.files.tutorialSession(tutorialRoot);
+    }
     this.files.activity(this::fileActivity);
     this.files.problems(this::fileProblem);
     this.reaction.classification(this::classification);
@@ -278,6 +300,8 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
         });
     this.viewSave.setOnFinished(event -> this.flushView());
     this.root.setId("chemistry-workspace");
+    this.undo.setId("chemistry-undo");
+    this.redo.setId("chemistry-redo");
     this.root.setPadding(Insets.EMPTY);
     this.root.setTop(this.toolbar());
     this.canvas.contextMenu(this::drawingMenu);
@@ -533,6 +557,7 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
               zoom[0] = this.canvas.fit();
               scale.setText(Math.round(zoom[0] * 100) + "%");
             });
+    fit.setId("chemistry-fit");
     this.focusButton.setId("chemistry-focus-component");
     this.focusButton.setTooltip(
         new javafx.scene.control.Tooltip(
@@ -554,6 +579,7 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
     zoomOut.setTooltip(new javafx.scene.control.Tooltip("Уменьшить рисунок · Ctrl + колесо мыши"));
     zoomIn.setTooltip(new javafx.scene.control.Tooltip("Увеличить рисунок · Ctrl + колесо мыши"));
     final Button check = button("Проверить", () -> this.run(this::checkStructure));
+    check.setId("chemistry-check-structure");
     check.setTooltip(
         new javafx.scene.control.Tooltip(
             "Проверить связи, заряды и электронное состояние структуры"));
@@ -914,6 +940,11 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
 
   public Node content(final Window window) {
     this.owner = window;
+    if (this.tutorialRoot != null) {
+      this.files.owner(window);
+      return this.root;
+    }
+    this.updates.attach(window);
     this.files.owner(window);
     if (!this.recoveryAttached) {
       this.recoveryAttached = true;
@@ -933,7 +964,170 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
         this.recovery.start(this::resumeSession);
       }
     }
+    return this.presentation;
+  }
+
+  private void startTutorial() {
+    if (this.tutorialRoot != null || this.tutorial != null || this.files.busy()) return;
+    try {
+      this.tutorial =
+          new LaboratoryTutorialPage(this.owner, this.viewPreferences, this::endTutorial);
+      this.presentation.getChildren().setAll(this.tutorial);
+    } catch (Exception failure) {
+      this.files.error(failure);
+    }
+  }
+
+  private void endTutorial() {
+    this.tutorial = null;
+    this.presentation.getChildren().setAll(this.root);
+  }
+
+  void tutorialDrawing() {
+    if (!tutorialCanLeave()) return;
+    reload();
+    drawingTabs.getSelectionModel().select(0);
+    canvas.fit();
+  }
+
+  java.util.Map<String, javafx.scene.control.ContextMenu> tutorialContextMenus() {
+    if (root.getCenter() != workArea || editor.document().layouts().isEmpty())
+      return java.util.Map.of();
+    final var entry = editor.document().layouts().entrySet().iterator().next();
+    final var molecule = entry.getValue().molecule();
+    final var result = new java.util.LinkedHashMap<String, javafx.scene.control.ContextMenu>();
+    if (!molecule.atoms().isEmpty())
+      result.put(
+          "Правая кнопка на атоме",
+          drawingMenu(
+              new LaboratoryCanvas.Hit(entry.getKey(), molecule.atoms().getFirst().id()), null));
+    if (!molecule.bonds().isEmpty()) {
+      final var bond = molecule.bonds().getFirst();
+      result.put(
+          "Правая кнопка на связи",
+          drawingMenu(
+              null,
+              new LaboratoryCanvas.BondHit(
+                  entry.getKey(), bond.firstAtomId(), bond.secondAtomId())));
+    }
+    return result;
+  }
+
+  void tutorialPrepareDrawingPractice() {
+    elementTool("C");
+    chooseTool("Выбор");
+  }
+
+  LaboratoryTutorialPractice.State tutorialDrawingState() {
+    return new LaboratoryTutorialPractice.State(
+        editor.document(),
+        tool,
+        drawElement,
+        drawBond,
+        selected == null ? "" : selected.componentId() + "/" + selected.atomId(),
+        viewPreferences.flag("carbonHydrogens", false));
+  }
+
+  LaboratoryEditor tutorialEditor() {
+    return this.editor;
+  }
+
+  LaboratoryNotebookPage tutorialNotebook() {
+    return this.computationPage instanceof LaboratoryNotebookPage page ? page : null;
+  }
+
+  List<LaboratoryCommandPalette.Command> tutorialCommands() {
+    return this.navigationCommands();
+  }
+
+  Node tutorialView() {
     return this.root;
+  }
+
+  Path tutorialFile() {
+    return this.files.path();
+  }
+
+  boolean tutorialSave() {
+    if (this.files.busy()) return false;
+    this.flushAll();
+    return this.files.path() == null || !this.editor.dirty() || this.files.save(false);
+  }
+
+  boolean tutorialCanLeave() {
+    return !this.files.busy()
+        && (this.textPage == null || this.textPage.canClose())
+        && (this.quantityPage == null || this.quantityPage.canClose())
+        && (this.projectPage == null || this.projectPage.canClose())
+        && (this.stagePage == null || this.stagePage.canClose())
+        && (this.stereoPage == null || this.stereoPage.canClose())
+        && (this.stoichiometryPage == null || this.stoichiometryPage.canClose())
+        && (this.materialsPage == null || this.materialsPage.canClose())
+        && (this.computationPage == null || this.computationPage.canClose())
+        && (this.structurePage == null || this.structurePage.canClose())
+        && (this.libraryPage == null || this.libraryPage.canClose())
+        && this.tutorialSave();
+  }
+
+  boolean tutorialIdle() {
+    return !this.files.busy()
+        && (this.computationPage == null || !this.computationPage.running)
+        && (this.libraryPage == null || !this.libraryPage.tutorialBusy());
+  }
+
+  void tutorialDispose() {
+    if (this.tutorialRoot == null) throw new IllegalStateException("Not a tutorial workspace");
+    this.viewSave.stop();
+    this.flushView();
+    this.recovery.closed();
+    this.archive.dispose();
+    if (this.computationPage != null) this.computationPage.dispose();
+    if (this.libraryPage != null) this.libraryPage.dispose();
+    if (this.structurePage != null) this.structurePage.dispose();
+    if (this.materialsPage != null) this.materialsPage.dispose();
+    if (this.projectPage != null) this.projectPage.dispose();
+  }
+
+  void tutorialOpen(final Path path) {
+    if (!path.toAbsolutePath()
+        .normalize()
+        .startsWith(this.tutorialRoot.toAbsolutePath().normalize()))
+      throw new IllegalArgumentException("Опыт находится вне учебной папки.");
+    if (this.files.openChecked(path)) {
+      this.folder = path.getParent();
+      this.files.preferredDirectory(this.folder);
+      this.desk(null);
+    }
+  }
+
+  void tutorialCommand(final String id) {
+    if (this.computationPage == null && this.root.getCenter() != this.workArea) {
+      if (!this.tutorialCanLeave()) return;
+      this.reload();
+    }
+    if (this.selected == null && !this.editor.document().experiment().components().isEmpty())
+      this.chooseComponent(this.editor.document().experiment().components().getFirst().id(), false);
+    this.navigationCommands().stream()
+        .filter(c -> c.id().equals(id))
+        .findFirst()
+        .orElseThrow()
+        .action()
+        .run();
+  }
+
+  void tutorialProjects(
+      final ru.pathcreator.vadim.quantum.desktop.chemistry.infrastructure
+              .LaboratoryNotebookRepository.Snapshot
+          snapshot) {
+    if (snapshot != null)
+      this.notebookView =
+          new LaboratoryNotebookPage.ViewState(
+              snapshot.project().id(),
+              snapshot.sections().isEmpty() ? null : snapshot.sections().getFirst().id(),
+              null,
+              "ALL",
+              "");
+    this.notebooks(false);
   }
 
   private void resumeSession() {
@@ -1017,6 +1211,10 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
   }
 
   public boolean requestClose() {
+    if (this.tutorial != null) {
+      if (!this.tutorial.closeForApplication()) return false;
+      this.endTutorial();
+    }
     this.startupInteracted = true;
     if (this.files.cancelDecisionForClose(
         () -> {
@@ -1152,6 +1350,10 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
   }
 
   public void shortcut(final KeyEvent event) {
+    if (this.tutorial != null) {
+      this.tutorial.shortcut(event);
+      return;
+    }
     if (!this.files.busy() && event.isShortcutDown() && event.getCode() == KeyCode.K) {
       this.commands();
       event.consume();
@@ -1535,57 +1737,21 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
                 menu("Пакет проекта…", this::exportProject)),
             menu("Редактировать QCHEM…", () -> this.run(this::showTextEditor)));
     final javafx.scene.control.MenuButton work = new javafx.scene.control.MenuButton("Разделы");
+    document.setId("chemistry-file-menu");
     work.setId("chemistry-work-menu");
-    work.getItems()
-        .setAll(
-            new javafx.scene.control.Menu(
-                "Опыт",
-                null,
-                menu("Рабочий экран", () -> this.desk(null)),
-                menu("Название реакции и механизмы", () -> this.classification(null)),
-                menu("Методика и проведение", () -> this.procedure(null)),
-                menu("Контроль, обработка и очистка", () -> this.operations(null)),
-                menu("Следующая стадия из образца", this::sampleTransfer)),
-            new javafx.scene.control.Menu(
-                "Планирование",
-                null,
-                menu("Карта многостадийного синтеза", () -> this.route(null)),
-                menu("Матрица условий, DoE и виалы", this::design),
-                menu("Серия из шаблона", this::series),
-                menu("Обзор и сравнение опытов", this::overview)),
-            new javafx.scene.control.Menu(
-                "Вещества и хранение",
-                null,
-                menu("Материалы и партии", this::materials),
-                menu("Образцы и фракции", this::samples),
-                menu("Образцы проекта", this::sampleCatalog),
-                menu("Растворы и разведения", this::solutions),
-                menu("Карта хранения", this::storage),
-                menu("Реестр соединений", this::registry)),
-            new javafx.scene.control.Menu(
-                "Структуры",
-                null,
-                menu("Библиотека структур", this::library),
-                menu("Построить по названию", this::nameStructure),
-                menu("Каркасы и сложные циклы", () -> this.scaffolds(null)),
-                menu("Рассчитать R/S и E/Z", this::cip),
-                menu("Относительная стереохимия", () -> this.relativeStereo(null)),
-                menu("Конформеры и виды", () -> this.conformers(null))),
-            new javafx.scene.control.Menu(
-                "Аналитика",
-                null,
-                menu("Расчёт свойств", this::calculation),
-                menu("ЯМР · офлайн-прогноз и смеси", this::predictedNmr),
-                menu("Спектры, ЯМР, МС и ТСХ", this::analyses),
-                menu("Количественная аналитика и досье", this::evidence)),
-            new javafx.scene.control.Menu(
-                "Методики и поиск",
-                null,
-                menu("Литература и DOI", () -> this.literature(null)),
-                menu("Найти реакцию или методику", this::reactionSearch),
-                menu("Поиск по структуре", this::structureSearch),
-                menu("Отчёт по опыту", this::report)));
-    work.disableProperty().bind(this.root.centerProperty().isNotEqualTo(this.workArea));
+    final java.util.Map<String, javafx.scene.control.Menu> groups = new java.util.LinkedHashMap<>();
+    for (final var entry : this.navigationCommands()) {
+      final var group = groups.computeIfAbsent(entry.section(), javafx.scene.control.Menu::new);
+      final var item = menu(entry.name(), entry.action());
+      item.setId("section-" + entry.id());
+      group.getItems().add(item);
+    }
+    work.getItems().setAll(groups.values());
+    work.disableProperty()
+        .bind(
+            javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> this.root.getCenter() != this.workArea && this.computationPage == null,
+                this.root.centerProperty()));
     document
         .getItems()
         .get(1)
@@ -1643,6 +1809,8 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
             item ->
                 item.disableProperty()
                     .bind(this.root.centerProperty().isNotEqualTo(this.workArea)));
+    document.visibleProperty().bind(this.root.centerProperty().isEqualTo(this.workArea));
+    document.managedProperty().bind(document.visibleProperty());
     final Button actions = button("Найти действие…", this::commands);
     actions.setId("chemistry-actions-open");
     actions.setTooltip(
@@ -1659,7 +1827,25 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
     this.drawingConditions.setTooltip(
         new javafx.scene.control.Tooltip(
             "Выбрать исходники и продукт, задать растворитель, температуру и время"));
-    final ToolBar bar = new ToolBar(document, work, actions);
+    final Button projects =
+        button("← К серии опытов", () -> this.command("notebook", this::notebooks));
+    projects.setId("chemistry-projects-open");
+    projects.setTooltip(
+        new javafx.scene.control.Tooltip("Проекты и опыты · вернуться к выбранной серии"));
+    projects.disableProperty().bind(work.disableProperty());
+    projects
+        .visibleProperty()
+        .bind(
+            javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> !(this.computationPage instanceof LaboratoryExperimentDesk),
+                this.root.centerProperty()));
+    projects.managedProperty().bind(projects.visibleProperty());
+    final Button learn = button("Обучение", this::startTutorial);
+    learn.setId("chemistry-tutorial-open");
+    learn.setTooltip(
+        new javafx.scene.control.Tooltip("Пошаговое обучение и подсказки по всем разделам"));
+    final ToolBar bar = new ToolBar(projects, work, actions, document);
+    if (this.tutorialRoot == null) bar.getItems().addAll(learn, this.updates.button());
     bar.setId("chemistry-main-toolbar");
     this.documentTitle.setId("chemistry-document-title");
     this.documentTitle.setMinWidth(0);
@@ -1796,7 +1982,7 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
         });
     panels.getItems().addAll(foldersItem, detailsItem);
     panels.disableProperty().bind(this.root.centerProperty().isNotEqualTo(this.workArea));
-    bar.getItems().addAll(new javafx.scene.control.Separator(), this.undo, this.redo, edit, panels);
+    final ToolBar drawingTools = new ToolBar(this.undo, this.redo, edit, panels);
     save.setId("chemistry-save");
     save.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
     save.setTooltip(new javafx.scene.control.Tooltip("Сохранить опыт · Ctrl+S"));
@@ -1812,7 +1998,11 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
     javafx.scene.layout.HBox.setHgrow(this.documentTitle, javafx.scene.layout.Priority.ALWAYS);
     desk.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
     this.drawingConditions.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
-    final VBox documentBar = new VBox(heading, bar);
+    heading.visibleProperty().bind(this.root.centerProperty().isEqualTo(this.workArea));
+    heading.managedProperty().bind(heading.visibleProperty());
+    drawingTools.visibleProperty().bind(heading.visibleProperty());
+    drawingTools.managedProperty().bind(drawingTools.visibleProperty());
+    final VBox documentBar = new VBox(bar, heading, drawingTools);
     documentBar.setId("chemistry-document-bar");
     documentBar.setMinWidth(0);
     return documentBar;
@@ -1837,6 +2027,7 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
       final String name = names[index];
       final ToggleButton button = new ToggleButton(name);
       this.icon(button, icons[index], hints[index]);
+      button.setId("chemistry-tool-" + icons[index]);
       button.setToggleGroup(group);
       button.setSelected(name.equals(this.tool));
       button.setOnAction(event -> this.chooseTool(name));
@@ -1856,6 +2047,8 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
             () ->
                 this.bondTool(
                     ru.pathcreator.vadim.quantum.chemistry.domain.structure.BondType.TRIPLE));
+    doubleBond.setId("chemistry-tool-double");
+    tripleBond.setId("chemistry-tool-triple");
     this.icon(doubleBond, "double", "Двойная связь · 2");
     this.icon(tripleBond, "triple", "Тройная связь · 3");
     final Button benzene =
@@ -1874,9 +2067,12 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
               this.aromaticRing = false;
               this.chooseTool("Кольцо");
             });
+    benzene.setId("chemistry-tool-benzene");
+    pentagon.setId("chemistry-tool-pentagon");
     this.icon(benzene, "benzene", "Бензольное кольцо");
     this.icon(pentagon, "pentagon", "Пятичленное кольцо");
     final Button remove = button("Удалить выделенное", () -> this.run(this::removeSelected));
+    remove.setId("chemistry-tool-delete");
     this.icon(remove, "delete", "Удалить выделенное · Delete");
     tools
         .getChildren()
@@ -3499,8 +3695,8 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
     this.run(
         () -> {
           if (this.editor.document().experiment().components().isEmpty()) {
-            this.status.setText("Сначала нарисуйте структуру для прогноза ЯМР.");
-            return;
+            throw new IllegalArgumentException(
+                "Сначала добавьте структуру для прогноза ЯМР: «Реакция» → «Нарисовать структуры» или «Библиотека структур».");
           }
           if (this.computationPage != null && !this.computationPage.canClose()) {
             return;
@@ -4035,6 +4231,23 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
     if (this.files.busy()) {
       return;
     }
+    LaboratoryCommandPalette.show(this.owner, this.navigationCommands(), this.viewPreferences);
+  }
+
+  private List<LaboratoryCommandPalette.Command> navigationCommands() {
+    return this.commandDefinitions().stream()
+        .map(
+            c ->
+                new LaboratoryCommandPalette.Command(
+                    c.id(),
+                    c.name(),
+                    c.section(),
+                    c.hint(),
+                    () -> this.command(c.id(), c.action())))
+        .toList();
+  }
+
+  private List<LaboratoryCommandPalette.Command> commandDefinitions() {
     final var commands = new java.util.ArrayList<LaboratoryCommandPalette.Command>();
     commands.add(
         new LaboratoryCommandPalette.Command(
@@ -4204,35 +4417,178 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
             "Структура",
             "CIP, стереохимия, клинья, импортированная конфигурация и дескрипторы",
             this::cip));
-    LaboratoryCommandPalette.show(
-        this.owner,
-        commands.stream()
-            .map(
-                c ->
-                    new LaboratoryCommandPalette.Command(
-                        c.id(), c.name(), c.section(), c.hint(), () -> this.command(c.action())))
-            .toList(),
-        this.viewPreferences);
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "materials",
+            "Материалы и партии",
+            "Материалы",
+            "Склад, остатки, поступление и расход",
+            this::materials));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "sample-catalog",
+            "Образцы проекта",
+            "Образцы",
+            "Образцы сохранённых опытов",
+            this::sampleCatalog));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "library", "Библиотека структур", "Структура", "Структуры и фрагменты", this::library));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "calculation",
+            "Расчёт свойств",
+            "Аналитика",
+            "Выбрать вещество и рассчитать свойства",
+            this::calculation));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "predicted-nmr",
+            "ЯМР · офлайн-прогноз и смеси",
+            "Аналитика",
+            "Расчётные сдвиги, растворитель и смесь",
+            this::predictedNmr));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "report",
+            "Отчёт по опыту",
+            "Аналитика",
+            "Предпросмотр и экспорт PDF / HTML",
+            this::report));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "structure-search",
+            "Поиск по структуре",
+            "Знания",
+            "Найти сохранённый опыт по молекуле",
+            this::structureSearch));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "series", "Серия из шаблона", "Планирование", "Создать варианты опыта", this::series));
+    commands.add(
+        new LaboratoryCommandPalette.Command(
+            "overview",
+            "Обзор и сравнение опытов",
+            "Планирование",
+            "Сравнить сохранённые опыты серии",
+            this::overview));
+    return List.copyOf(commands);
   }
 
-  private void command(final Runnable action) {
+  private void command(final String id, final Runnable action) {
+    if (this.files.busy()) {
+      return;
+    }
     this.run(
         () -> {
-          if (this.computationPage != null) {
-            if (!this.computationPage.canClose()) {
-              return;
-            }
-            this.leaveComputation();
+          final var previous = this.computationPage;
+          if (previous != null && !previous.canClose()) {
+            return;
           }
-          if (this.root.getCenter() != this.workArea) {
-            this.files.error(
-                new IllegalArgumentException(
-                    "Сначала примените или отмените ввод в открытой форме и вернитесь к опыту."));
+          if (previous == null && this.root.getCenter() != this.workArea) {
+            throw new IllegalArgumentException(
+                "Сначала примените или отмените ввод в открытой форме.");
+          }
+          if (Set.of("calculation", "cip", "relative-stereo", "conformers").contains(id)
+              && !this.selectCommandComponent()) {
             return;
           }
           this.flushAll();
+          if (previous instanceof LaboratoryExperimentDesk
+              && Set.of(
+                      "route",
+                      "procedure",
+                      "operations",
+                      "samples",
+                      "analyses",
+                      "evidence",
+                      "literature",
+                      "reaction-classification",
+                      "report")
+                  .contains(id)) {
+            this.deskAction("reaction-classification".equals(id) ? "classification" : id);
+            return;
+          }
+          final String experimentId = this.editor.document().experiment().id();
+          final ReturnTarget inherited = this.returnTarget(previous);
+          final Runnable back;
+          if (previous instanceof LaboratoryExperimentDesk desk) {
+            final var view = desk.viewState();
+            back = () -> this.desk(view.stageId(), view);
+          } else if (previous instanceof LaboratoryNotebookPage) {
+            back = () -> this.notebooks(false);
+          } else if (previous instanceof LaboratoryWelcomePage) {
+            back = this::welcome;
+          } else {
+            back = inherited == null ? null : inherited.action();
+          }
+          this.leaveComputation();
           action.run();
+          if (!experimentId.equals(this.editor.document().experiment().id())) {
+            if ("repeat".equals(id) && this.root.getCenter() == this.workArea) this.desk(null);
+            return;
+          }
+          if (this.root.getCenter() == this.workArea) {
+            if (back != null) back.run();
+          } else if (!Set.of("notebook", "desk").contains(id) && back != null) {
+            this.navigationReturn = new ReturnTarget(this.root.getCenter(), experimentId, back);
+            if (this.computationPage != null) {
+              this.computationPage.backCaption(
+                  previous instanceof LaboratoryNotebookPage
+                      ? "← К серии опытов"
+                      : previous instanceof LaboratoryWelcomePage ? "← К началу" : "← К опыту");
+            } else {
+              final var legacyBack =
+                  this.root
+                      .getCenter()
+                      .lookup(
+                          "library".equals(id)
+                              ? "#chemistry-library-back"
+                              : "#chemistry-materials-back");
+              if (legacyBack instanceof Button button) button.setText("← К опыту");
+            }
+          }
         });
+  }
+
+  private boolean selectCommandComponent() {
+    final var components = this.editor.document().experiment().components();
+    if (components.isEmpty()) {
+      throw new IllegalArgumentException(
+          "В опыте пока нет веществ. Откройте «Реакция» → «Нарисовать структуры» или добавьте вещество из библиотеки.");
+    }
+    if ((this.root.getCenter() == this.workArea || this.tutorialRoot != null)
+        && this.selected != null
+        && components.stream().anyMatch(c -> c.id().equals(this.selected.componentId()))) {
+      return true;
+    }
+    record Choice(String id, String name) {
+      @Override
+      public String toString() {
+        return this.name;
+      }
+    }
+    final var choices =
+        components.stream().map(c -> new Choice(c.id(), c.molecule().displayName())).toList();
+    final Choice chosen;
+    if (choices.size() == 1) {
+      chosen = choices.getFirst();
+    } else {
+      final var dialog = new javafx.scene.control.ChoiceDialog<>(choices.getFirst(), choices);
+      dialog.initOwner(this.owner);
+      dialog.setTitle("Выбор вещества");
+      dialog.setHeaderText("Для какого вещества открыть действие?");
+      dialog.setContentText("Вещество:");
+      chosen = dialog.showAndWait().orElse(null);
+    }
+    if (chosen == null) return false;
+    final var molecule = this.editor.document().layouts().get(chosen.id());
+    if (molecule == null || molecule.atoms().isEmpty()) {
+      throw new IllegalArgumentException(
+          "У выбранного вещества нет структуры. Сначала нарисуйте её.");
+    }
+    this.chooseComponent(chosen.id(), false);
+    return true;
   }
 
   private void welcome() {
@@ -4290,6 +4646,15 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
                     }
                     : null));
     page.pendingDrafts(this.recovery.pendingDrafts());
+    if (this.tutorialRoot == null
+        && !this.viewPreferences.flag("tutorial.offer.dismissed", false)) {
+      page.offerTutorial(
+          this::startTutorial,
+          () -> {
+            this.viewPreferences.set("tutorial.offer.dismissed", true);
+            this.viewPreferences.save();
+          });
+    }
     this.computationPage = page;
     this.openComputation();
   }
@@ -4344,7 +4709,11 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
           final var page =
               new LaboratoryNotebookPage(
                   this.notebookRepository, this::openNotebookExperiment, this::closeComputation);
-          page.planSource(() -> this.editor.document());
+          page.planSource(
+              () ->
+                  this.tutorialRoot == null
+                      ? this.editor.document()
+                      : LaboratoryTutorialPage.examplePlan());
           page.actions(this::openNotebookAction);
           this.computationPage = page;
           this.openComputation();
@@ -4529,8 +4898,10 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
           this.computationPage =
               new LaboratoryReportPage(
                   this.editor.document(),
-                  java.util.Map.of(
-                      activeStage, java.util.Objects.toString(desk.resultReference(), "")),
+                  activeStage == null
+                      ? java.util.Map.of()
+                      : java.util.Map.of(
+                          activeStage, java.util.Objects.toString(desk.resultReference(), "")),
                   this::closeComputation);
           this.openComputation();
         }
@@ -5054,8 +5425,8 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
       this.navigationReturn = null;
     }
     this.root.setCenter(this.computationPage);
-    this.root.getTop().setVisible(false);
-    this.root.getTop().setManaged(false);
+    this.root.getTop().setVisible(true);
+    this.root.getTop().setManaged(true);
     this.status();
   }
 
@@ -5115,7 +5486,10 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
           } catch (final java.io.IOException exception) {
             throw new java.io.UncheckedIOException(exception);
           }
-          this.libraryPage = new LaboratoryLibraryWindow();
+          this.libraryPage =
+              this.tutorialRoot == null
+                  ? new LaboratoryLibraryWindow()
+                  : new LaboratoryLibraryWindow(this.tutorialRoot.resolve("Library"));
           final var page =
               this.libraryPage.view(
                   this.owner,
@@ -5161,11 +5535,14 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
                     this.refresh();
                   },
                   () -> {
+                    final var targetReturn = this.returnTarget(this.root.getCenter());
                     this.libraryPage = null;
+                    this.navigationReturn = null;
                     this.root.setCenter(this.workArea);
                     this.root.getTop().setVisible(true);
                     this.root.getTop().setManaged(true);
                     this.refresh();
+                    this.resume(targetReturn);
                   });
           this.root.setCenter(page);
           this.root.getTop().setVisible(false);
@@ -5330,11 +5707,14 @@ public final class LaboratoryWorkspace implements DesktopWorkspaceExtension {
             molecule,
             this.editor.document().experiment().title(),
             () -> {
+              final var targetReturn = this.returnTarget(this.root.getCenter());
               this.materialsPage = null;
+              this.navigationReturn = null;
               this.root.setCenter(this.workArea);
               this.root.getTop().setVisible(true);
               this.root.getTop().setManaged(true);
               this.refresh();
+              this.resume(targetReturn);
             });
     this.materialsPage = page;
     this.root.setCenter(content);

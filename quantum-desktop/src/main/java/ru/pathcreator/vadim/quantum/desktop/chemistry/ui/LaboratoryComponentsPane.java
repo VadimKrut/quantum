@@ -109,7 +109,7 @@ final class LaboratoryComponentsPane extends BorderPane {
                     && this.getIndex() < table.getItems().size()) {
                   final LaboratoryComponent component = table.getItems().get(this.getIndex());
                   this.title.setText(value);
-                  this.role.setText(LaboratoryInspector.roleText(component.role()));
+                  this.role.setText(LaboratoryComponentsPane.this.roleText(component));
                   this.setGraphic(this.content);
                   this.setTooltip(new Tooltip(value + "\n" + this.role.getText()));
                 }
@@ -183,7 +183,7 @@ final class LaboratoryComponentsPane extends BorderPane {
     this.allColumns.setId("chemistry-components-all-columns");
     this.allColumns.setOnAction(event -> this.columns());
     this.search.textProperty().addListener((observable, before, after) -> this.filter());
-    this.roles.setOnAction(event -> this.filter());
+    this.roles.valueProperty().addListener((observable, before, after) -> this.filter());
     this.search.setOnKeyPressed(
         event -> {
           if (event.getCode() == KeyCode.ESCAPE && !this.search.getText().isEmpty()) {
@@ -360,6 +360,8 @@ final class LaboratoryComponentsPane extends BorderPane {
       if (!this.source.equals(values)) {
         this.source.setAll(values);
       }
+      this.filter();
+      this.table.refresh();
       this.table.getSelectionModel().clearSelection();
       this.table.getItems().stream()
           .filter(component -> component.id().equals(selectedId))
@@ -412,6 +414,7 @@ final class LaboratoryComponentsPane extends BorderPane {
 
   private void filter() {
     final var selected = this.table.getSelectionModel().getSelectedItem();
+    final boolean wasChanging = this.changing;
     this.changing = true;
     try {
       final String query = normalized(this.search.getText());
@@ -421,18 +424,19 @@ final class LaboratoryComponentsPane extends BorderPane {
             if (!this.expanded) {
               return true;
             }
-            if (role == 1 && component.role() != ReactionComponentRole.REACTANT
-                || role == 2 && component.role() != ReactionComponentRole.PRODUCT
+            final var roles = this.roles(component);
+            if (role == 1 && !roles.contains(ReactionComponentRole.REACTANT)
+                || role == 2 && !roles.contains(ReactionComponentRole.PRODUCT)
                 || role == 3
-                    && (component.role() == ReactionComponentRole.REACTANT
-                        || component.role() == ReactionComponentRole.PRODUCT)) {
+                    && roles.stream()
+                        .noneMatch(
+                            r ->
+                                r != ReactionComponentRole.REACTANT
+                                    && r != ReactionComponentRole.PRODUCT)) {
               return false;
             }
             final String haystack =
-                normalized(
-                    component.molecule().displayName()
-                        + " "
-                        + LaboratoryInspector.roleText(component.role()));
+                normalized(component.molecule().displayName() + " " + this.roleText(component));
             return query.isBlank()
                 || java.util.Arrays.stream(query.split("\\s+")).allMatch(haystack::contains);
           });
@@ -444,8 +448,25 @@ final class LaboratoryComponentsPane extends BorderPane {
       this.count.setText(this.filtered.size() + " из " + this.source.size());
       this.selection();
     } finally {
-      this.changing = false;
+      this.changing = wasChanging;
     }
+  }
+
+  private List<ReactionComponentRole> roles(final LaboratoryComponent component) {
+    final var roles =
+        this.stages.stream()
+            .flatMap(stage -> stage.participants().stream())
+            .filter(participant -> participant.componentId().equals(component.id()))
+            .map(participant -> participant.role())
+            .distinct()
+            .toList();
+    return roles.isEmpty() ? List.of(component.role()) : roles;
+  }
+
+  private String roleText(final LaboratoryComponent component) {
+    return this.roles(component).stream()
+        .map(LaboratoryInspector::roleText)
+        .collect(java.util.stream.Collectors.joining(" / "));
   }
 
   private void columns() {
@@ -477,7 +498,7 @@ final class LaboratoryComponentsPane extends BorderPane {
             ? "Выберите компонент для полных значений. Enter — количество; Ctrl+Enter — рисунок."
             : component.molecule().displayName()
                 + "\n"
-                + LaboratoryInspector.roleText(component.role())
+                + this.roleText(component)
                 + " · "
                 + component.evidence()
                 + "\nПлан: "
